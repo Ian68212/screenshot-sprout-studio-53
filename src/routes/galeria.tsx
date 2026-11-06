@@ -28,12 +28,12 @@ function Galeria() {
           ))}
         </div>
       </section>
-      {open !== null && (
+      {open !== null && gallery[open] && (
         <div role="dialog" aria-modal="true" className="fixed inset-0 z-[60] flex items-center justify-center bg-navy-deep/95 p-4" onClick={() => setOpen(null)}>
           <button className="absolute right-5 top-5 text-navy-foreground" aria-label="Fechar"><X className="h-8 w-8" /></button>
           <figure onClick={(e) => e.stopPropagation()}>
-            <img src={gallery[open].src} alt={gallery[open].alt} className="max-h-[80vh] w-auto" />
-            <figcaption className="mt-3 text-center text-sm text-navy-foreground/80">{gallery[open].alt}</figcaption>
+            <img src={gallery[open]!.src} alt={gallery[open]!.alt} className="max-h-[80vh] w-auto" />
+            <figcaption className="mt-3 text-center text-sm text-navy-foreground/80">{gallery[open]!.alt}</figcaption>
           </figure>
         </div>
       )}

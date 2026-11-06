@@ -6,7 +6,7 @@ import { ContactInfo } from "./contato";
 import { pageMeta } from "@/lib/seo";
 
 export const Route = createFileRoute("/orcamento")({
-  validateSearch: (s: Record<string, unknown>): { servico?: string } => (typeof s.servico === "string" ? { servico: s.servico } : {}),
+  validateSearch: (s: Record<string, unknown>): { servico?: string } => (typeof s["servico"] === "string" ? { servico: s["servico"] } : {}),
   head: () => ({ meta: pageMeta("Solicitar orçamento", "Solicite um orçamento à Rodrinox Pro para corte a laser, dobra, soldagem e fabricação de componentes metálicos.") }),
   component: Orcamento,
 });

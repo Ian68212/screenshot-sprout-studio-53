@@ -29,6 +29,7 @@ function Home() {
     const t = setInterval(() => setI((v) => (v + 1) % slides.length), 6500);
     return () => clearInterval(t);
   }, [i]);
+  const cur = slides[i]!;
   const go = (d: number) => setI((v) => (v + d + slides.length) % slides.length);
 
   return (
@@ -43,9 +44,9 @@ function Home() {
         ))}
         <div className="container-site relative flex h-full flex-col justify-center pt-24">
           <div key={i} className="max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <p className="eyebrow">{slides[i].eyebrow}</p>
-            <h1 className="mt-4 text-4xl font-extrabold leading-[1.05] text-navy-foreground md:text-7xl">{slides[i].title}</h1>
-            <p className="mt-6 max-w-xl text-lg text-navy-foreground/80">{slides[i].text}</p>
+            <p className="eyebrow">{cur.eyebrow}</p>
+            <h1 className="mt-4 text-4xl font-extrabold leading-[1.05] text-navy-foreground md:text-7xl">{cur.title}</h1>
+            <p className="mt-6 max-w-xl text-lg text-navy-foreground/80">{cur.text}</p>
             <div className="mt-9 flex flex-wrap gap-4">
               <Link to="/orcamento" className={cn(btn.base, btn.accent)}>Solicitar orçamento <ArrowRight className="h-4 w-4" /></Link>
               <Link to="/servicos" className={cn(btn.base, btn.outlineLight)}>Conheça os serviços</Link>
