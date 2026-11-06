@@ -8,6 +8,7 @@ import cilindros from "@/assets/cilindros.jpg";
 import componentes from "@/assets/componentes.jpg";
 import projetos from "@/assets/projetos.jpg";
 import fabrica from "@/assets/fabrica.jpg";
+import projetoPersonalizado from "@/assets/projeto-personalizado.png.asset.json";
 
 export const images = { heroLaser, dobra, soldaLaser, soldaTig, cilindros, componentes, projetos, fabrica };
 
@@ -90,7 +91,7 @@ export const services: Service[] = [
     short: "Da necessidade à solução, com projeto sob medida.",
     description:
       "Entendemos o desafio da sua empresa e desenvolvemos alternativas adequadas à sua operação, com acompanhamento próximo em cada etapa.",
-    image: projetos,
+    image: projetoPersonalizado.url,
   },
   {
     slug: "pecas-e-componentes",
