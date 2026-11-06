@@ -8,6 +8,7 @@ import cilindros from "@/assets/cilindros.jpg";
 import componentes from "@/assets/componentes.jpg";
 import projetos from "@/assets/projetos.jpg";
 import fabrica from "@/assets/fabrica.jpg";
+import soldasEspeciais from "@/assets/soldas-especiais.png.asset.json";
 import projetoPersonalizado from "@/assets/projeto-personalizado.png.asset.json";
 
 export const images = { heroLaser, dobra, soldaLaser, soldaTig, cilindros, componentes, projetos, fabrica };
@@ -75,7 +76,7 @@ export const services: Service[] = [
     short: "Soluções de soldagem para demandas específicas.",
     description:
       "Atendimento a necessidades de soldagem fora do padrão. Conte-nos sobre o material e a aplicação para avaliarmos a melhor solução.",
-    image: soldaLaser,
+    image: soldasEspeciais.url,
   },
   {
     slug: "cilindros",
