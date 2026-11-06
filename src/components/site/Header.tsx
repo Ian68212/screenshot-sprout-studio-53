@@ -30,7 +30,7 @@ export function Header() {
       <div className={cn("border-b bg-card/95 backdrop-blur transition-shadow", scrolled && "shadow-card")}>
         <div className="container-site flex h-20 items-center justify-between gap-6">
           <Link to="/" aria-label="Rodrinox Pro — início" className="shrink-0">
-            <img src={logo.url} alt="Rodrinox Pro" className="h-14 w-auto mix-blend-multiply" width={690} height={200} />
+            <img src={logo.url} alt="Rodrinox Pro" className="h-14 w-auto" width={1800} height={480} />
           </Link>
           <nav className="hidden items-center gap-7 lg:flex" aria-label="Menu principal">
             {nav.map((n) => (
