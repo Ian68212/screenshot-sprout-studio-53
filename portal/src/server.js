@@ -8,6 +8,7 @@ import rateLimit from "express-rate-limit";
 import { q, auditar } from "./db.js";
 import { COOKIE, login, logout, carregarUsuario, exigir, gerarHash } from "./auth.js";
 import { PERFIS, podeVerFerramenta, senhaValida } from "./permissions.js";
+import { siteRouter } from "./site-cms.js";
 
 const BASE = process.env.BASE_PATH || "/colaborador";
 const dir = path.dirname(fileURLToPath(import.meta.url));
@@ -125,6 +126,7 @@ r.get("/api/admin/auditoria", exigir("admin.auditoria"), wrap(async (_req, res) 
     LEFT JOIN usuarios u ON u.id=a.usuario_id ORDER BY a.id DESC LIMIT 200`));
 }));
 
+r.use("/api/site", siteRouter);
 r.use(express.static(path.join(dir, "..", "public"), { index: "index.html" }));
 r.use((err, _req, res, _next) => {
   if (err?.code === "ER_DUP_ENTRY") return res.status(409).json({ erro: "Registro já existe" });
