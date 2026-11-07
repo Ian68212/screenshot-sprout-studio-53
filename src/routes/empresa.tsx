@@ -5,23 +5,49 @@ import { CtaBand } from "@/components/site/Footer";
 import { pageMeta } from "@/lib/seo";
 
 export const Route = createFileRoute("/empresa")({
-  head: () => ({ meta: pageMeta("A empresa", "Conheça a Rodrinox Pro: soluções industriais e fabricação de componentes metálicos com visão técnica, inovação e compromisso.") }),
+  head: () => ({
+    meta: pageMeta(
+      "A empresa",
+      "Conheça a Rodrinox Pro: soluções industriais e fabricação de componentes metálicos com visão técnica, inovação e compromisso.",
+    ),
+  }),
   component: Empresa,
 });
 
 function Empresa() {
   return (
     <>
-      <PageHero eyebrow="A empresa" title="Mais do que soluções. Parcerias que geram resultados." image={images.fabrica} />
+      <PageHero
+        eyebrow="A empresa"
+        title="Mais do que soluções. Parcerias que geram resultados."
+        image={images.fabrica}
+      />
       <section className="py-24">
         <div className="container-site grid gap-14 lg:grid-cols-2">
           <Reveal>
             <SectionTitle eyebrow="Quem somos" title="Engenharia, tecnologia e soluções para a indústria." />
           </Reveal>
           <Reveal delay={120} className="space-y-5 text-lg leading-relaxed text-muted-foreground">
-            <p>A Rodrinox Pro é especializada em soluções industriais e na fabricação de componentes metálicos. Acreditamos que grandes resultados começam com soluções bem planejadas.</p>
-            <p>Trabalhamos para conectar necessidades industriais a caminhos eficientes, com atenção aos detalhes, tecnologia e relacionamento próximo com cada cliente.</p>
-            <p className="rounded-sm border border-dashed border-accent/60 bg-secondary p-4 text-sm">[História da empresa, ano de fundação e diferenciais — a preencher]</p>
+            <p>
+              A Rodrinox Pro é especializada em soluções industriais e na fabricação de componentes metálicos.
+              Acreditamos que grandes resultados começam com soluções bem planejadas.
+            </p>
+            <p>
+              Trabalhamos para conectar necessidades industriais a caminhos eficientes, com atenção aos detalhes,
+              tecnologia e relacionamento próximo com cada cliente.
+            </p>
+            <p className="rounded-sm border border-dashed border-accent/60 bg-secondary p-4 text-sm">
+              [Toda grande conquista começa com um sonho. E todo sonho precisa de coragem para se tornar realidade. A
+              Rodrinox Pro nasceu da vontade de transformar ideias em soluções, desafios em oportunidades e trabalho em
+              resultados. Entre o aço, as máquinas e a precisão de cada detalhe, construímos mais do que peças.
+              Construímos caminhos, fortalecemos parcerias e aprendemos que a verdadeira força de uma empresa está nas
+              pessoas que acreditam nela. Nem todos os dias foram fáceis. Houve obstáculos, decisões difíceis e momentos
+              que exigiram persistência. Mas cada desafio trouxe aprendizado, e cada conquista renovou nossa
+              determinação de seguir em frente. Porque o aço pode ser moldado pelo calor, mas uma grande história é
+              moldada pela coragem, pelo trabalho e pela perseverança. **Rodrinox Pro — Soluções, Inovação e
+              Resultados.** *Mais do que transformar metais, trabalhamos para transformar possibilidades em grandes
+              realizações.*]
+            </p>
           </Reveal>
         </div>
       </section>
