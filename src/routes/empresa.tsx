@@ -67,7 +67,7 @@ function Empresa() {
             {["Missão", "Visão", "Valores"].map((t) => (
               <div key={t} className="border bg-card p-8">
                 <h3 className="font-bold text-primary">{t}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">[{t} da Rodrinox Pro — a preencher]</p>
+                <p className="mt-2 text-sm text-muted-foreground">{t === "Valores" ? "Na Rodrinox Pro, nossos valores são a base de cada projeto e de cada parceria. Atuamos com ética, transparência e responsabilidade, valorizando a qualidade, a inovação e a melhoria contínua de nossos processos. Acreditamos no respeito às pessoas, no trabalho em equipe e no compromisso de entregar soluções industriais com precisão, segurança e excelência, construindo relações duradouras de confiança com nossos clientes e parceiros." : `[${t} da Rodrinox Pro — a preencher]`}</p>
               </div>
             ))}
           </div>
