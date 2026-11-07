@@ -2,7 +2,9 @@
   "name": "rodrinox-portal-colaborador",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "start": "node src/server.js",
     "db:init": "node scripts/init-db.js",
@@ -16,6 +18,8 @@
     "express": "^4.21.2",
     "express-rate-limit": "^7.4.1",
     "helmet": "^8.0.0",
-    "mysql2": "^3.11.5"
+    "mysql2": "^3.11.5",
+    "multer": "^2.0.2",
+    "file-type": "^20.5.0"
   }
 }
