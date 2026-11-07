@@ -24,7 +24,7 @@ export const company = {
   whatsappNumber: "5511965988004",
   site: "www.rodrinoxpro.com.br",
   // Campos a preencher pela empresa:
-  address: "[Endereço completo — a preencher]",
+  address: "Rodovia Presidente Tancredo de Almeida Neves, KM 59, Galpão 03\nBairro Santa Gertrudes\nJundiaí – SP\nCEP: 13205-005\nBrasil",
   hours: "[Horário de atendimento — a preencher]",
   cnpj: "[CNPJ — a preencher]",
 };
