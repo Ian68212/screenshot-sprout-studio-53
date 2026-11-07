@@ -9,6 +9,7 @@ import { q, auditar } from "./db.js";
 import { COOKIE, login, logout, carregarUsuario, exigir, gerarHash } from "./auth.js";
 import { PERFIS, podeVerFerramenta, senhaValida } from "./permissions.js";
 import { siteRouter } from "./site-cms.js";
+import { mediaRouter } from "./site-media.js";
 
 const BASE = process.env.BASE_PATH || "/colaborador";
 const dir = path.dirname(fileURLToPath(import.meta.url));
@@ -127,8 +128,11 @@ r.get("/api/admin/auditoria", exigir("admin.auditoria"), wrap(async (_req, res) 
 }));
 
 r.use("/api/site", siteRouter);
+r.use("/api/site/midias", mediaRouter);
 r.use(express.static(path.join(dir, "..", "public"), { index: "index.html" }));
 r.use((err, _req, res, _next) => {
+  if (err?.code === "LIMIT_FILE_SIZE") return res.status(413).json({ erro: "Imagem excede 5 MB" });
+  if (err?.code === "LIMIT_UNEXPECTED_FILE") return res.status(400).json({ erro: "Envie apenas uma imagem" });
   if (err?.code === "ER_DUP_ENTRY") return res.status(409).json({ erro: "Registro já existe" });
   console.error(err);
   res.status(500).json({ erro: "Erro interno" });
