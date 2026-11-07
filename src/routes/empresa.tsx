@@ -37,19 +37,13 @@ function Empresa() {
               tecnologia e relacionamento próximo com cada cliente.
             </p>
             <p className="rounded-sm border border-dashed border-accent/60 bg-secondary p-4 text-sm">
-              {`Toda grande conquista começa com um sonho. E todo sonho precisa de coragem para se tornar realidade. 
+              {`Toda grande conquista começa com um sonho. E todo sonho precisa de coragem para se tornar realidade.  
 
 
-A Rodrinox Pro nasceu da vontade de transformar ideias em soluções, desafios em oportunidades e trabalho em resultados. Entre o aço, as máquinas e a precisão de cada detalhe, construímos mais do que peças. Construímos caminhos, fortalecemos parcerias e aprendemos que a verdadeira força de uma empresa está nas pessoas que acreditam nela. Nem todos os dias foram fáceis. 
+A Rodrinox Pro nasceu da vontade de transformar ideias em soluções, desafios em oportunidades e trabalho em resultados. Entre o aço, as máquinas e a precisão de cada detalhe, construímos mais do que peças. Construímos caminhos, fortalecemos parcerias e aprendemos que a verdadeira força de uma empresa está nas pessoas que acreditam nela. Nem todos os dias foram fáceis.  Houve obstáculos, decisões difíceis e momentos que exigiram persistência. Mas cada desafio trouxe aprendizado, e cada conquista renovou nossa determinação de seguir em frente. Porque o aço pode ser moldado pelo calor, mas uma grande história é moldada pela coragem, pelo trabalho e pela perseverança. 
 
 
-Houve obstáculos, decisões difíceis e momentos que exigiram persistência. Mas cada desafio trouxe aprendizado, e cada conquista renovou nossa determinação de seguir em frente. Porque o aço pode ser moldado pelo calor, mas uma grande história é moldada pela coragem, pelo trabalho e pela perseverança.
-
-
-Rodrinox Pro — Soluções, Inovação e Resultados.
-
-
-Mais do que transformar metais, trabalhamos para transformar possibilidades em grandes realizações.`}
+ Rodrinox Pro — Soluções, Inovação e Resultados. Mais do que transformar metais, trabalhamos para transformar possibilidades em grandes realizações.`}
             </p>
           </Reveal>
         </div>
