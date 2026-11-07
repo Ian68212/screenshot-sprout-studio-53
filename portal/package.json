@@ -1,0 +1,21 @@
+{
+  "name": "rodrinox-portal-colaborador",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node src/server.js",
+    "db:init": "node scripts/init-db.js",
+    "admin:create": "node scripts/create-admin.js",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.4.1",
+    "helmet": "^8.0.0",
+    "mysql2": "^3.11.5"
+  }
+}

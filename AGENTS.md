@@ -31,3 +31,5 @@ use the editor.
 
 ## Brand assets
 - The header's official logo uses an absolute hosted asset URL so external deployments do not depend on Lovable-only relative asset endpoints; preserve the original artwork and aspect ratio.
+
+- The collaborator portal lives in `portal/` as a standalone Express + MySQL app deployed separately on Hostinger; it must never import from or change the public site in `src/`.

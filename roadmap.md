@@ -1,5 +1,4 @@
-
-- [ ] Verificar compatibilidade do Portal do Colaborador com Node.js e MySQL na Hostinger, sem alterar o site público.
-- [ ] Preparar ambiente isolado de testes — depende de acesso e configuração da Hostinger e confirmação dos dados de perfil.
-- [ ] Implementar autenticação, cadastro exclusivo pelo administrador, permissões e painel — depende de execução backend Node.js/MySQL fora do ambiente gerenciado do Lovable.
-- [ ] Validar segurança e acessos na Hostinger antes de disponibilizar /colaborador.
+- [x] Verificar compatibilidade do Portal do Colaborador com Node.js e MySQL na Hostinger, sem alterar o site público.
+- [x] Implementar autenticação, cadastro exclusivo pelo administrador, permissões e painel (pasta `portal/`).
+- [ ] Criar subdomínio de teste, banco MySQL de teste e app Node.js na Hostinger — depende de acesso do usuário ao hPanel.
+- [ ] Validar segurança e acessos no ambiente de teste antes de liberar /colaborador em produção.
