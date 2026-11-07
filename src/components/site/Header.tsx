@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Mail, Menu, Phone, X } from "lucide-react";
-import logo from "@/assets/rodrinox-oficial.png.asset.json";
+import logo from "@/assets/rodrinox-oficial.png";
 import { company, nav } from "@/content/site";
 import { btn } from "./primitives";
 import { cn } from "@/lib/utils";
@@ -30,7 +30,7 @@ export function Header() {
       <div className={cn("border-b bg-card/95 backdrop-blur transition-shadow", scrolled && "shadow-card")}>
         <div className="container-site flex h-20 items-center justify-between gap-6">
           <Link to="/" aria-label="Rodrinox Pro — início" className="shrink-0">
-            <img src={`https://screenshot-sprout-studio-53.lovable.app${logo.url}`} alt="Rodrinox Pro" className="h-14 w-auto" width={1920} height={640} />
+            <img src={logo} alt="Rodrinox Pro" className="h-14 w-auto" width={1920} height={640} />
           </Link>
           <nav className="hidden items-center gap-7 lg:flex" aria-label="Menu principal">
             {nav.map((n) => (
