@@ -28,3 +28,6 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+## Brand assets
+- The header's official logo uses an absolute hosted asset URL so external deployments do not depend on Lovable-only relative asset endpoints; preserve the original artwork and aspect ratio.
