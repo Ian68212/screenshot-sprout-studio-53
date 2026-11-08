@@ -5,7 +5,22 @@ import { q } from "./db.js";
 
 export const publicSiteRouter = Router();
 const DIR = path.resolve(process.env.SITE_UPLOAD_DIR || "./storage/site");
-const IMAGE_NAME = /^[a-f0-9-]{36}\\.(jpg|png|webp)$/;\nconst ALLOWED_ORIGIN = process.env.SITE_PUBLIC_ORIGIN || "https://rodrinoxpro.com.br";\n\npublicSiteRouter.use((req, res, next) => {\n  res.set("Cross-Origin-Resource-Policy", "cross-origin");\n  const origin = req.get("Origin");\n  if (origin === ALLOWED_ORIGIN) {\n    res.set("Access-Control-Allow-Origin", ALLOWED_ORIGIN);\n    res.set("Vary", "Origin");\n    res.set("Access-Control-Allow-Methods", "GET, OPTIONS");\n    res.set("Access-Control-Allow-Headers", "Accept, Content-Type");\n  }\n  if (req.method === "OPTIONS") return res.sendStatus(origin === ALLOWED_ORIGIN ? 204 : 403);\n  next();\n});
+const IMAGE_NAME = /^[a-f0-9-]{36}\.(jpg|png|webp)$/;
+const ALLOWED_ORIGIN = process.env.SITE_PUBLIC_ORIGIN || "https://rodrinoxpro.com.br";
+
+// API somente de leitura para o site institucional. Nunca expõe rascunhos.
+publicSiteRouter.use((req, res, next) => {
+  res.set("Cross-Origin-Resource-Policy", "cross-origin");
+  const origin = req.get("Origin");
+  if (origin === ALLOWED_ORIGIN) {
+    res.set("Access-Control-Allow-Origin", ALLOWED_ORIGIN);
+    res.set("Vary", "Origin");
+    res.set("Access-Control-Allow-Methods", "GET, OPTIONS");
+    res.set("Access-Control-Allow-Headers", "Accept, Content-Type");
+  }
+  if (req.method === "OPTIONS") return res.sendStatus(origin === ALLOWED_ORIGIN ? 204 : 403);
+  next();
+});
 
 publicSiteRouter.get("/", async (_req, res, next) => {
   try {
