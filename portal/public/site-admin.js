@@ -9,7 +9,7 @@ const homeDefaults=[
  {chave:"home.intro",eyebrow:"",titulo:"Seu próximo projeto merece um parceiro à altura.",texto:"Na Rodrinox Pro, acreditamos que grandes resultados começam com soluções bem planejadas. Conectamos necessidades industriais a caminhos eficientes, com atenção aos detalhes, tecnologia e relacionamento próximo."}
 ];
 const grupos={
- carreiras:{chave:"pagina.trabalhe-conosco",titulo:"Trabalhe Conosco",campos:[["chamada","Chamada superior","text"],["titulo","Título principal","text"],["descricao","Texto de apresentação","textarea"],["form_titulo","Título do formulário","text"],["form_descricao","Orientação para candidatos","textarea"],["botao","Texto do botão de envio","text"],["cor_primaria","Cor principal (ex.: #0b1f3a)","text"],["cor_destaque","Cor de destaque (ex.: #f26a1b)","text"]]},
+ carreiras:{chave:"pagina.trabalhe-conosco",titulo:"Trabalhe Conosco",campos:[["chamada","Chamada superior","text"],["titulo","Título principal","text"],["descricao","Texto de apresentação","textarea"],["form_titulo","Título do formulário","text"],["form_descricao","Orientação para candidatos","textarea"],["botao","Texto do botão de envio","text"],["imagem_id","Imagem da página","media"],["cor_primaria","Cor principal (ex.: #0b1f3a)","text"],["cor_destaque","Cor de destaque (ex.: #f26a1b)","text"]]},
  login:{chave:"pagina.login",titulo:"Login — Acesso restrito",campos:[["chamada","Chamada do painel visual","text"],["titulo_visual","Título do painel visual","text"],["descricao_visual","Descrição do painel visual","textarea"],["titulo_form","Título do formulário de acesso","text"],["descricao_form","Descrição do formulário","textarea"],["botao","Texto do botão de acesso","text"],["imagem_id","Imagem de fundo do login","media"],["cor_primaria","Cor principal (ex.: #0b1f3a)","text"],["cor_destaque","Cor de destaque (ex.: #f26a1b)","text"]]},
  empresa:{chave:"empresa.institucional",titulo:"A empresa",campos:[
   ["historia","História da Rodrinox Pro","textarea"],["apresentacao","Apresentação institucional","textarea"],["missao","Missão","textarea"],["visao","Visão","textarea"],["valores","Valores","textarea"]
@@ -104,7 +104,7 @@ $("#home-editor").addEventListener("submit",async e=>{
 $("#home-reload").addEventListener("click",async()=>{try{await carregarConteudos();await carregarHome();aviso("Página inicial recarregada.");}catch(e){aviso(e.message,true);}});
 for(const nome of Object.keys(grupos)){
  montarCamposGrupo(nome);
- if(nome==="carreiras"||nome==="login")$('#'+nome+'-fields [name="imagem_id"]').addEventListener("change",()=>atualizarPreviewGrupo(nome,"imagem_id"));
+ if(nome==="carreiras"||nome==="login"){const seletor=$('#'+nome+'-fields [name="imagem_id"]');if(seletor)seletor.addEventListener("change",()=>atualizarPreviewGrupo(nome,"imagem_id"));}
  const form=$("#"+nome+"-editor");
  form.addEventListener("submit",async e=>{
   e.preventDefault();try{const dados=dadosCamposGrupo(nome);await salvarConteudo(grupos[nome].chave,grupos[nome].titulo,dados);aviso("Informações de "+grupos[nome].titulo.toLowerCase()+" salvas como rascunho.");}
