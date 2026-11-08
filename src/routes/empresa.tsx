@@ -3,6 +3,7 @@ import { images, values } from "@/content/site";
 import { PageHero, Reveal, SectionTitle } from "@/components/site/primitives";
 import { CtaBand } from "@/components/site/Footer";
 import { pageMeta } from "@/lib/seo";
+import { useSiteCms } from "@/lib/site-cms";
 
 export const Route = createFileRoute("/empresa")({
   head: () => ({
@@ -15,6 +16,10 @@ export const Route = createFileRoute("/empresa")({
 });
 
 function Empresa() {
+  const cms = useSiteCms();
+  const saved = cms.conteudo("empresa.institucional");
+  let custom: Record<string, string> = {};
+  try { custom = JSON.parse(saved?.corpo || "{}"); } catch { /* mantém conteúdo local */ }
   return (
     <>
       <PageHero
@@ -29,12 +34,10 @@ function Empresa() {
           </Reveal>
           <Reveal delay={120} className="space-y-5 text-lg leading-relaxed text-muted-foreground">
             <p>
-              A Rodrinox Pro é especializada em soluções industriais e na fabricação de componentes metálicos.
-              Acreditamos que grandes resultados começam com soluções bem planejadas.
+              {custom.apresentacao || "A Rodrinox Pro é especializada em soluções industriais e na fabricação de componentes metálicos. Acreditamos que grandes resultados começam com soluções bem planejadas."}
             </p>
             <p>
-              Trabalhamos para conectar necessidades industriais a caminhos eficientes, com atenção aos detalhes,
-              tecnologia e relacionamento próximo com cada cliente.
+              {custom.historia || "Trabalhamos para conectar necessidades industriais a caminhos eficientes, com atenção aos detalhes, tecnologia e relacionamento próximo com cada cliente."}
             </p>
             <p className="rounded-sm border border-dashed border-accent/60 bg-secondary p-4 text-sm">
               {`Toda grande conquista começa com um sonho. E todo sonho precisa de coragem para se tornar realidade.  
