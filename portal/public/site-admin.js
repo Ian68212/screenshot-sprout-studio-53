@@ -1,3 +1,6 @@
+const $ = (s) => document.querySelector(s);
+const aviso = (s) => { $("#aviso").textContent = s; };
+
 
 const HOME_DEFAULTS = [
   { chave: "home.hero.slide-1", eyebrow: "Tecnologia a serviço da indústria", titulo: "Precisão em cada corte. Qualidade em cada peça.", texto: "Corte a laser, dobra e soldagem de componentes metálicos para impulsionar os projetos da sua empresa." },
@@ -55,8 +58,6 @@ $("#home-reload").addEventListener("click", async () => {
   catch (err) { aviso(err.message); }
 });
 
-const $ = (s) => document.querySelector(s);
-const aviso = (s) => { $("#aviso").textContent = s; };
 
 async function carregarSite() {
   try {
