@@ -54,3 +54,65 @@ mediaRouter.get("/:id/arquivo", exigir("site.editar"), async (req,res,next) => {
     res.send(buffer);
   } catch(e) { next(e); }
 });
+
+mediaRouter.delete("/:id", exigir("site.editar"), async (req,res,next) => {
+  try {
+    const id = valido(req.params.id);
+
+    if (!id) {
+      return res.status(400).json({ erro:"ID inválido" });
+    }
+
+    const [m] = await q(
+      "SELECT id,caminho FROM site_midias WHERE id=?",
+      [id]
+    );
+
+    if (!m) {
+      return res.status(404).json({ erro:"Imagem não encontrada" });
+    }
+
+    // Impede excluir imagens que já estão sendo utilizadas.
+    const [uso] = await q(
+      "SELECT id,titulo FROM site_itens WHERE imagem_id=? LIMIT 1",
+      [id]
+    );
+
+    if (uso) {
+      return res.status(409).json({
+        erro:"Esta imagem está sendo utilizada em: " +
+          uso.titulo +
+          ". Substitua a imagem antes de excluí-la."
+      });
+    }
+
+    // Valida o nome do arquivo antes de acessar o armazenamento.
+    if (!/^[a-f0-9-]{36}\.(jpg|png|webp)$/.test(m.caminho)) {
+      return res.status(400).json({
+        erro:"Caminho de imagem inválido"
+      });
+    }
+
+    await q("DELETE FROM site_midias WHERE id=?", [id]);
+
+    await unlink(path.join(DIR,m.caminho)).catch(e => {
+      if (e.code !== "ENOENT") throw e;
+    });
+
+    await auditar(
+      req.usuario.id,
+      "site_excluiu_midia",
+      String(id),
+      req.ip
+    );
+
+    res.json({
+      ok:true,
+      mensagem:"Imagem excluída com sucesso"
+    });
+
+  } catch(e) {
+    next(e);
+  }
+});
+
