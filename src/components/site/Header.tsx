@@ -43,6 +43,12 @@ export function Header() {
                 {n.label}
               </Link>
             ))}
+            <a
+              href="/colaborador/trabalhe-conosco.html"
+              className="relative py-2 text-sm font-medium text-primary/80 transition-colors hover:text-primary after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-accent after:transition-all hover:after:w-full"
+            >
+              Trabalhe Conosco
+            </a>
           </nav>
           <Link to="/orcamento" className={cn(btn.base, btn.accent, "hidden lg:inline-flex")}>Solicitar orçamento</Link>
           <button className="text-primary lg:hidden" aria-label={open ? "Fechar menu" : "Abrir menu"} aria-expanded={open} onClick={() => setOpen(!open)}>
@@ -57,6 +63,9 @@ export function Header() {
                   {n.label}
                 </Link>
               ))}
+              <a href="/colaborador/trabalhe-conosco.html" onClick={() => setOpen(false)} className="border-b py-3 font-medium text-primary">
+                Trabalhe Conosco
+              </a>
               <Link to="/orcamento" onClick={() => setOpen(false)} className={cn(btn.base, btn.accent, "mt-4")}>Solicitar orçamento</Link>
             </div>
           </nav>
