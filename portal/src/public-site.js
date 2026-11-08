@@ -5,7 +5,7 @@ import { q } from "./db.js";
 
 export const publicSiteRouter = Router();
 const DIR = path.resolve(process.env.SITE_UPLOAD_DIR || "./storage/site");
-const IMAGE_NAME = /^[a-f0-9-]{36}\\.(jpg|png|webp)$/;\nconst ALLOWED_ORIGIN = process.env.SITE_PUBLIC_ORIGIN || "https://rodrinoxpro.com.br";\n\npublicSiteRouter.use((req, res, next) => {\n  const origin = req.get("Origin");\n  if (origin === ALLOWED_ORIGIN) {\n    res.set("Access-Control-Allow-Origin", ALLOWED_ORIGIN);\n    res.set("Vary", "Origin");\n    res.set("Access-Control-Allow-Methods", "GET, OPTIONS");\n    res.set("Access-Control-Allow-Headers", "Accept, Content-Type");\n  }\n  if (req.method === "OPTIONS") return res.sendStatus(origin === ALLOWED_ORIGIN ? 204 : 403);\n  next();\n});
+const IMAGE_NAME = /^[a-f0-9-]{36}\\.(jpg|png|webp)$/;\nconst ALLOWED_ORIGIN = process.env.SITE_PUBLIC_ORIGIN || "https://rodrinoxpro.com.br";\n\npublicSiteRouter.use((req, res, next) => {\n  res.set("Cross-Origin-Resource-Policy", "cross-origin");\n  const origin = req.get("Origin");\n  if (origin === ALLOWED_ORIGIN) {\n    res.set("Access-Control-Allow-Origin", ALLOWED_ORIGIN);\n    res.set("Vary", "Origin");\n    res.set("Access-Control-Allow-Methods", "GET, OPTIONS");\n    res.set("Access-Control-Allow-Headers", "Accept, Content-Type");\n  }\n  if (req.method === "OPTIONS") return res.sendStatus(origin === ALLOWED_ORIGIN ? 204 : 403);\n  next();\n});
 
 publicSiteRouter.get("/", async (_req, res, next) => {
   try {
