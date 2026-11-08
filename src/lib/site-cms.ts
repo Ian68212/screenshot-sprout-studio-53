@@ -24,5 +24,10 @@ export function useSiteCms() {
   }, []);
   const imagem = (id: number | null | undefined) => id ? `${API}/midias/${id}` : "";
   const conteudo = (chave: string) => data.conteudos.find((c) => c.chave === chave);
-  return { ...data, imagem, conteudo };
+  const dados = (chave: string): Record<string, string> => {
+    const item = conteudo(chave);
+    if (!item?.corpo) return {};
+    try { return JSON.parse(item.corpo) as Record<string, string>; } catch { return {}; }
+  };
+  return { ...data, imagem, conteudo, dados };
 }
