@@ -30,3 +30,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Currículos enviados ao Portal RH (não versionar dados pessoais)
+portal/private/
