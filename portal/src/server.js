@@ -14,6 +14,7 @@ import { COOKIE, login, logout, carregarUsuario, exigir, gerarHash } from "./aut
 import { PERFIS, podeVerFerramenta } from "./permissions.js";
 import { siteRouter } from "./site-cms.js";
 import { mediaRouter } from "./site-media.js";
+import { publicSiteRouter } from "./public-site.js";
 
 const BASE = process.env.BASE_PATH || "/colaborador";
 const dir = path.dirname(fileURLToPath(import.meta.url));
@@ -175,6 +176,7 @@ r.get("/api/admin/auditoria", exigir("admin.auditoria"), wrap(async (_req, res) 
     LEFT JOIN usuarios u ON u.id=a.usuario_id ORDER BY a.id DESC LIMIT 200`));
 }));
 
+r.use("/api/public/site", publicSiteRouter);
 r.use("/api/site", siteRouter);
 r.use("/api/site/midias", mediaRouter);
 r.use(express.static(path.join(dir, "..", "public"), { index: "index.html" }));
