@@ -1,5 +1,46 @@
 const $ = (s) => document.querySelector(s);
 const aviso = (s) => { $("#aviso").textContent = s; };
+let midiasDisponiveis = [];
+
+function atualizarPreviewBanner(numero, imagemId) {
+  const area = $("#hero" + numero + "-preview");
+  if (!area) return;
+  area.replaceChildren();
+  const midia = midiasDisponiveis.find((m) => String(m.id) === String(imagemId));
+  if (!midia) {
+    area.className = "media-empty";
+    area.textContent = "Nenhuma imagem selecionada";
+    return;
+  }
+  const img = document.createElement("img");
+  img.src = "api/site/midias/" + midia.id + "/arquivo";
+  img.alt = midia.descricao || midia.nome_original || "Imagem do banner";
+  area.className = "";
+  area.append(img);
+}
+
+function preencherSeletoresDeBanner() {
+  for (let numero = 1; numero <= 3; numero++) {
+    const seletor = $("#hero" + numero + "-image");
+    if (!seletor) continue;
+    const selecionado = seletor.value;
+    seletor.replaceChildren(new Option("Sem imagem selecionada", ""));
+    for (const midia of midiasDisponiveis) {
+      const opcao = new Option(
+        (midia.descricao || midia.nome_original || "Imagem") + " (#" + midia.id + ")",
+        String(midia.id)
+      );
+      seletor.append(opcao);
+    }
+    seletor.value = selecionado;
+  }
+}
+
+for (let numero = 1; numero <= 3; numero++) {
+  $("#hero" + numero + "-image")?.addEventListener("change", (e) => {
+    atualizarPreviewBanner(numero, e.currentTarget.value);
+  });
+}
 
 
 const HOME_DEFAULTS = [
@@ -23,6 +64,13 @@ async function carregarHome() {
     $("#" + prefixo + "-eyebrow") && ($("#" + prefixo + "-eyebrow").value = extra.eyebrow ?? base.eyebrow);
     $("#" + prefixo + "-title").value = salvo?.titulo ?? base.titulo;
     $("#" + prefixo + "-text").value = extra.texto ?? base.texto;
+    if (i < 3) {
+      const seletorImagem = $("#" + prefixo + "-image");
+      if (seletorImagem) {
+        seletorImagem.value = extra.imagem_id == null ? "" : String(extra.imagem_id);
+        atualizarPreviewBanner(i + 1, seletorImagem.value);
+      }
+    }
   }
 }
 
@@ -36,7 +84,10 @@ $("#home-editor").addEventListener("submit", async (e) => {
       titulo: $("#" + prefixo + "-title").value.trim(),
       corpo: JSON.stringify({
         eyebrow: i < 3 ? $("#" + prefixo + "-eyebrow").value.trim() : "",
-        texto: $("#" + prefixo + "-text").value.trim()
+        texto: $("#" + prefixo + "-text").value.trim(),
+        imagem_id: i < 3 && $("#" + prefixo + "-image").value
+          ? Number($("#" + prefixo + "-image").value)
+          : null
       })
     };
   });
@@ -80,6 +131,8 @@ async function carregarSite() {
 async function carregarMidias() {
   try {
     const dados = await api("site/midias");
+    midiasDisponiveis = dados;
+    preencherSeletoresDeBanner();
     $("#midias").replaceChildren();
 
     for (const m of dados) {
@@ -207,9 +260,9 @@ $("#novo").addEventListener("submit", async (e) => {
       return;
     }
 
+    await carregarMidias();
     await carregarHome();
     await carregarSite();
-    await carregarMidias();
   } catch {
     location.href = "index.html";
   }
