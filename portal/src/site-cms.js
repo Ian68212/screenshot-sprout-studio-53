@@ -3,7 +3,7 @@ import { q, auditar } from "./db.js";
 import { exigir } from "./auth.js";
 
 // API administrativa: nunca disponibilizar escrita sem sessão e permissão.
-// Conteúdo publicado NÃO é conectado ao site institucional nesta fase.
+// O site institucional consulta conteúdo publicado pela API pública somente de leitura.
 export const siteRouter = Router();
 const TIPOS = new Set(["banner", "servico", "projeto", "galeria"]);
 const STATUS = new Set(["rascunho", "publicado"]);
