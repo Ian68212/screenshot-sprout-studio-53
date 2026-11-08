@@ -1,1 +1,110 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Gerenciador do Site | Rodrinox Pro</title><link rel="stylesheet" href="portal.css"></head><body><main style="max-width:960px;margin:2rem auto;padding:1rem"><h1>Gerenciador do site institucional</h1><p>Ambiente de desenvolvimento. Os registros ficam no banco de testes e não alteram o site público.</p><p id="aviso" role="status"></p><section><h2>Itens de conteúdo</h2><label>Categoria <select id="tipo"><option value="servico">Serviços</option><option value="projeto">Projetos</option><option value="banner">Banners</option><option value="galeria">Galeria</option></select></label><button id="atualizar" type="button">Atualizar lista</button><ul id="itens"></ul></section><section><h2>Biblioteca de imagens</h2><form id="upload" enctype="multipart/form-data"><label>Imagem JPG, PNG ou WebP (até 5 MB) <input type="file" name="imagem" accept="image/jpeg,image/png,image/webp" required></label><label>Descrição <input name="descricao" maxlength="255"></label><button type="submit">Enviar imagem</button></form><ul id="midias"></ul></section><section><h2>Criar rascunho</h2><form id="novo"><label>Identificador (sem espaços) <input name="slug" required pattern="[a-z0-9]+(-[a-z0-9]+)*"></label><label>Título <input name="titulo" required maxlength="255"></label><label>Resumo <textarea name="resumo"></textarea></label><label>Descrição <textarea name="descricao"></textarea></label><button type="submit">Salvar rascunho</button></form></section><p><a href="painel.html">Voltar ao Portal</a></p></main><script src="app.js"></script><script src="site-admin.js"></script></body></html>
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Gerenciador do Site | Rodrinox Pro</title>
+  <link rel="stylesheet" href="portal.css">
+  <style>
+    .editor-card{background:#fff;border:1px solid #dde3ea;border-radius:10px;padding:1rem;margin:1rem 0}
+    .editor-card h3{margin-bottom:.4rem}
+    .editor-card textarea{width:100%;min-height:88px;padding:.65rem .7rem;border:1px solid #dde3ea;border-radius:6px;font:inherit;resize:vertical}
+    .editor-card input{margin-top:.2rem}
+    .editor-actions{display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;margin-top:1rem}
+    .hint{color:#5d6b7e;font-size:.9rem}
+  </style>
+</head>
+<body>
+<main style="max-width:960px;margin:2rem auto;padding:1rem">
+  <h1>Gerenciador do site institucional</h1>
+  <p>Ambiente de desenvolvimento. Os registros ficam no banco de testes e não alteram o site público.</p>
+  <p id="aviso" role="status" aria-live="polite"></p>
+
+  <section>
+    <h2>Editor da página inicial</h2>
+    <p class="hint">Edite os textos dos três banners e da apresentação da empresa. Salvar cria rascunhos no banco de testes; nada é publicado no site público.</p>
+    <form id="home-editor">
+      <div class="editor-card">
+        <h3>Banner 1 — Corte e precisão</h3>
+        <label for="hero1-eyebrow">Texto pequeno</label>
+        <input id="hero1-eyebrow" maxlength="160">
+        <label for="hero1-title">Título principal</label>
+        <input id="hero1-title" maxlength="255" required>
+        <label for="hero1-text">Descrição</label>
+        <textarea id="hero1-text" maxlength="5000"></textarea>
+      </div>
+      <div class="editor-card">
+        <h3>Banner 2 — Fabricação industrial</h3>
+        <label for="hero2-eyebrow">Texto pequeno</label>
+        <input id="hero2-eyebrow" maxlength="160">
+        <label for="hero2-title">Título principal</label>
+        <input id="hero2-title" maxlength="255" required>
+        <label for="hero2-text">Descrição</label>
+        <textarea id="hero2-text" maxlength="5000"></textarea>
+      </div>
+      <div class="editor-card">
+        <h3>Banner 3 — Soldagem especializada</h3>
+        <label for="hero3-eyebrow">Texto pequeno</label>
+        <input id="hero3-eyebrow" maxlength="160">
+        <label for="hero3-title">Título principal</label>
+        <input id="hero3-title" maxlength="255" required>
+        <label for="hero3-text">Descrição</label>
+        <textarea id="hero3-text" maxlength="5000"></textarea>
+      </div>
+      <div class="editor-card">
+        <h3>Apresentação — Quem somos</h3>
+        <label for="intro-title">Título da seção</label>
+        <input id="intro-title" maxlength="255" required>
+        <label for="intro-text">Texto de apresentação</label>
+        <textarea id="intro-text" maxlength="5000"></textarea>
+      </div>
+      <div class="editor-actions">
+        <button type="submit">Salvar página inicial como rascunho</button>
+        <button class="sec" id="home-reload" type="button">Recarregar dados salvos</button>
+      </div>
+    </form>
+  </section>
+
+  <section>
+    <h2>Itens de conteúdo</h2>
+    <label>Categoria
+      <select id="tipo">
+        <option value="servico">Serviços</option>
+        <option value="projeto">Projetos</option>
+        <option value="banner">Banners</option>
+        <option value="galeria">Galeria</option>
+      </select>
+    </label>
+    <button id="atualizar" type="button">Atualizar lista</button>
+    <ul id="itens"></ul>
+  </section>
+
+  <section>
+    <h2>Biblioteca de imagens</h2>
+    <form id="upload" enctype="multipart/form-data">
+      <label>Imagem JPG, PNG ou WebP (até 5 MB)
+        <input type="file" name="imagem" accept="image/jpeg,image/png,image/webp" required>
+      </label>
+      <label>Descrição <input name="descricao" maxlength="255"></label>
+      <button type="submit">Enviar imagem</button>
+    </form>
+    <ul id="midias"></ul>
+  </section>
+
+  <section>
+    <h2>Criar rascunho</h2>
+    <form id="novo">
+      <label>Identificador (sem espaços) <input name="slug" required pattern="[a-z0-9]+(-[a-z0-9]+)*"></label>
+      <label>Título <input name="titulo" required maxlength="255"></label>
+      <label>Resumo <textarea name="resumo"></textarea></label>
+      <label>Descrição <textarea name="descricao"></textarea></label>
+      <button type="submit">Salvar rascunho</button>
+    </form>
+  </section>
+  <p><a href="painel.html">Voltar ao Portal</a></p>
+</main>
+<script src="app.js"></script>
+<script src="site-admin.js"></script>
+</body>
+</html>
