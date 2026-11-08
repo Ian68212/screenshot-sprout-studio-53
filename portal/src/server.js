@@ -1,6 +1,9 @@
 import "dotenv/config";
 import path from "node:path";
-import crypto from "node:crypto";
+import crypto, { randomUUID } from "node:crypto";
+import { mkdir, writeFile, readFile, unlink } from "node:fs/promises";
+import multer from "multer";
+import { fileTypeFromBuffer } from "file-type";
 import { fileURLToPath } from "node:url";
 import express from "express";
 import helmet from "helmet";
@@ -30,6 +33,9 @@ r.use((req, res, next) => {
   next();
 });
 
+const limiteCandidatura = rateLimit({ windowMs: 60 * 60 * 1000, limit: 5, standardHeaders: true, legacyHeaders: false });
+const uploadCurriculo = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024, files: 1 } });
+const DIR_CANDIDATURAS = path.resolve(process.env.CANDIDATE_UPLOAD_DIR || path.join(process.env.HOME || "/tmp", "rodrinox-candidaturas"));
 const limiteLogin = rateLimit({ windowMs: 15 * 60000, limit: 20, standardHeaders: true, legacyHeaders: false });
 
 r.post("/api/login", limiteLogin, wrap(async (req, res) => {
@@ -52,6 +58,51 @@ r.post("/api/logout", wrap(async (req, res) => {
 }));
 
 r.get("/api/eu", exigir("painel"), (req, res) => res.json(req.usuario));
+
+/* ---------- Trabalhe Conosco: formulário público e gestão restrita ao RH/admin ---------- */
+r.post("/api/candidaturas", limiteCandidatura, uploadCurriculo.single("curriculo"), wrap(async (req,res) => {
+  const nome=String(req.body?.nome||"").trim();
+  const email=String(req.body?.email||"").trim().toLowerCase();
+  const telefone=String(req.body?.telefone||"").trim();
+  const area=String(req.body?.area||"").trim();
+  const mensagem=String(req.body?.mensagem||"").trim().slice(0,3000);
+  if(!nome||nome.length>160||!/^\S+@\S+\.\S+$/.test(email)||email.length>190||!telefone||telefone.length>40||!area||area.length>120)
+    return res.status(400).json({erro:"Confira nome, e-mail, telefone e área pretendida."});
+  if(!req.file) return res.status(400).json({erro:"Anexe seu currículo em PDF."});
+  const tipo=await fileTypeFromBuffer(req.file.buffer);
+  if(!tipo||tipo.mime!=="application/pdf") return res.status(415).json({erro:"O currículo precisa ser um arquivo PDF válido."});
+  const arquivo=randomUUID()+".pdf";
+  await mkdir(DIR_CANDIDATURAS,{recursive:true,mode:0o700});
+  await writeFile(path.join(DIR_CANDIDATURAS,arquivo),req.file.buffer,{flag:"wx",mode:0o600});
+  try {
+    await q("INSERT INTO candidaturas (nome,email,telefone,area,mensagem,arquivo_nome,arquivo_caminho,arquivo_mime,arquivo_tamanho) VALUES (?,?,?,?,?,?,?,?,?)",
+      [nome,email,telefone,area,mensagem,String(req.file.originalname||"curriculo.pdf").slice(0,255),arquivo,"application/pdf",req.file.size]);
+  } catch(e) { await unlink(path.join(DIR_CANDIDATURAS,arquivo)).catch(()=>{}); throw e; }
+  res.status(201).json({ok:true,mensagem:"Candidatura recebida com sucesso. Obrigado pelo interesse na Rodrinox Pro!"});
+}));
+r.get("/api/admin/candidaturas", exigir("admin.usuarios"), wrap(async (_req,res) => {
+  res.json(await q("SELECT id,nome,email,telefone,area,mensagem,arquivo_nome,arquivo_tamanho,status,criado_em FROM candidaturas ORDER BY criado_em DESC LIMIT 500"));
+}));
+r.patch("/api/admin/candidaturas/:id", exigir("admin.usuarios"), wrap(async (req,res) => {
+  const id=Number(req.params.id), status=String(req.body?.status||"");
+  if(!Number.isSafeInteger(id)||id<1||!["recebido","em_analise","aprovado","reprovado"].includes(status)) return res.status(400).json({erro:"Dados inválidos."});
+  const result=await q("UPDATE candidaturas SET status=? WHERE id=?",[status,id]);
+  if(!result.affectedRows) return res.status(404).json({erro:"Candidatura não encontrada."});
+  await auditar(req.usuario.id,"atualizou_candidatura",String(id)+":"+status,req.ip);
+  res.json({ok:true});
+}));
+r.get("/api/admin/candidaturas/:id/curriculo", exigir("admin.usuarios"), wrap(async (req,res) => {
+  const id=Number(req.params.id);
+  const [item]=await q("SELECT arquivo_nome,arquivo_caminho FROM candidaturas WHERE id=?",[id]);
+  if(!item||!/^[a-f0-9-]{36}\\.pdf$/.test(item.arquivo_caminho)) return res.status(404).json({erro:"Currículo não encontrado."});
+  const buffer=await readFile(path.join(DIR_CANDIDATURAS,item.arquivo_caminho));
+  res.set("Content-Type","application/pdf");
+  res.set("Content-Disposition",'attachment; filename="curriculo.pdf"');
+  res.set("Cache-Control","private, no-store");
+  res.set("X-Content-Type-Options","nosniff");
+  res.send(buffer);
+}));
+
 
 r.get("/api/ferramentas", exigir("painel"), wrap(async (req, res) => {
   const ferramentas = await q("SELECT id, nome, descricao, url, categoria FROM ferramentas WHERE ativo = 1 ORDER BY nome");
