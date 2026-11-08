@@ -1,10 +1,13 @@
 import "dotenv/config";
 import path from "node:path";
+import fs from "node:fs";
+import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 import express from "express";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import rateLimit from "express-rate-limit";
+import multer from "multer";
 import { q, auditar } from "./db.js";
 import { COOKIE, login, logout, carregarUsuario, exigir, gerarHash } from "./auth.js";
 import { PERFIS, podeVerFerramenta, senhaValida } from "./permissions.js";
@@ -12,6 +15,21 @@ import { PERFIS, podeVerFerramenta, senhaValida } from "./permissions.js";
 const BASE = process.env.BASE_PATH || "/colaborador";
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
+const uploadDir = path.join(dir, "..", "private", "curriculos");
+fs.mkdirSync(uploadDir, { recursive: true });
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, uploadDir),
+    filename: (_req, file, cb) => cb(null, `${crypto.randomUUID()}${path.extname(file.originalname).toLowerCase()}`),
+  }),
+  limits: { fileSize: 5 * 1024 * 1024, files: 1 },
+  fileFilter: (_req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    const allowed = [".pdf", ".doc", ".docx"];
+    if (!allowed.includes(ext)) return cb(new Error("Envie o currículo em PDF, DOC ou DOCX"));
+    cb(null, true);
+  },
+});
 app.set("trust proxy", 1);
 app.use(helmet({ contentSecurityPolicy: { directives: { "script-src": ["'self'"] } } }));
 app.use(express.json({ limit: "100kb" }));
@@ -20,6 +38,20 @@ app.use(cookieParser());
 const r = express.Router();
 const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 r.use(wrap(carregarUsuario));
+
+// CORS restrito ao site institucional para receber candidaturas sem expor a API administrativa.
+const siteOrigins = new Set(["https://rodrinoxpro.com.br", "https://www.rodrinoxpro.com.br"]);
+r.use((req, res, next) => {
+  const origin = req.get("Origin");
+  if (origin && siteOrigins.has(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Portal");
+    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  }
+  if (req.method === "OPTIONS") return res.sendStatus(origin && siteOrigins.has(origin) ? 204 : 403);
+  next();
+});
 
 // Proteção CSRF: toda escrita exige cabeçalho próprio (não enviável por formulários de outros sites)
 r.use((req, res, next) => {
@@ -53,6 +85,47 @@ r.get("/api/ferramentas", exigir("painel"), wrap(async (req, res) => {
   const ferramentas = await q("SELECT id, nome, descricao, url, categoria FROM ferramentas WHERE ativo = 1 ORDER BY nome");
   const regras = await q("SELECT * FROM ferramenta_acessos");
   res.json(ferramentas.filter((f) => podeVerFerramenta(req.usuario, regras.filter((x) => x.ferramenta_id === f.id))));
+}));
+
+
+// ---------- Candidaturas (formulário público + gestão restrita) ----------
+const limiteCandidaturas = rateLimit({ windowMs: 60 * 60 * 1000, limit: 10, standardHeaders: true, legacyHeaders: false });
+r.post("/api/candidaturas", limiteCandidaturas, upload.single("curriculo"), wrap(async (req, res) => {
+  const { nome, email, telefone, area, cargo_pretendido } = req.body || {};
+  if (!nome?.trim() || !email?.trim() || !telefone?.trim() || !area?.trim() || !req.file)
+    return res.status(400).json({ erro: "Preencha os campos obrigatórios e anexe seu currículo." });
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))
+    return res.status(400).json({ erro: "Informe um e-mail válido." });
+  const ext = path.extname(req.file.originalname).toLowerCase();
+  const allowedMime = ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/octet-stream"];
+  if (![".pdf", ".doc", ".docx"].includes(ext) || !allowedMime.includes(req.file.mimetype)) {
+    fs.unlink(req.file.path, () => {});
+    return res.status(400).json({ erro: "Formato de currículo não permitido." });
+  }
+  await q(
+    "INSERT INTO candidaturas (nome,email,telefone,area,cargo_pretendido,arquivo_nome,arquivo_path) VALUES (?,?,?,?,?,?,?)",
+    [nome.trim().slice(0,150), email.trim().toLowerCase().slice(0,180), telefone.trim().slice(0,30), area.trim().slice(0,100), String(cargo_pretendido || "").trim().slice(0,120) || null, path.basename(req.file.originalname).slice(0,255), req.file.path],
+  );
+  res.status(201).json({ ok: true });
+}));
+
+r.get("/api/admin/candidaturas", exigir("admin.usuarios"), wrap(async (_req, res) => {
+  res.json(await q("SELECT id,nome,email,telefone,area,cargo_pretendido,status,criado_em FROM candidaturas ORDER BY criado_em DESC LIMIT 500"));
+}));
+
+r.patch("/api/admin/candidaturas/:id", exigir("admin.usuarios"), wrap(async (req, res) => {
+  const status = String(req.body?.status || "");
+  const validos = ["recebido","em_analise","entrevista","aprovado","reprovado"];
+  if (!validos.includes(status)) return res.status(400).json({ erro: "Status inválido." });
+  await q("UPDATE candidaturas SET status=? WHERE id=?", [status, Number(req.params.id)]);
+  await auditar(req.usuario.id, "atualizou_candidatura", `#${req.params.id}: ${status}`, req.ip);
+  res.json({ ok: true });
+}));
+
+r.get("/api/admin/candidaturas/:id/curriculo", exigir("admin.usuarios"), wrap(async (req, res) => {
+  const [item] = await q("SELECT arquivo_nome,arquivo_path FROM candidaturas WHERE id=?", [Number(req.params.id)]);
+  if (!item || !fs.existsSync(item.arquivo_path)) return res.status(404).json({ erro: "Currículo não encontrado." });
+  res.download(item.arquivo_path, item.arquivo_nome);
 }));
 
 // ---------- Administração ----------
@@ -127,6 +200,8 @@ r.get("/api/admin/auditoria", exigir("admin.auditoria"), wrap(async (_req, res) 
 
 r.use(express.static(path.join(dir, "..", "public"), { index: "index.html" }));
 r.use((err, _req, res, _next) => {
+  if (err?.code === "LIMIT_FILE_SIZE") return res.status(413).json({ erro: "O currículo deve ter no máximo 5 MB." });
+  if (err?.message?.includes("currículo")) return res.status(400).json({ erro: err.message });
   if (err?.code === "ER_DUP_ENTRY") return res.status(409).json({ erro: "Registro já existe" });
   console.error(err);
   res.status(500).json({ erro: "Erro interno" });
