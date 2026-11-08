@@ -10,7 +10,7 @@ const homeDefaults=[
 ];
 const grupos={
  carreiras:{chave:"pagina.trabalhe-conosco",titulo:"Trabalhe Conosco",campos:[["chamada","Chamada superior","text"],["titulo","Título principal","text"],["descricao","Texto de apresentação","textarea"],["form_titulo","Título do formulário","text"],["form_descricao","Orientação para candidatos","textarea"],["botao","Texto do botão de envio","text"],["cor_primaria","Cor principal (ex.: #0b1f3a)","text"],["cor_destaque","Cor de destaque (ex.: #f26a1b)","text"]]},
- login:{chave:"pagina.login",titulo:"Login — Acesso restrito",campos:[["chamada","Chamada do painel visual","text"],["titulo_visual","Título do painel visual","text"],["descricao_visual","Descrição do painel visual","textarea"],["titulo_form","Título do formulário de acesso","text"],["descricao_form","Descrição do formulário","textarea"],["botao","Texto do botão de acesso","text"],["imagem_url","URL da imagem de fundo (HTTPS)","url"],["cor_primaria","Cor principal (ex.: #0b1f3a)","text"],["cor_destaque","Cor de destaque (ex.: #f26a1b)","text"]]},
+ login:{chave:"pagina.login",titulo:"Login — Acesso restrito",campos:[["chamada","Chamada do painel visual","text"],["titulo_visual","Título do painel visual","text"],["descricao_visual","Descrição do painel visual","textarea"],["titulo_form","Título do formulário de acesso","text"],["descricao_form","Descrição do formulário","textarea"],["botao","Texto do botão de acesso","text"],["imagem_id","Imagem de fundo do login","media"],["cor_primaria","Cor principal (ex.: #0b1f3a)","text"],["cor_destaque","Cor de destaque (ex.: #f26a1b)","text"]]},
  empresa:{chave:"empresa.institucional",titulo:"A empresa",campos:[
   ["historia","História da Rodrinox Pro","textarea"],["apresentacao","Apresentação institucional","textarea"],["missao","Missão","textarea"],["visao","Visão","textarea"],["valores","Valores","textarea"]
  ]},
@@ -24,7 +24,7 @@ const grupos={
 function parseCorpo(item){try{return JSON.parse(item?.corpo||"{}")}catch{return {texto:item?.corpo||""}}}
 function fieldMarkup(id,label,type,value=""){
  const val=String(value??"");
- return '<div><label for="'+id+'">'+label+'</label>'+(type==="textarea"
+ return '<div><label for="'+id+'">'+label+'</label>'+(type==="media" ? '<select id="'+id+'" name="'+id+'"><option value="">Sem imagem personalizada</option></select><img class="media-preview" id="'+id+'-preview" alt="Prévia da imagem escolhida" hidden><p class="hint">Para enviar outra foto, use a aba Imagens.</p>' : type==="textarea"
  ? '<textarea id="'+id+'" name="'+id+'">'+esc(val)+'</textarea>'
  : '<input id="'+id+'" name="'+id+'" type="'+type+'" value="'+esc(val)+'">')+'</div>';
 }
@@ -33,7 +33,23 @@ function montarCamposGrupo(nome){
  alvo.innerHTML=grupo.campos.map(([id,label,type])=>fieldMarkup(id,label,type,"")).join("");
 }
 function preencherCamposGrupo(nome, dados){
- for(const [id] of grupos[nome].campos){const el=$('#'+nome+'-fields [name="'+id+'"]');if(el)el.value=dados[id]??"";}
+ for(const [id] of grupos[nome].campos){const el=$('#'+nome+'-fields [name="'+id+'"]');if(el){el.value=dados[id]??"";if(el.tagName==="SELECT")atualizarPreviewGrupo(nome,id);}}
+}
+function atualizarPreviewGrupo(nome,id){
+ const el=$('#'+nome+'-fields [name="'+id+'"]'),img=$('#'+nome+'-fields #'+id+'-preview');
+ if(!el||!img)return;
+ const m=midiasDisponiveis.find(x=>String(x.id)===String(el.value));
+ if(m){img.src="api/site/midias/"+m.id+"/arquivo";img.alt=m.descricao||m.nome_original;img.hidden=false;}
+ else{img.removeAttribute("src");img.hidden=true;}
+}
+function preencherMidiasGrupos(){
+ for(const nome of ["carreiras","login"]){
+  const el=$('#'+nome+'-fields [name="imagem_id"]');if(!el)continue;
+  const atual=el.value;el.replaceChildren(new Option("Sem imagem personalizada",""));
+  midiasDisponiveis.forEach(m=>el.add(new Option((m.descricao||m.nome_original)+" (#"+m.id+")",String(m.id))));
+  el.value=atual;
+  atualizarPreviewGrupo(nome,"imagem_id");
+ }
 }
 function dadosCamposGrupo(nome){
  const out={};for(const [id] of grupos[nome].campos)out[id]=$('#'+nome+'-fields [name="'+id+'"]').value.trim();return out;
@@ -88,6 +104,7 @@ $("#home-editor").addEventListener("submit",async e=>{
 $("#home-reload").addEventListener("click",async()=>{try{await carregarConteudos();await carregarHome();aviso("Página inicial recarregada.");}catch(e){aviso(e.message,true);}});
 for(const nome of Object.keys(grupos)){
  montarCamposGrupo(nome);
+ if(nome==="carreiras"||nome==="login")$('#'+nome+'-fields [name="imagem_id"]').addEventListener("change",()=>atualizarPreviewGrupo(nome,"imagem_id"));
  const form=$("#"+nome+"-editor");
  form.addEventListener("submit",async e=>{
   e.preventDefault();try{const dados=dadosCamposGrupo(nome);await salvarConteudo(grupos[nome].chave,grupos[nome].titulo,dados);aviso("Informações de "+grupos[nome].titulo.toLowerCase()+" salvas como rascunho.");}
@@ -155,7 +172,7 @@ for(const tipo of ["servico","projeto","galeria"]){
  });
 }
 async function carregarMidias(){
- midiasDisponiveis=await api("site/midias");preencherSelectsImagem();
+ midiasDisponiveis=await api("site/midias");preencherSelectsImagem();preencherMidiasGrupos();
  const alvo=$("#midias");alvo.replaceChildren();
  if(!midiasDisponiveis.length){alvo.textContent="Nenhuma imagem cadastrada.";return;}
  for(const m of midiasDisponiveis){
