@@ -1,9 +1,31 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex,nofollow"><title>Portal do Colaborador — Rodrinox Pro</title><link rel="stylesheet" href="portal.css"></head>
-<body class="login"><form class="card" id="f">
-<span class="tag">Área restrita</span><h1>Portal do Colaborador</h1>
-<label for="email">E-mail</label><input id="email" type="email" autocomplete="username" required>
-<label for="senha">Senha</label><input id="senha" type="password" autocomplete="current-password" required>
-<p class="erro" id="erro"></p><button type="submit" style="width:100%">Entrar</button>
-<p style="font-size:.8rem;color:#5d6b7e">Acesso liberado somente pelo administrador.</p>
-</form><script src="app.js"></script><script src="login.js"></script></body></html>
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>Área administrativa | Rodrinox Pro</title><link rel="stylesheet" href="portal.css">
+<style>
+body.login{padding:24px;background:linear-gradient(135deg,#07182d,#17385f);min-height:100vh}
+.admin-login{width:min(440px,94vw);padding:32px}
+.brand{font-weight:800;letter-spacing:.08em;color:#0b1f3a;font-size:1.1rem;margin-bottom:28px}
+.brand span{color:#f26a1b}
+.admin-login h1{font-size:1.8rem;color:#0b1f3a}
+.admin-login .intro{color:#5d6b7e;line-height:1.5;margin-bottom:22px}
+.admin-login input{padding:12px}
+.admin-login button{margin-top:8px}
+.login-foot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:20px;font-size:.82rem}
+.login-foot a{color:#5d6b7e}
+</style></head>
+<body class="login">
+<form class="card admin-login" id="f">
+<div class="brand">RODRINOX <span>PRO</span></div>
+<span class="tag">Acesso restrito</span>
+<h1>Área administrativa</h1>
+<p class="intro">Entre com seu e-mail corporativo e a senha da sua caixa postal Rodrinox Pro. O acesso é permitido somente a colaboradores previamente cadastrados e autorizados.</p>
+<label for="email">E-mail corporativo</label><input id="email" name="email" type="email" autocomplete="username" placeholder="nome@rodrinoxpro.com.br" required>
+<label for="senha">Senha do e-mail corporativo</label><input id="senha" name="senha" type="password" autocomplete="current-password" required>
+<p class="erro" id="erro" role="alert"></p>
+<button type="submit" style="width:100%">Entrar com segurança</button>
+<p style="font-size:.78rem;color:#5d6b7e;line-height:1.5">Sua senha é validada pela caixa postal Hostinger e não é armazenada pelo portal. Não compartilhe suas credenciais.</p>
+<div class="login-foot"><a href="../">Voltar ao site</a><a href="trabalhe-conosco.html">Trabalhe Conosco</a></div>
+</form>
+<script src="app.js"></script><script src="login.js"></script>
+</body></html>
