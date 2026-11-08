@@ -13,6 +13,10 @@
     .editor-card input{margin-top:.2rem}
     .editor-actions{display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;margin-top:1rem}
     .hint{color:#5d6b7e;font-size:.9rem}
+    .banner-media{display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:1rem;align-items:start;margin-top:.8rem}
+    .banner-media img{width:150px;height:105px;object-fit:cover;border:1px solid #dde3ea;border-radius:8px;background:#f3f5f8}
+    .banner-media .media-empty{width:150px;height:105px;display:grid;place-items:center;text-align:center;color:#5d6b7e;background:#f3f5f8;border:1px dashed #aab4c2;border-radius:8px;font-size:.85rem;padding:.5rem}
+    @media(max-width:600px){.banner-media{grid-template-columns:1fr}.banner-media img,.banner-media .media-empty{width:100%;height:180px}}
   </style>
 </head>
 <body>
@@ -27,6 +31,14 @@
     <form id="home-editor">
       <div class="editor-card">
         <h3>Banner 1 — Corte e precisão</h3>
+        <div class="banner-media">
+          <div>
+            <label for="hero1-image">Imagem do banner</label>
+            <select id="hero1-image"><option value="">Sem imagem selecionada</option></select>
+            <p class="hint">Escolha uma imagem já enviada à biblioteca abaixo.</p>
+          </div>
+          <div id="hero1-preview" class="media-empty">Nenhuma imagem selecionada</div>
+        </div>
         <label for="hero1-eyebrow">Texto pequeno</label>
         <input id="hero1-eyebrow" maxlength="160">
         <label for="hero1-title">Título principal</label>
@@ -36,6 +48,14 @@
       </div>
       <div class="editor-card">
         <h3>Banner 2 — Fabricação industrial</h3>
+        <div class="banner-media">
+          <div>
+            <label for="hero2-image">Imagem do banner</label>
+            <select id="hero2-image"><option value="">Sem imagem selecionada</option></select>
+            <p class="hint">Escolha uma imagem já enviada à biblioteca abaixo.</p>
+          </div>
+          <div id="hero2-preview" class="media-empty">Nenhuma imagem selecionada</div>
+        </div>
         <label for="hero2-eyebrow">Texto pequeno</label>
         <input id="hero2-eyebrow" maxlength="160">
         <label for="hero2-title">Título principal</label>
@@ -45,6 +65,14 @@
       </div>
       <div class="editor-card">
         <h3>Banner 3 — Soldagem especializada</h3>
+        <div class="banner-media">
+          <div>
+            <label for="hero3-image">Imagem do banner</label>
+            <select id="hero3-image"><option value="">Sem imagem selecionada</option></select>
+            <p class="hint">Escolha uma imagem já enviada à biblioteca abaixo.</p>
+          </div>
+          <div id="hero3-preview" class="media-empty">Nenhuma imagem selecionada</div>
+        </div>
         <label for="hero3-eyebrow">Texto pequeno</label>
         <input id="hero3-eyebrow" maxlength="160">
         <label for="hero3-title">Título principal</label>
