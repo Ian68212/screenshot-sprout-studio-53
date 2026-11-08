@@ -26,15 +26,19 @@ const slides = [
 
 function Home() {
   const cms = useSiteCms();
-  const banners = cms.itens.filter((item) => item.tipo === "banner");
-  const displaySlides = banners.length
-    ? banners.map((item, n) => ({
-        image: cms.imagem(item.imagem_id) || slides[n % slides.length]!.image,
-        eyebrow: item.resumo || "Rodrinox Pro",
-        title: item.titulo,
-        text: item.descricao || "",
-      }))
-    : slides;
+  const banners = [1, 2, 3].map((n) => {
+    const saved = cms.conteudo("home.hero.slide-" + n);
+    if (!saved) return null;
+    let extra: { eyebrow?: string; texto?: string; imagem_id?: number | null } = {};
+    try { extra = JSON.parse(saved.corpo || "{}"); } catch { /* mantém fallback */ }
+    return {
+      image: cms.imagem(extra.imagem_id) || slides[n - 1]!.image,
+      eyebrow: extra.eyebrow || slides[n - 1]!.eyebrow,
+      title: saved.titulo || slides[n - 1]!.title,
+      text: extra.texto || slides[n - 1]!.text,
+    };
+  });
+  const displaySlides = banners.every(Boolean) ? banners as NonNullable<typeof banners[number]>[] : slides;
   const [i, setI] = useState(0);
   useEffect(() => {
     setI((current) => Math.min(current, displaySlides.length - 1));
