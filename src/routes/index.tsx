@@ -6,6 +6,7 @@ import { Reveal, SectionTitle, btn } from "@/components/site/primitives";
 import { CtaBand } from "@/components/site/Footer";
 import { pageMeta } from "@/lib/seo";
 import { cn } from "@/lib/utils";
+import { useSiteCms } from "@/lib/site-cms";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -24,19 +25,30 @@ const slides = [
 ];
 
 function Home() {
+  const cms = useSiteCms();
+  const banners = cms.itens.filter((item) => item.tipo === "banner");
+  const displaySlides = banners.length
+    ? banners.map((item, n) => ({
+        image: cms.imagem(item.imagem_id) || slides[n % slides.length]!.image,
+        eyebrow: item.resumo || "Rodrinox Pro",
+        title: item.titulo,
+        text: item.descricao || "",
+      }))
+    : slides;
   const [i, setI] = useState(0);
   useEffect(() => {
-    const t = setInterval(() => setI((v) => (v + 1) % slides.length), 6500);
+    setI((current) => Math.min(current, displaySlides.length - 1));
+    const t = setInterval(() => setI((v) => (v + 1) % displaySlides.length), 6500);
     return () => clearInterval(t);
-  }, [i]);
-  const cur = slides[i]!;
-  const go = (d: number) => setI((v) => (v + d + slides.length) % slides.length);
+  }, [displaySlides.length]);
+  const cur = displaySlides[i]!;
+  const go = (d: number) => setI((v) => (v + d + displaySlides.length) % displaySlides.length);
 
   return (
     <>
       {/* Banner principal */}
       <section className="relative h-[92vh] min-h-[600px] overflow-hidden bg-navy-deep">
-        {slides.map((s, idx) => (
+        {displaySlides.map((s, idx) => (
           <div key={idx} className={cn("absolute inset-0 transition-opacity duration-1000", idx === i ? "opacity-100" : "opacity-0")} aria-hidden={idx !== i}>
             <img src={s.image} alt="" className={cn("h-full w-full object-cover", idx === i && "animate-hero-zoom")} width={1920} height={1088} />
             <div className="bg-hero-overlay absolute inset-0" />
@@ -54,7 +66,7 @@ function Home() {
           </div>
           <div className="absolute bottom-10 left-5 right-5 flex items-center justify-between md:left-8 md:right-8">
             <div className="flex gap-2">
-              {slides.map((_, idx) => (
+              {displaySlides.map((_, idx) => (
                 <button key={idx} onClick={() => setI(idx)} aria-label={`Banner ${idx + 1}`} className={cn("h-1 transition-all", idx === i ? "w-12 bg-accent" : "w-6 bg-navy-foreground/40")} />
               ))}
             </div>
