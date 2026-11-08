@@ -77,9 +77,12 @@ export function Footer() {
 }
 
 export function WhatsAppFab() {
+  const cms = useSiteCms();
+  const contact = cms.dados("contato.dados");
+  const whatsappNumber = contact.whatsapp_numero || company.whatsappNumber;
   return (
     <a
-      href={whatsappUrl(company.whatsappNumber, "Olá, Rodrinox Pro! Gostaria de mais informações.")}
+      href={whatsappUrl(whatsappNumber, "Olá, Rodrinox Pro! Gostaria de mais informações.")}
       target="_blank"
       rel="noreferrer"
       aria-label="Conversar pelo WhatsApp"
