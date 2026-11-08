@@ -8,6 +8,7 @@
   "scripts": {
     "start": "node src/server.js",
     "db:init": "node scripts/init-db.js",
+    "db:check": "node scripts/inspect-db.js",
     "admin:create": "node scripts/create-admin.js",
     "test": "node --test test/*.test.js",
     "media:import-original": "node scripts/import-original-media.js"
