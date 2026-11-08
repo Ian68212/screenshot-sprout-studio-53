@@ -92,7 +92,7 @@ r.get("/api/ferramentas", exigir("painel"), wrap(async (req, res) => {
 const limiteCandidaturas = rateLimit({ windowMs: 60 * 60 * 1000, limit: 10, standardHeaders: true, legacyHeaders: false });
 r.post("/api/candidaturas", limiteCandidaturas, upload.single("curriculo"), wrap(async (req, res) => {
   const { nome, email, telefone, area, cargo_pretendido } = req.body || {};
-  if (!nome?.trim() || !email?.trim() || !telefone?.trim() || !area?.trim() || !req.file)
+  if (!nome?.trim() || !email?.trim() || !telefone?.trim() || !area?.trim() || !req.file || req.body?.consent !== "on")
     return res.status(400).json({ erro: "Preencha os campos obrigatórios e anexe seu currículo." });
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))
     return res.status(400).json({ erro: "Informe um e-mail válido." });
@@ -103,7 +103,7 @@ r.post("/api/candidaturas", limiteCandidaturas, upload.single("curriculo"), wrap
     return res.status(400).json({ erro: "Formato de currículo não permitido." });
   }
   await q(
-    "INSERT INTO candidaturas (nome,email,telefone,area,cargo_pretendido,arquivo_nome,arquivo_path) VALUES (?,?,?,?,?,?,?)",
+    "INSERT INTO candidaturas (nome,email,telefone,area,cargo_pretendido,arquivo_nome,arquivo_path,consent_at) VALUES (?,?,?,?,?,?,?,NOW())",
     [nome.trim().slice(0,150), email.trim().toLowerCase().slice(0,180), telefone.trim().slice(0,30), area.trim().slice(0,100), String(cargo_pretendido || "").trim().slice(0,120) || null, path.basename(req.file.originalname).slice(0,255), req.file.path],
   );
   res.status(201).json({ ok: true });
