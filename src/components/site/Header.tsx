@@ -5,8 +5,16 @@ import logo from "@/assets/rodrinox-oficial.png";
 import { company, nav } from "@/content/site";
 import { btn } from "./primitives";
 import { cn } from "@/lib/utils";
+import { useSiteCms } from "@/lib/site-cms";
 
 export function Header() {
+  const cms = useSiteCms();
+  const identity = cms.dados("site.identidade");
+  const contact = cms.dados("contato.dados");
+  const tagline = identity.tagline || company.tagline;
+  const email = contact.email || company.email;
+  const phone = contact.telefone || company.phone;
+  const phoneHref = contact.telefone_link || company.phoneHref;
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
@@ -20,10 +28,10 @@ export function Header() {
     <header className="fixed inset-x-0 top-0 z-50">
       <div className={cn("bg-navy-deep text-navy-foreground/80 transition-all duration-300", scrolled ? "h-0 overflow-hidden" : "h-9")}>
         <div className="container-site flex h-9 items-center justify-between text-xs">
-          <span className="hidden sm:block">{company.tagline}</span>
+          <span className="hidden sm:block">{tagline}</span>
           <div className="flex items-center gap-5">
-            <a href={`mailto:${company.email}`} className="flex items-center gap-1.5 hover:text-accent"><Mail className="h-3.5 w-3.5" />{company.email}</a>
-            <a href={company.phoneHref} className="hidden items-center gap-1.5 hover:text-accent md:flex"><Phone className="h-3.5 w-3.5" />{company.phone}</a>
+            <a href={`mailto:${email}`} className="flex items-center gap-1.5 hover:text-accent"><Mail className="h-3.5 w-3.5" />{email}</a>
+            <a href={phoneHref} className="hidden items-center gap-1.5 hover:text-accent md:flex"><Phone className="h-3.5 w-3.5" />{phone}</a>
           </div>
         </div>
       </div>
