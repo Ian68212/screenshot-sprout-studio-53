@@ -1,0 +1,40 @@
+name: Validar projeto Rodrinox Pro
+
+on:
+  push:
+    branches:
+      - feature/modulo-rh-recrutamento
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  site:
+    name: Build do site institucional
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+
+  portal:
+    name: Testes do Portal do Colaborador
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: portal
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - run: npm test
+      - run: node --check src/server.js
+      - run: node --check src/auth.js
+      - run: node --check public/admin.js
+      - run: node --check public/app.js
+      - run: node --check public/painel.js

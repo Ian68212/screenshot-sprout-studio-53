@@ -17,6 +17,7 @@ import { Route as GaleriaRouteImport } from './routes/galeria'
 import { Route as OrcamentoRouteImport } from './routes/orcamento'
 import { Route as ProjetosRouteImport } from './routes/projetos'
 import { Route as ServicosRouteImport } from './routes/servicos'
+import { Route as TrabalheConoscoRouteImport } from './routes/trabalhe-conosco'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -58,6 +59,11 @@ const ServicosRoute = ServicosRouteImport.update({
   path: '/servicos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TrabalheConoscoRoute = TrabalheConoscoRouteImport.update({
+  id: '/trabalhe-conosco',
+  path: '/trabalhe-conosco',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -68,6 +74,7 @@ export interface FileRoutesByFullPath {
   '/orcamento': typeof OrcamentoRoute
   '/projetos': typeof ProjetosRoute
   '/servicos': typeof ServicosRoute
+  '/trabalhe-conosco': typeof TrabalheConoscoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -78,6 +85,7 @@ export interface FileRoutesByTo {
   '/orcamento': typeof OrcamentoRoute
   '/projetos': typeof ProjetosRoute
   '/servicos': typeof ServicosRoute
+  '/trabalhe-conosco': typeof TrabalheConoscoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -101,6 +109,7 @@ export interface FileRouteTypes {
     | '/orcamento'
     | '/projetos'
     | '/servicos'
+    | '/trabalhe-conosco'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -132,6 +141,7 @@ export interface RootRouteChildren {
   OrcamentoRoute: typeof OrcamentoRoute
   ProjetosRoute: typeof ProjetosRoute
   ServicosRoute: typeof ServicosRoute
+  TrabalheConoscoRoute: typeof TrabalheConoscoRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -192,6 +202,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ServicosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/trabalhe-conosco': {
+      id: '/trabalhe-conosco'
+      path: '/trabalhe-conosco'
+      fullPath: '/trabalhe-conosco'
+      preLoaderRoute: typeof TrabalheConoscoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -204,6 +221,7 @@ const rootRouteChildren: RootRouteChildren = {
   OrcamentoRoute: OrcamentoRoute,
   ProjetosRoute: ProjetosRoute,
   ServicosRoute: ServicosRoute,
+  TrabalheConoscoRoute: TrabalheConoscoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

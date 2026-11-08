@@ -67,3 +67,22 @@ CREATE TABLE IF NOT EXISTS auditoria (
   ip VARCHAR(64) NULL,
   criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+-- Candidaturas recebidas pelo formulário público Trabalhe Conosco.
+CREATE TABLE IF NOT EXISTS candidaturas (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  nome VARCHAR(150) NOT NULL,
+  email VARCHAR(180) NOT NULL,
+  telefone VARCHAR(30) NOT NULL,
+  area VARCHAR(100) NOT NULL,
+  cargo_pretendido VARCHAR(120) NULL,
+  arquivo_nome VARCHAR(255) NOT NULL,
+  arquivo_path VARCHAR(500) NOT NULL,
+  consent_at DATETIME NOT NULL,
+  status ENUM('recebido','em_analise','entrevista','aprovado','reprovado') NOT NULL DEFAULT 'recebido',
+  criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_candidaturas_status (status),
+  INDEX idx_candidaturas_criado (criado_em)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
