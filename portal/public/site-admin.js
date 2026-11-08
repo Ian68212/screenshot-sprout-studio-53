@@ -61,6 +61,26 @@ async function salvarConteudo(chave,titulo,body){
 async function carregarConteudos(){
  const dados=await api("site/conteudos");conteudosSalvos=new Map(dados.map(x=>[x.chave,x]));
 }
+$("#publish-all").addEventListener("click", async () => {
+ if (!confirm("Publicar todos os rascunhos de textos, banners, serviços, projetos e galeria? As alterações ficarão visíveis no site institucional conectado.")) return;
+ try {
+  const conteudos = await api("site/conteudos");
+  for (const item of conteudos) {
+   await api("site/conteudos/" + encodeURIComponent(item.chave), {
+    method: "PUT", body: { titulo: item.titulo, corpo: item.corpo || "", status: "publicado" }
+   });
+  }
+  for (const tipo of ["banner", "servico", "projeto", "galeria"]) {
+   const itens = await api("site/itens?tipo=" + tipo);
+   for (const item of itens) {
+    if (item.status !== "publicado") await api("site/itens/" + item.id, { method: "PATCH", body: { status: "publicado" } });
+   }
+  }
+  await carregarConteudos();
+  aviso("Rascunhos publicados. O site atualizará os conteúdos conectados em instantes.");
+  await Promise.all([carregarItens("servico"), carregarItens("projeto"), carregarItens("galeria")]);
+ } catch (err) { aviso("Falha ao publicar: " + err.message, true); }
+});
 async function carregarHome(){
  for(let i=0;i<homeDefaults.length;i++){
   const base=homeDefaults[i],salvo=conteudosSalvos.get(base.chave),extra=parseCorpo(salvo),prefix=i<3?"hero"+(i+1):"intro";
