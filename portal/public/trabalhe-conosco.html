@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="index,follow"><title>Trabalhe Conosco | Rodrinox Pro</title><link rel="stylesheet" href="portal.css">
+<style>
+body.careers{background:#f4f6f9}.career-hero{background:linear-gradient(120deg,#0b1f3a,#193b65);color:#fff;padding:56px 24px}.career-hero>div{max-width:1050px;margin:auto}.career-hero p{max-width:680px;color:#d8e2ef;line-height:1.65}.career-wrap{max-width:900px;margin:28px auto;padding:0 18px 48px}.career-card{background:#fff;border:1px solid #dde3ea;border-radius:12px;padding:24px}.career-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}.career-card textarea{width:100%;min-height:120px;padding:10px;border:1px solid #dde3ea;border-radius:6px;font:inherit}.career-card input,.career-card select{padding:11px}.career-card button{margin-top:18px}.career-note{font-size:.85rem;color:#5d6b7e;line-height:1.5}.success{padding:12px;background:#e8f6ee;color:#17633a;border-radius:8px}.error{padding:12px;background:#fff0ef;color:#9f241d;border-radius:8px}@media(max-width:650px){.career-grid{grid-template-columns:1fr}.career-hero{padding:36px 20px}}
+</style></head>
+<body class="careers">
+<header class="top"><strong>RODRINOX <span>PRO</span></strong><nav><a href="/">Site institucional</a><a href="index.html">Área do colaborador</a></nav></header>
+<section class="career-hero"><div><span class="tag">Faça parte da equipe</span><h1>Trabalhe Conosco</h1><p>Estamos sempre interessados em conhecer profissionais que queiram crescer, aprender e contribuir com soluções para a indústria. Envie seus dados e seu currículo para nosso time.</p></div></section>
+<main class="career-wrap"><section class="career-card"><h2>Envie seu currículo</h2><p class="career-note">Preencha os campos abaixo. Os dados e o currículo serão disponibilizados somente à equipe autorizada de RH.</p>
+<div id="retorno" aria-live="polite"></div>
+<form id="candidatura" enctype="multipart/form-data">
+<div class="career-grid">
+<div><label for="nome">Nome completo *</label><input id="nome" name="nome" maxlength="160" autocomplete="name" required></div>
+<div><label for="email">E-mail *</label><input id="email" name="email" type="email" maxlength="190" autocomplete="email" required></div>
+<div><label for="telefone">Telefone / WhatsApp *</label><input id="telefone" name="telefone" maxlength="40" autocomplete="tel" required></div>
+<div><label for="area">Área pretendida *</label><select id="area" name="area" required><option value="">Selecione</option><option>Produção</option><option>Soldagem</option><option>Corte a laser</option><option>Dobra</option><option>Montagem</option><option>PCP</option><option>Compras</option><option>Almoxarifado</option><option>Administrativo</option><option>Financeiro</option><option>Recursos Humanos</option><option>Comercial</option><option>Outra</option></select></div>
+</div>
+<label for="mensagem">Conte um pouco sobre você (opcional)</label><textarea id="mensagem" name="mensagem" maxlength="3000"></textarea>
+<label for="curriculo">Currículo em PDF * (máximo 5 MB)</label><input id="curriculo" name="curriculo" type="file" accept="application/pdf,.pdf" required>
+<p class="career-note">Ao enviar, você declara que os dados fornecidos são verdadeiros e autoriza seu uso para fins de recrutamento e seleção, conforme a política de privacidade da empresa.</p>
+<button id="enviar" type="submit">Enviar candidatura</button>
+</form></section></main>
+<script src="trabalhe-conosco.js"></script></body></html>
