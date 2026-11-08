@@ -9,6 +9,8 @@ const homeDefaults=[
  {chave:"home.intro",eyebrow:"",titulo:"Seu próximo projeto merece um parceiro à altura.",texto:"Na Rodrinox Pro, acreditamos que grandes resultados começam com soluções bem planejadas. Conectamos necessidades industriais a caminhos eficientes, com atenção aos detalhes, tecnologia e relacionamento próximo."}
 ];
 const grupos={
+ carreiras:{chave:"pagina.trabalhe-conosco",titulo:"Trabalhe Conosco",campos:[["chamada","Chamada superior","text"],["titulo","Título principal","text"],["descricao","Texto de apresentação","textarea"],["form_titulo","Título do formulário","text"],["form_descricao","Orientação para candidatos","textarea"],["botao","Texto do botão de envio","text"],["cor_primaria","Cor principal (ex.: #0b1f3a)","text"],["cor_destaque","Cor de destaque (ex.: #f26a1b)","text"]]},
+ login:{chave:"pagina.login",titulo:"Login — Acesso restrito",campos:[["chamada","Chamada do painel visual","text"],["titulo_visual","Título do painel visual","text"],["descricao_visual","Descrição do painel visual","textarea"],["titulo_form","Título do formulário de acesso","text"],["descricao_form","Descrição do formulário","textarea"],["botao","Texto do botão de acesso","text"],["imagem_url","URL da imagem de fundo (HTTPS)","url"],["cor_primaria","Cor principal (ex.: #0b1f3a)","text"],["cor_destaque","Cor de destaque (ex.: #f26a1b)","text"]]},
  empresa:{chave:"empresa.institucional",titulo:"A empresa",campos:[
   ["historia","História da Rodrinox Pro","textarea"],["apresentacao","Apresentação institucional","textarea"],["missao","Missão","textarea"],["visao","Visão","textarea"],["valores","Valores","textarea"]
  ]},
