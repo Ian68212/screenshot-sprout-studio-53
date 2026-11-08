@@ -141,7 +141,7 @@ for(const tipo of ["servico","projeto","galeria"]){
  const form=$("#"+tipoParaForm[tipo]);
  form.addEventListener("submit",async e=>{
   e.preventDefault();const d=Object.fromEntries(new FormData(form));const id=d.id;
-  const payload={titulo:d.titulo.trim(),resumo:d.resumo,descricao:d.descricao,imagem_id:d.imagem_id?Number(d.imagem_id):null,ordem:Number(d.ordem||0)};
+  const payload={titulo:d.titulo.trim(),resumo:d.resumo,descricao:d.descricao,imagem_id:d.imagem_id?Number(d.imagem_id):null,ordem:Number(d.ordem||0),status:"rascunho"};
   try{
    if(id)await api("site/itens/"+id,{method:"PATCH",body:payload});
    else await api("site/itens",{method:"POST",body:{...payload,tipo,slug:d.slug.trim(),status:"rascunho"}});
