@@ -206,6 +206,7 @@ $("#novo").addEventListener("submit", async (e) => {
       return;
     }
 
+    await carregarHome();
     await carregarSite();
     await carregarMidias();
   } catch {
