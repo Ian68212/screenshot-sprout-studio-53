@@ -91,7 +91,8 @@ async function carregarMidias() {
 
 $("#upload").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const dados = new FormData(e.currentTarget);
+  const form = e.currentTarget;
+  const dados = new FormData(form);
 
   try {
     const r = await fetch("api/site/midias", {
@@ -106,7 +107,7 @@ $("#upload").addEventListener("submit", async (e) => {
     if (!r.ok) throw new Error(resposta.erro || "Falha no envio");
 
     aviso("Imagem enviada com sucesso: #" + resposta.id);
-    e.currentTarget.reset();
+    form.reset();
     await carregarMidias();
   } catch (err) {
     aviso(err.message);
@@ -118,7 +119,8 @@ $("#atualizar").addEventListener("click", carregarSite);
 
 $("#novo").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const d = Object.fromEntries(new FormData(e.currentTarget));
+  const form = e.currentTarget;
+  const d = Object.fromEntries(new FormData(form));
 
   try {
     await api("site/itens", {
@@ -130,7 +132,7 @@ $("#novo").addEventListener("submit", async (e) => {
       }
     });
 
-    e.currentTarget.reset();
+    form.reset();
     aviso("Rascunho salvo no banco de testes.");
     await carregarSite();
   } catch (err) {
