@@ -1,4 +1,60 @@
 
+const HOME_DEFAULTS = [
+  { chave: "home.hero.slide-1", eyebrow: "Tecnologia a serviço da indústria", titulo: "Precisão em cada corte. Qualidade em cada peça.", texto: "Corte a laser, dobra e soldagem de componentes metálicos para impulsionar os projetos da sua empresa." },
+  { chave: "home.hero.slide-2", eyebrow: "Fabricação industrial", titulo: "Da necessidade ao resultado.", texto: "Conectamos inovação, precisão e compromisso para transformar o seu projeto em realidade." },
+  { chave: "home.hero.slide-3", eyebrow: "Soldagem especializada", titulo: "Uniões que sustentam grandes projetos.", texto: "Soldagem a laser, TIG e soldas especiais com atenção a cada detalhe." },
+  { chave: "home.intro", eyebrow: "", titulo: "Seu próximo projeto merece um parceiro à altura.", texto: "Na Rodrinox Pro, acreditamos que grandes resultados começam com soluções bem planejadas. Conectamos necessidades industriais a caminhos eficientes, com atenção aos detalhes, tecnologia e relacionamento próximo." }
+];
+
+async function carregarHome() {
+  const salvos = await api("site/conteudos");
+  const porChave = new Map(salvos.map((item) => [item.chave, item]));
+  for (let i = 0; i < HOME_DEFAULTS.length; i++) {
+    const base = HOME_DEFAULTS[i];
+    const salvo = porChave.get(base.chave);
+    let extra = {};
+    if (salvo?.corpo) {
+      try { extra = JSON.parse(salvo.corpo); } catch { extra = { texto: salvo.corpo }; }
+    }
+    const prefixo = i < 3 ? "hero" + (i + 1) : "intro";
+    $("#" + prefixo + "-eyebrow") && ($("#" + prefixo + "-eyebrow").value = extra.eyebrow ?? base.eyebrow);
+    $("#" + prefixo + "-title").value = salvo?.titulo ?? base.titulo;
+    $("#" + prefixo + "-text").value = extra.texto ?? base.texto;
+  }
+}
+
+$("#home-editor").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const form = e.currentTarget;
+  const registros = HOME_DEFAULTS.map((base, i) => {
+    const prefixo = i < 3 ? "hero" + (i + 1) : "intro";
+    return {
+      chave: base.chave,
+      titulo: $("#" + prefixo + "-title").value.trim(),
+      corpo: JSON.stringify({
+        eyebrow: i < 3 ? $("#" + prefixo + "-eyebrow").value.trim() : "",
+        texto: $("#" + prefixo + "-text").value.trim()
+      })
+    };
+  });
+  try {
+    for (const item of registros) {
+      await api("site/conteudos/" + encodeURIComponent(item.chave), {
+        method: "PUT",
+        body: { titulo: item.titulo, corpo: item.corpo, status: "rascunho" }
+      });
+    }
+    aviso("Página inicial salva como rascunho no banco de testes. O site público não foi alterado.");
+  } catch (err) {
+    aviso("Não foi possível salvar a página inicial: " + err.message);
+  }
+});
+
+$("#home-reload").addEventListener("click", async () => {
+  try { await carregarHome(); aviso("Dados salvos carregados."); }
+  catch (err) { aviso(err.message); }
+});
+
 const $ = (s) => document.querySelector(s);
 const aviso = (s) => { $("#aviso").textContent = s; };
 
