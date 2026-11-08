@@ -46,6 +46,9 @@ function Home() {
     return () => clearInterval(t);
   }, [displaySlides.length]);
   const cur = displaySlides[i]!;
+  const introSaved = cms.conteudo("home.intro");
+  let introExtra: { texto?: string } = {};
+  try { introExtra = JSON.parse(introSaved?.corpo || "{}"); } catch { /* mantém conteúdo local */ }
   const go = (d: number) => setI((v) => (v + d + displaySlides.length) % displaySlides.length);
 
   return (
@@ -86,7 +89,7 @@ function Home() {
       <section className="py-24 md:py-32">
         <div className="container-site grid items-center gap-14 lg:grid-cols-2">
           <Reveal>
-            <SectionTitle eyebrow="Quem somos" title="Seu próximo projeto merece um parceiro à altura." text="Na Rodrinox Pro, acreditamos que grandes resultados começam com soluções bem planejadas. Conectamos necessidades industriais a caminhos eficientes, com atenção aos detalhes, tecnologia e relacionamento próximo." />
+            <SectionTitle eyebrow="Quem somos" title={introSaved?.titulo || "Seu próximo projeto merece um parceiro à altura."} text={introExtra.texto || "Na Rodrinox Pro, acreditamos que grandes resultados começam com soluções bem planejadas. Conectamos necessidades industriais a caminhos eficientes, com atenção aos detalhes, tecnologia e relacionamento próximo."} />
             <div className="mt-10 grid gap-6 sm:grid-cols-3">
               {values.map((v, n) => (
                 <div key={v.title} className="border-t-2 border-accent pt-4">
