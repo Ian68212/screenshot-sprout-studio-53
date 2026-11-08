@@ -30,7 +30,7 @@ r.use(wrap(carregarUsuario));
 
 // Proteção CSRF: toda escrita exige cabeçalho próprio (não enviável por formulários de outros sites)
 r.use((req, res, next) => {
-  if (req.method !== "GET" && req.get("X-Portal") !== "1") return res.status(403).json({ erro: "Requisição inválida" });
+  if (req.method !== "GET" && req.method !== "OPTIONS" && req.get("X-Portal") !== "1") return res.status(403).json({ erro: "Requisição inválida" });
   next();
 });
 
