@@ -6,5 +6,10 @@ import { pool } from "../src/db.js";
 const sql = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "schema.sql"), "utf8");
 const comandos = sql.split(/;\s*$/m).map((s) => s.replace(/^--.*$/gm, "").trim()).filter(Boolean);
 for (const c of comandos) await pool.query(c);
-console.log(`Tabelas criadas no banco ${process.env.DB_NAME}.`);
+// Migração compatível com bancos de teste já existentes antes do módulo de RH.
+const [colunas] = await pool.query("SHOW COLUMNS FROM candidaturas LIKE 'consent_at'");
+if (!colunas.length) {
+  await pool.query("ALTER TABLE candidaturas ADD COLUMN consent_at DATETIME NULL AFTER arquivo_path");
+}
+console.log(`Tabelas e migrações conferidas no banco ${process.env.DB_NAME}.`);
 await pool.end();
