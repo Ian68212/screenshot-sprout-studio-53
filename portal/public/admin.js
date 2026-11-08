@@ -29,6 +29,15 @@ const enviar = (f, url, erroEl, montar = form) => f.addEventListener("submit", a
   if (eu.perfil === "admin") {
     soAdmin.hidden = false;
     await carregar();
+    await candidaturas();
+    tc.addEventListener("change", async (e) => {
+      const s = e.target.closest("select[data-candidatura]");
+      if (!s) return;
+      try {
+        await api(`admin/candidaturas/${s.dataset.candidatura}`, { method: "PATCH", body: { status: s.value } });
+        await auditoria();
+      } catch (err) { alert(err.message); }
+    });
     enviar(fu, "admin/usuarios", document.getElementById("eu"));
     enviar(fs, "admin/setores"); enviar(fc, "admin/cargos");
     enviar(ff, "admin/ferramentas", ef, (f) => {
