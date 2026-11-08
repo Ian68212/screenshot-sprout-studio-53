@@ -10,7 +10,7 @@ async function carregar() {
   tu.innerHTML = us.map((u) => `<tr><td>${esc(u.nome)}</td><td>${esc(u.email)}</td><td>${esc(u.perfil)}</td><td>${esc(u.setor)}</td><td>${esc(u.cargo)}</td>
     <td>${u.ativo ? "Ativo" : "Inativo"}</td><td><button class="sec" data-id="${u.id}" data-ativo="${u.ativo ? 0 : 1}">${u.ativo ? "Desativar" : "Ativar"}</button></td></tr>`).join("");
 }
-async function auditoria() {
+async function candidaturas() {\n  const itens = await api("admin/candidaturas");\n  const status = { recebido: "Recebido", em_analise: "Em análise", entrevista: "Entrevista", aprovado: "Aprovado", reprovado: "Reprovado" };\n  tc.innerHTML = itens.map((x) => `<tr><td>${new Date(x.criado_em).toLocaleDateString("pt-BR")}</td><td>${esc(x.nome)}</td><td><a href="mailto:${encodeURIComponent(x.email)}">${esc(x.email)}</a><br>${esc(x.telefone)}</td><td>${esc(x.area)}</td><td>${esc(x.cargo_pretendido || "—")}</td><td><a href="api/admin/candidaturas/${x.id}/curriculo">Baixar currículo</a></td><td><select data-candidatura="${x.id}">${Object.entries(status).map(([v,t]) => `<option value="${v}" ${x.status === v ? "selected" : ""}>${t}</option>`).join("")}</select></td></tr>`).join("") || `<tr><td colspan="7">Nenhuma candidatura recebida.</td></tr>`;\n}\nasync function auditoria() {
   const a = await api("admin/auditoria");
   ta.innerHTML = a.map((x) => `<tr><td>${new Date(x.criado_em).toLocaleString("pt-BR")}</td><td>${esc(x.email)}</td><td>${esc(x.acao)}</td><td>${esc(x.detalhe)}</td></tr>`).join("");
 }
