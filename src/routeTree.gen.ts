@@ -85,6 +85,7 @@ export interface FileRoutesByTo {
   '/orcamento': typeof OrcamentoRoute
   '/projetos': typeof ProjetosRoute
   '/servicos': typeof ServicosRoute
+  '/trabalhe-conosco': typeof TrabalheConoscoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -108,6 +109,7 @@ export interface FileRouteTypes {
     | '/orcamento'
     | '/projetos'
     | '/servicos'
+    | '/trabalhe-conosco'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
