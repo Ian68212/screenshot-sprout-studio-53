@@ -67,7 +67,7 @@ A Rodrinox Pro nasceu da vontade de transformar ideias em soluções, desafios e
             {["Missão", "Visão", "Valores"].map((t) => (
               <div key={t} className="border bg-card p-8">
                 <h3 className="font-bold text-primary">{t}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">{custom[t.toLowerCase()] || (t === "Valores" ? "Na Rodrinox Pro, nossos valores são a base de cada projeto e de cada parceria, com ética, transparência, qualidade e inovação." : t === "Visão" ? "Ser referência em soluções industriais por meio da excelência, inovação, tecnologia e qualidade." : "Oferecer soluções industriais completas, unindo tecnologia, inovação e precisão para gerar resultados aos clientes.")} da Rodrinox Pro — a preencher]`}</p>
+                <p className="mt-2 text-sm text-muted-foreground">{custom[t.toLowerCase()] || (t === "Valores" ? "Na Rodrinox Pro, nossos valores são a base de cada projeto e de cada parceria, com ética, transparência, qualidade e inovação." : t === "Visão" ? "Ser referência em soluções industriais por meio da excelência, inovação, tecnologia e qualidade." : "Oferecer soluções industriais completas, unindo tecnologia, inovação e precisão para gerar resultados aos clientes.")}</p>
               </div>
             ))}
           </div>
