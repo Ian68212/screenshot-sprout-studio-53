@@ -1,269 +1,185 @@
-const $ = (s) => document.querySelector(s);
-const aviso = (s) => { $("#aviso").textContent = s; };
-let midiasDisponiveis = [];
-
-function atualizarPreviewBanner(numero, imagemId) {
-  const area = $("#hero" + numero + "-preview");
-  if (!area) return;
-  area.replaceChildren();
-  const midia = midiasDisponiveis.find((m) => String(m.id) === String(imagemId));
-  if (!midia) {
-    area.className = "media-empty";
-    area.textContent = "Nenhuma imagem selecionada";
-    return;
-  }
-  const img = document.createElement("img");
-  img.src = "api/site/midias/" + midia.id + "/arquivo";
-  img.alt = midia.descricao || midia.nome_original || "Imagem do banner";
-  area.className = "";
-  area.append(img);
-}
-
-function preencherSeletoresDeBanner() {
-  for (let numero = 1; numero <= 3; numero++) {
-    const seletor = $("#hero" + numero + "-image");
-    if (!seletor) continue;
-    const selecionado = seletor.value;
-    seletor.replaceChildren(new Option("Sem imagem selecionada", ""));
-    for (const midia of midiasDisponiveis) {
-      const opcao = new Option(
-        (midia.descricao || midia.nome_original || "Imagem") + " (#" + midia.id + ")",
-        String(midia.id)
-      );
-      seletor.append(opcao);
-    }
-    seletor.value = selecionado;
-  }
-}
-
-for (let numero = 1; numero <= 3; numero++) {
-  $("#hero" + numero + "-image")?.addEventListener("change", (e) => {
-    atualizarPreviewBanner(numero, e.currentTarget.value);
-  });
-}
-
-
-const HOME_DEFAULTS = [
-  { chave: "home.hero.slide-1", eyebrow: "Tecnologia a serviço da indústria", titulo: "Precisão em cada corte. Qualidade em cada peça.", texto: "Corte a laser, dobra e soldagem de componentes metálicos para impulsionar os projetos da sua empresa." },
-  { chave: "home.hero.slide-2", eyebrow: "Fabricação industrial", titulo: "Da necessidade ao resultado.", texto: "Conectamos inovação, precisão e compromisso para transformar o seu projeto em realidade." },
-  { chave: "home.hero.slide-3", eyebrow: "Soldagem especializada", titulo: "Uniões que sustentam grandes projetos.", texto: "Soldagem a laser, TIG e soldas especiais com atenção a cada detalhe." },
-  { chave: "home.intro", eyebrow: "", titulo: "Seu próximo projeto merece um parceiro à altura.", texto: "Na Rodrinox Pro, acreditamos que grandes resultados começam com soluções bem planejadas. Conectamos necessidades industriais a caminhos eficientes, com atenção aos detalhes, tecnologia e relacionamento próximo." }
+const $ = (s, root=document) => root.querySelector(s);
+const aviso = (msg, error=false) => { const el=$("#aviso"); el.textContent=msg; el.classList.toggle("error",error); };
+let midiasDisponiveis=[];
+let conteudosSalvos=new Map();
+const homeDefaults=[
+ {chave:"home.hero.slide-1",eyebrow:"Tecnologia a serviço da indústria",titulo:"Precisão em cada corte. Qualidade em cada peça.",texto:"Corte a laser, dobra e soldagem de componentes metálicos para impulsionar os projetos da sua empresa."},
+ {chave:"home.hero.slide-2",eyebrow:"Fabricação industrial",titulo:"Da necessidade ao resultado.",texto:"Conectamos inovação, precisão e compromisso para transformar o seu projeto em realidade."},
+ {chave:"home.hero.slide-3",eyebrow:"Soldagem especializada",titulo:"Uniões que sustentam grandes projetos.",texto:"Soldagem a laser, TIG e soldas especiais com atenção a cada detalhe."},
+ {chave:"home.intro",eyebrow:"",titulo:"Seu próximo projeto merece um parceiro à altura.",texto:"Na Rodrinox Pro, acreditamos que grandes resultados começam com soluções bem planejadas. Conectamos necessidades industriais a caminhos eficientes, com atenção aos detalhes, tecnologia e relacionamento próximo."}
 ];
-
-async function carregarHome() {
-  const salvos = await api("site/conteudos");
-  const porChave = new Map(salvos.map((item) => [item.chave, item]));
-  for (let i = 0; i < HOME_DEFAULTS.length; i++) {
-    const base = HOME_DEFAULTS[i];
-    const salvo = porChave.get(base.chave);
-    let extra = {};
-    if (salvo?.corpo) {
-      try { extra = JSON.parse(salvo.corpo); } catch { extra = { texto: salvo.corpo }; }
-    }
-    const prefixo = i < 3 ? "hero" + (i + 1) : "intro";
-    $("#" + prefixo + "-eyebrow") && ($("#" + prefixo + "-eyebrow").value = extra.eyebrow ?? base.eyebrow);
-    $("#" + prefixo + "-title").value = salvo?.titulo ?? base.titulo;
-    $("#" + prefixo + "-text").value = extra.texto ?? base.texto;
-    if (i < 3) {
-      const seletorImagem = $("#" + prefixo + "-image");
-      if (seletorImagem) {
-        seletorImagem.value = extra.imagem_id == null ? "" : String(extra.imagem_id);
-        atualizarPreviewBanner(i + 1, seletorImagem.value);
-      }
-    }
-  }
+const grupos={
+ empresa:{chave:"empresa.institucional",titulo:"A empresa",campos:[
+  ["historia","História da Rodrinox Pro","textarea"],["apresentacao","Apresentação institucional","textarea"],["missao","Missão","textarea"],["visao","Visão","textarea"],["valores","Valores","textarea"]
+ ]},
+ contato:{chave:"contato.dados",titulo:"Contato",campos:[
+  ["email","E-mail","text"],["telefone","Telefone","text"],["telefone_link","Link de telefone (tel:)","text"],["whatsapp","WhatsApp exibido","text"],["whatsapp_numero","WhatsApp com código do país, só números","text"],["endereco","Endereço completo","textarea"],["horario","Horário de atendimento","text"],["mapa_url","Link do Google Maps","url"]
+ ]},
+ identidade:{chave:"site.identidade",titulo:"Cabeçalho e rodapé",campos:[
+  ["nome","Nome da empresa","text"],["slogan","Slogan","text"],["tagline","Frase institucional do cabeçalho","text"],["texto_rodape","Texto institucional do rodapé","textarea"],["site","Endereço do site","text"],["logo_url","URL da logomarca (se já estiver hospedada)","url"]
+ ]}
+};
+function parseCorpo(item){try{return JSON.parse(item?.corpo||"{}")}catch{return {texto:item?.corpo||""}}}
+function fieldMarkup(id,label,type,value=""){
+ const val=String(value??"");
+ return '<div><label for="'+id+'">'+label+'</label>'+(type==="textarea"
+ ? '<textarea id="'+id+'" name="'+id+'">'+esc(val)+'</textarea>'
+ : '<input id="'+id+'" name="'+id+'" type="'+type+'" value="'+esc(val)+'">')+'</div>';
 }
-
-$("#home-editor").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const form = e.currentTarget;
-  const registros = HOME_DEFAULTS.map((base, i) => {
-    const prefixo = i < 3 ? "hero" + (i + 1) : "intro";
-    return {
-      chave: base.chave,
-      titulo: $("#" + prefixo + "-title").value.trim(),
-      corpo: JSON.stringify({
-        eyebrow: i < 3 ? $("#" + prefixo + "-eyebrow").value.trim() : "",
-        texto: $("#" + prefixo + "-text").value.trim(),
-        imagem_id: i < 3 && $("#" + prefixo + "-image").value
-          ? Number($("#" + prefixo + "-image").value)
-          : null
-      })
-    };
+function montarCamposGrupo(nome){
+ const grupo=grupos[nome], alvo=$("#"+nome+"-fields");
+ alvo.innerHTML=grupo.campos.map(([id,label,type])=>fieldMarkup(id,label,type,"")).join("");
+}
+function preencherCamposGrupo(nome, dados){
+ for(const [id] of grupos[nome].campos){const el=$('#'+nome+'-fields [name="'+id+'"]');if(el)el.value=dados[id]??"";}
+}
+function dadosCamposGrupo(nome){
+ const out={};for(const [id] of grupos[nome].campos)out[id]=$('#'+nome+'-fields [name="'+id+'"]').value.trim();return out;
+}
+async function salvarConteudo(chave,titulo,body){
+ await api("site/conteudos/"+encodeURIComponent(chave),{method:"PUT",body:{titulo,corpo:JSON.stringify(body),status:"rascunho"}});
+ conteudosSalvos.set(chave,{chave,titulo,corpo:JSON.stringify(body),status:"rascunho"});
+}
+async function carregarConteudos(){
+ const dados=await api("site/conteudos");conteudosSalvos=new Map(dados.map(x=>[x.chave,x]));
+}
+async function carregarHome(){
+ for(let i=0;i<homeDefaults.length;i++){
+  const base=homeDefaults[i],salvo=conteudosSalvos.get(base.chave),extra=parseCorpo(salvo),prefix=i<3?"hero"+(i+1):"intro";
+  $("#"+prefix+"-eyebrow") && ($("#"+prefix+"-eyebrow").value=extra.eyebrow??base.eyebrow);
+  $("#"+prefix+"-title").value=salvo?.titulo??base.titulo;
+  $("#"+prefix+"-text").value=extra.texto??base.texto;
+  if(i<3){const select=$("#"+prefix+"-image");select.value=extra.imagem_id==null?"":String(extra.imagem_id);atualizarPreview(i+1,select.value);}
+ }
+}
+function atualizarPreview(n,id){
+ const el=$("#hero"+n+"-preview"),m=midiasDisponiveis.find(x=>String(x.id)===String(id));
+ if(m){el.src="api/site/midias/"+m.id+"/arquivo";el.alt=m.descricao||m.nome_original;}
+ else{el.removeAttribute("src");el.alt="Imagem original do site será mantida até a integração de publicação.";}
+}
+function preencherSelectsImagem(){
+ for(let n=1;n<=3;n++){
+  const s=$("#hero"+n+"-image"),v=s.value;s.replaceChildren(new Option("Usar imagem original",""));
+  midiasDisponiveis.forEach(m=>s.add(new Option((m.descricao||m.nome_original)+" (#"+m.id+")",String(m.id))));
+  s.value=v;
+ }
+ for(const id of ["servico-form","projeto-form","galeria-form"]){
+  const s=$('#'+id+' [name="imagem_id"]');if(!s)continue;const v=s.value;s.replaceChildren(new Option("Sem imagem",""));
+  midiasDisponiveis.forEach(m=>s.add(new Option((m.descricao||m.nome_original)+" (#"+m.id+")",String(m.id))));s.value=v;
+ }
+}
+for(let n=1;n<=3;n++)$("#hero"+n+"-image").addEventListener("change",e=>atualizarPreview(n,e.target.value));
+$("#home-editor").addEventListener("submit",async e=>{
+ e.preventDefault();
+ try{
+  for(let i=0;i<homeDefaults.length;i++){
+   const base=homeDefaults[i],prefix=i<3?"hero"+(i+1):"intro";
+   await salvarConteudo(base.chave,$("#"+prefix+"-title").value.trim(),{
+    eyebrow:i<3?$("#"+prefix+"-eyebrow").value.trim():"",
+    texto:$("#"+prefix+"-text").value.trim(),
+    imagem_id:i<3&&$("#"+prefix+"-image").value?Number($("#"+prefix+"-image").value):null
+   });
+  }
+  aviso("Página inicial salva como rascunho no banco de testes.");
+ }catch(err){aviso("Falha ao salvar a página inicial: "+err.message,true);}
+});
+$("#home-reload").addEventListener("click",async()=>{try{await carregarConteudos();await carregarHome();aviso("Página inicial recarregada.");}catch(e){aviso(e.message,true);}});
+for(const nome of Object.keys(grupos)){
+ montarCamposGrupo(nome);
+ const form=$("#"+nome+"-editor");
+ form.addEventListener("submit",async e=>{
+  e.preventDefault();try{const dados=dadosCamposGrupo(nome);await salvarConteudo(grupos[nome].chave,grupos[nome].titulo,dados);aviso("Informações de "+grupos[nome].titulo.toLowerCase()+" salvas como rascunho.");}
+  catch(err){aviso("Não foi possível salvar: "+err.message,true);}
+ });
+}
+async function carregarGrupos(){
+ for(const nome of Object.keys(grupos)){const item=conteudosSalvos.get(grupos[nome].chave);preencherCamposGrupo(nome,parseCorpo(item));}
+}
+function limparFormulario(id){
+ const f=$("#"+id);f.reset();f.elements.id.value="";f.elements.slug.disabled=false;
+ $("#"+id+"-title")&&($("#"+id+"-title").textContent=id==="servico-form"?"Adicionar serviço":id==="projeto-form"?"Adicionar projeto":"Adicionar imagem à galeria");
+}
+document.addEventListener("click",e=>{
+ const tab=e.target.closest("[data-tab]");
+ if(tab){document.querySelectorAll(".admin-nav button").forEach(b=>b.classList.toggle("active",b===tab));document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("active",p.id==="tab-"+tab.dataset.tab));}
+ const reset=e.target.closest("[data-reset]");if(reset)limparFormulario(reset.dataset.reset);
+});
+function itemCard(item){
+ const row=document.createElement("article");row.className="item-row";
+ const img=document.createElement("img");img.alt=item.titulo;
+ const midia=midiasDisponiveis.find(m=>String(m.id)===String(item.imagem_id));
+ if(midia)img.src="api/site/midias/"+midia.id+"/arquivo";else img.src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='70'%3E%3Crect width='100%25' height='100%25' fill='%23edf2f7'/%3E%3C/svg%3E";
+ const info=document.createElement("div"),title=document.createElement("strong"),desc=document.createElement("p"),status=document.createElement("span");
+ title.textContent=item.titulo;desc.textContent=item.resumo||item.descricao||item.slug;status.className="status"+(item.status==="publicado"?" published":"");status.textContent=item.status;
+ info.append(title,desc,status);
+ const actions=document.createElement("div");actions.className="item-actions actions";
+ const edit=document.createElement("button");edit.type="button";edit.className="secondary";edit.textContent="Editar";edit.addEventListener("click",()=>editarItem(item));
+ const del=document.createElement("button");del.type="button";del.className="danger";del.textContent="Excluir";del.addEventListener("click",()=>excluirItem(item));
+ actions.append(edit,del);row.append(img,info,actions);return row;
+}
+const tipoParaForm={servico:"servico-form",projeto:"projeto-form",galeria:"galeria-form"};
+async function carregarItens(tipo){
+ const dados=await api("site/itens?tipo="+tipo),alvo=$("#"+tipo+"-list");alvo.replaceChildren();
+ if(!dados.length){alvo.textContent="Nenhum registro cadastrado.";return;}
+ dados.forEach(x=>alvo.append(itemCard(x)));
+}
+function editarItem(item){
+ const form=$("#"+tipoParaForm[item.tipo]);if(!form)return;
+ form.elements.id.value=item.id;form.elements.slug.value=item.slug;form.elements.slug.disabled=true;
+ form.elements.titulo.value=item.titulo;form.elements.resumo.value=item.resumo||"";
+ form.elements.descricao.value=item.descricao||"";form.elements.imagem_id.value=item.imagem_id||"";
+ form.elements.ordem.value=item.ordem||0;
+ $("#"+item.tipo+"-form-title").textContent="Editar: "+item.titulo;
+ form.scrollIntoView({behavior:"smooth",block:"center"});
+}
+async function excluirItem(item){
+ if(!confirm('Excluir "'+item.titulo+'"? Esta ação não pode ser desfeita.'))return;
+ try{await api("site/itens/"+item.id,{method:"DELETE"});await carregarItens(item.tipo);aviso("Registro excluído.");}
+ catch(e){aviso("Não foi possível excluir: "+e.message,true);}
+}
+for(const tipo of ["servico","projeto","galeria"]){
+ const form=$("#"+tipoParaForm[tipo]);
+ form.addEventListener("submit",async e=>{
+  e.preventDefault();const d=Object.fromEntries(new FormData(form));const id=d.id;
+  const payload={titulo:d.titulo.trim(),resumo:d.resumo,descricao:d.descricao,imagem_id:d.imagem_id?Number(d.imagem_id):null,ordem:Number(d.ordem||0)};
+  try{
+   if(id)await api("site/itens/"+id,{method:"PATCH",body:payload});
+   else await api("site/itens",{method:"POST",body:{...payload,tipo,slug:d.slug.trim(),status:"rascunho"}});
+   limparFormulario(tipoParaForm[tipo]);await carregarItens(tipo);aviso((tipo==="servico"?"Serviço":tipo==="projeto"?"Projeto":"Imagem da galeria")+" salvo como rascunho.");
+  }catch(err){aviso("Não foi possível salvar: "+err.message,true);}
+ });
+}
+async function carregarMidias(){
+ midiasDisponiveis=await api("site/midias");preencherSelectsImagem();
+ const alvo=$("#midias");alvo.replaceChildren();
+ if(!midiasDisponiveis.length){alvo.textContent="Nenhuma imagem cadastrada.";return;}
+ for(const m of midiasDisponiveis){
+  const card=document.createElement("article");card.className="item-row";
+  const img=document.createElement("img");img.src="api/site/midias/"+m.id+"/arquivo";img.alt=m.descricao||m.nome_original;
+  const info=document.createElement("div"),strong=document.createElement("strong"),p=document.createElement("p");
+  strong.textContent=m.descricao||m.nome_original;p.textContent="#"+m.id+" · "+m.mime+" · "+Math.round(m.tamanho/1024)+" KB";
+  info.append(strong,p);
+  const del=document.createElement("button");del.className="danger";del.textContent="Excluir";del.addEventListener("click",async()=>{
+   if(!confirm("Excluir esta imagem da biblioteca?"))return;
+   try{await api("site/midias/"+m.id,{method:"DELETE"});await carregarMidias();aviso("Imagem excluída.");}
+   catch(e){aviso(e.message,true);}
   });
-  try {
-    for (const item of registros) {
-      await api("site/conteudos/" + encodeURIComponent(item.chave), {
-        method: "PUT",
-        body: { titulo: item.titulo, corpo: item.corpo, status: "rascunho" }
-      });
-    }
-    aviso("Página inicial salva como rascunho no banco de testes. O site público não foi alterado.");
-  } catch (err) {
-    aviso("Não foi possível salvar a página inicial: " + err.message);
-  }
-});
-
-$("#home-reload").addEventListener("click", async () => {
-  try { await carregarHome(); aviso("Dados salvos carregados."); }
-  catch (err) { aviso(err.message); }
-});
-
-
-async function carregarSite() {
-  try {
-    const tipo = $("#tipo").value;
-    const dados = await api("site/itens?tipo=" + encodeURIComponent(tipo));
-    $("#itens").replaceChildren();
-
-    for (const item of dados) {
-      const li = document.createElement("li");
-      li.textContent = item.titulo + " (" + item.status + ")";
-      $("#itens").append(li);
-    }
-
-    aviso(dados.length ? dados.length + " registro(s)" : "Nenhum item cadastrado");
-  } catch (e) {
-    aviso(e.message);
-  }
+  card.append(img,info,del);alvo.append(card);
+ }
 }
-
-async function carregarMidias() {
-  try {
-    const dados = await api("site/midias");
-    midiasDisponiveis = dados;
-    preencherSeletoresDeBanner();
-    $("#midias").replaceChildren();
-
-    for (const m of dados) {
-      const li = document.createElement("li");
-
-      li.style.cssText =
-        "display:flex;align-items:center;gap:14px;padding:12px;margin:10px 0;border:1px solid #ddd;border-radius:10px;flex-wrap:wrap";
-
-      const img = document.createElement("img");
-      img.src = "api/site/midias/" + m.id + "/arquivo";
-      img.alt = m.descricao || m.nome_original;
-      img.style.cssText =
-        "width:100px;height:85px;object-fit:cover;border-radius:8px";
-
-      const info = document.createElement("div");
-      info.style.flex = "1";
-
-      const nome = document.createElement("strong");
-      nome.textContent = m.descricao || m.nome_original;
-
-      const detalhe = document.createElement("small");
-      detalhe.textContent =
-        "#" + m.id + "  " + m.mime + "  " +
-        Math.round(m.tamanho / 1024) + " KB";
-      detalhe.style.display = "block";
-
-      const visualizar = document.createElement("a");
-      visualizar.href = img.src;
-      visualizar.target = "_blank";
-      visualizar.rel = "noopener";
-      visualizar.textContent = "Visualizar";
-
-      const excluir = document.createElement("button");
-      excluir.type = "button";
-      excluir.textContent = "Excluir";
-      excluir.style.cssText =
-        "background:#b42318;color:white;border:0;border-radius:6px;padding:9px 14px;cursor:pointer";
-
-      excluir.addEventListener("click", async () => {
-        if (!confirm("Deseja realmente excluir esta imagem?")) return;
-
-        excluir.disabled = true;
-
-        try {
-          await api("site/midias/" + m.id, { method: "DELETE" });
-          aviso("Imagem excluída com sucesso.");
-          await carregarMidias();
-        } catch (e) {
-          aviso(e.message);
-          excluir.disabled = false;
-        }
-      });
-
-      info.append(nome, detalhe, document.createElement("br"), visualizar);
-      li.append(img, info, excluir);
-      $("#midias").append(li);
-    }
-
-    if (!dados.length) {
-      $("#midias").textContent = "Nenhuma imagem cadastrada.";
-    }
-  } catch (e) {
-    aviso(e.message);
-  }
-}
-
-$("#upload").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const form = e.currentTarget;
-  const dados = new FormData(form);
-
-  try {
-    const r = await fetch("api/site/midias", {
-      method: "POST",
-      credentials: "same-origin",
-      headers: { "X-Portal": "1" },
-      body: dados
-    });
-
-    const resposta = await r.json().catch(() => ({}));
-
-    if (!r.ok) throw new Error(resposta.erro || "Falha no envio");
-
-    aviso("Imagem enviada com sucesso: #" + resposta.id);
-    form.reset();
-    await carregarMidias();
-  } catch (err) {
-    aviso(err.message);
-  }
+$("#upload").addEventListener("submit",async e=>{
+ e.preventDefault();const form=e.currentTarget;
+ try{
+  const r=await fetch("api/site/midias",{method:"POST",credentials:"same-origin",headers:{"X-Portal":"1"},body:new FormData(form)});
+  const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.erro||"Falha no envio");
+  form.reset();await carregarMidias();aviso("Imagem enviada para a biblioteca.");
+ }catch(err){aviso("Falha no upload: "+err.message,true);}
 });
-
-$("#tipo").addEventListener("change", carregarSite);
-$("#atualizar").addEventListener("click", carregarSite);
-
-$("#novo").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const form = e.currentTarget;
-  const d = Object.fromEntries(new FormData(form));
-
-  try {
-    await api("site/itens", {
-      method: "POST",
-      body: {
-        ...d,
-        tipo: $("#tipo").value,
-        status: "rascunho"
-      }
-    });
-
-    form.reset();
-    aviso("Rascunho salvo no banco de testes.");
-    await carregarSite();
-  } catch (err) {
-    aviso(err.message);
-  }
-});
-
-(async () => {
-  try {
-    const u = await api("eu");
-
-    if (u.perfil !== "admin") {
-      aviso("Acesso restrito ao administrador.");
-      $("#novo").hidden = true;
-      return;
-    }
-
-    await carregarMidias();
-    await carregarHome();
-    await carregarSite();
-  } catch {
-    location.href = "index.html";
-  }
+(async()=>{
+ try{
+  const usuario=await api("eu");if(usuario.perfil!=="admin"){aviso("Acesso restrito ao administrador.",true);return;}
+  await carregarConteudos();await carregarMidias();await carregarHome();await carregarGrupos();
+  await Promise.all([carregarItens("servico"),carregarItens("projeto"),carregarItens("galeria")]);
+  aviso("Gerenciador carregado. As alterações ficam em rascunho no banco de testes.");
+ }catch(e){aviso(e.message,true);setTimeout(()=>location.href="index.html",1200);}
 })();
