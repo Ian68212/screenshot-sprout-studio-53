@@ -79,6 +79,7 @@ CREATE TABLE IF NOT EXISTS candidaturas (
   cargo_pretendido VARCHAR(120) NULL,
   arquivo_nome VARCHAR(255) NOT NULL,
   arquivo_path VARCHAR(500) NOT NULL,
+  consent_at DATETIME NOT NULL,
   status ENUM('recebido','em_analise','entrevista','aprovado','reprovado') NOT NULL DEFAULT 'recebido',
   criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
