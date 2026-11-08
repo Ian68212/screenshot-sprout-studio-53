@@ -119,7 +119,10 @@ function itemCard(item){
 }
 const tipoParaForm={servico:"servico-form",projeto:"projeto-form",galeria:"galeria-form"};
 async function carregarItens(tipo){
- const dados=await api("site/itens?tipo="+tipo),alvo=$("#"+tipo+"-list");alvo.replaceChildren();
+ const listaIds={servico:"servicos-list",projeto:"projetos-list",galeria:"galeria-list"};
+ const dados=await api("site/itens?tipo="+tipo),alvo=$("#"+listaIds[tipo]);
+ if(!alvo)throw new Error("Área da lista não encontrada: "+tipo);
+ alvo.replaceChildren();
  if(!dados.length){alvo.textContent="Nenhum registro cadastrado.";return;}
  dados.forEach(x=>alvo.append(itemCard(x)));
 }
