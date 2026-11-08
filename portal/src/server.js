@@ -92,8 +92,10 @@ r.get("/api/ferramentas", exigir("painel"), wrap(async (req, res) => {
 const limiteCandidaturas = rateLimit({ windowMs: 60 * 60 * 1000, limit: 10, standardHeaders: true, legacyHeaders: false });
 r.post("/api/candidaturas", limiteCandidaturas, upload.single("curriculo"), wrap(async (req, res) => {
   const { nome, email, telefone, area, cargo_pretendido } = req.body || {};
-  if (!nome?.trim() || !email?.trim() || !telefone?.trim() || !area?.trim() || !req.file || req.body?.consent !== "on")
-    return res.status(400).json({ erro: "Preencha os campos obrigatórios e anexe seu currículo." });
+  if (!nome?.trim() || !email?.trim() || !telefone?.trim() || !area?.trim() || !req.file || req.body?.consent !== "on") {
+    if (req.file) fs.unlink(req.file.path, () => {});
+    return res.status(400).json({ erro: "Preencha os campos obrigatórios, anexe seu currículo e confirme o consentimento." });
+  }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))
     return res.status(400).json({ erro: "Informe um e-mail válido." });
   const ext = path.extname(req.file.originalname).toLowerCase();
