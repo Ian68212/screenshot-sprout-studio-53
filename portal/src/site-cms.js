@@ -80,6 +80,20 @@ siteRouter.patch("/itens/:id", exigir("site.editar"), async (req, res, next) => 
   } catch (e) { next(e); }
 });
 
+siteRouter.delete("/itens/:id", exigir("site.editar"), async (req, res, next) => {
+  try {
+    const id = inteiro(req.params.id);
+    if (!id) return res.status(400).json({ erro: "ID inválido" });
+    const [atual] = await q("SELECT id,titulo,status FROM site_itens WHERE id=?", [id]);
+    if (!atual) return res.status(404).json({ erro: "Item não encontrado" });
+    if (atual.status === "publicado" && req.usuario.perfil !== "admin")
+      return res.status(403).json({ erro: "Somente administrador exclui itens publicados" });
+    await q("DELETE FROM site_itens WHERE id=?", [id]);
+    await auditar(req.usuario.id, "site_excluiu_item", String(id) + ": " + atual.titulo, req.ip);
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
 siteRouter.get("/conteudos", exigir("site.editar"), async (_req, res, next) => {
   try { res.json(await q("SELECT chave,titulo,corpo,status,atualizado_em FROM site_conteudos ORDER BY chave")); }
   catch (e) { next(e); }
