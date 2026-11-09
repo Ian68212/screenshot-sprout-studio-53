@@ -7,6 +7,12 @@ on:
       - "android-app/**"
       - ".github/workflows/build-android-apk.yml"
       - "portal/public/assets/app-icon-original.jpeg"
+  pull_request:
+    branches: [main]
+    paths:
+      - "android-app/**"
+      - ".github/workflows/build-android-apk.yml"
+      - "portal/public/assets/app-icon-original.jpeg"
   workflow_dispatch:
 
 permissions:
@@ -29,8 +35,6 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
         with:
-          # The legacy "tools" SDK package no longer exists. Install only
-          # platform-tools here; the required API/build-tools are installed below.
           packages: "platform-tools"
 
       - name: Install Android 36 SDK
