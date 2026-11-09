@@ -1,9 +1,21 @@
 import { defineConfig } from "nitro";
 
 export default defineConfig({
-  // Hostinger executa aplicações Node.js persistentes. O preset padrão do
-  // projeto Lovable era Cloudflare (fetch handler), que não abre uma porta
-  // HTTP e causava o erro "App did not call listen() within 3 seconds".
+  // Hostinger executa o servidor Node.js persistente.
   preset: "node_server",
   serverDir: "./server",
+
+  // O Portal do Colaborador é um handler Node/Express, não um handler H3.
+  // Registrar explicitamente como format "node" preserva req/res originais
+  // e evita respostas 200 vazias na conversão entre H3 e Express.
+  routes: {
+    "/colaborador": {
+      handler: "./portal/src/server.js",
+      format: "node",
+    },
+    "/colaborador/**": {
+      handler: "./portal/src/server.js",
+      format: "node",
+    },
+  },
 });
