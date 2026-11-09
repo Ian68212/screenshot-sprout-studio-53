@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/modulo-rh-recrutamento
+      - recuperacao-painel-admin-2026-11-09
   pull_request:
     branches:
       - main
@@ -38,3 +39,7 @@ jobs:
       - run: node --check public/admin.js
       - run: node --check public/app.js
       - run: node --check public/painel.js
+      - run: node --check public/site-admin.js
+      - run: node --check src/site-cms.js
+      - run: node --check src/site-media.js
+      - run: node --check src/public-site.js

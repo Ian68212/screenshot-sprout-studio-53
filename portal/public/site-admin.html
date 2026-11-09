@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex"><title>Gerenciador do Site | Rodrinox Pro</title>
+<link rel="stylesheet" href="portal.css">
+<style>
+:root{--ink:#142238;--soft:#64748b;--line:#e2e8f0}
+body{background:#f3f6fa;color:var(--ink)}
+.admin-wrap{max-width:1180px;margin:28px auto;padding:0 18px}
+.admin-head{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+.admin-head p{color:var(--soft);margin:.3rem 0}
+.admin-nav{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}
+.admin-nav button{background:#e7edf5;color:#183153}
+.admin-nav button.active{background:#102747;color:#fff}
+.panel{display:none}.panel.active{display:block}
+.editor-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;margin:14px 0;box-shadow:0 4px 18px #14223808}
+.editor-card h3{margin:0 0 10px}
+.editor-card textarea{width:100%;min-height:92px;padding:10px;border:1px solid var(--line);border-radius:7px;font:inherit;resize:vertical}
+.editor-card input,.editor-card select{width:100%;padding:10px;border:1px solid var(--line);border-radius:7px;font:inherit}
+.editor-card label{display:block;margin:12px 0 5px;font-size:.88rem;font-weight:650}
+.hint{color:var(--soft);font-size:.88rem}
+.actions{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:14px}
+.banner-grid,.field-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.media-preview{width:100%;height:150px;object-fit:cover;border:1px solid var(--line);border-radius:8px;background:#f1f5f9}
+.item-row{display:grid;grid-template-columns:80px 1fr auto;gap:14px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:10px;background:#fff;margin:10px 0}
+.item-row img{width:80px;height:70px;object-fit:cover;border-radius:7px;background:#eef2f7}
+.item-row p{margin:4px 0;color:var(--soft);font-size:.86rem}
+.status{font-size:.75rem;padding:3px 8px;border-radius:20px;background:#fff3df;color:#965a00}
+.status.published{background:#e5f7ed;color:#17633a}
+.notice{padding:12px 14px;border-radius:9px;background:#eaf1fa;color:#17365e;margin:14px 0}
+.notice.error{background:#fff0ef;color:#9f241d}
+button.danger{background:#b42318}
+button.secondary{background:#e7edf5;color:#183153}
+@media(max-width:650px){.item-row{grid-template-columns:64px 1fr}.item-row img{width:64px;height:64px}.item-row .item-actions{grid-column:1/-1}}
+</style>
+</head>
+<body>
+<header class="top"><strong>RODRINOX <span>PRO</span> · ADMINISTRAÇÃO DO SITE</strong><nav><a href="painel.html">Portal</a><a href="#" id="sair">Sair</a></nav></header>
+<main class="admin-wrap">
+<div class="admin-head"><div><h1>Gerenciador do site</h1><p>Central de conteúdo do site institucional · ambiente de testes</p></div><span class="status">MODO RASCUNHO</span></div>
+<div id="aviso" class="notice" role="status" aria-live="polite">Carregando dados...</div>
+<div class="actions"><button type="button" id="publish-all">Publicar todos os rascunhos no site</button></div>
+<div class="notice"><strong>Ambiente protegido:</strong> as alterações são salvas como rascunho no banco de testes. Elas ainda não são exibidas no site público.</div>
+<nav class="admin-nav" aria-label="Seções do gerenciador">
+<button class="active" data-tab="inicio">Página inicial</button><button data-tab="empresa">A empresa</button><button data-tab="servicos">Serviços</button><button data-tab="projetos">Projetos</button><button data-tab="galeria">Galeria</button><button data-tab="contato">Contato</button><button data-tab="carreiras">Trabalhe Conosco</button><button data-tab="login">Login — Acesso restrito</button><button data-tab="identidade">Cabeçalho e rodapé</button><button data-tab="midias">Imagens</button>
+</nav>
+
+<section class="panel active" id="tab-inicio">
+<h2>Página inicial</h2><p class="hint">Edite os três banners e a apresentação principal.</p>
+<form id="home-editor">
+<div class="banner-grid">
+<article class="editor-card"><h3>Banner 1</h3><label>Imagem</label><select id="hero1-image"><option value="">Usar imagem original</option></select><img id="hero1-preview" class="media-preview" alt="Prévia do banner"><label>Chamada pequena</label><input id="hero1-eyebrow" maxlength="160"><label>Título</label><input id="hero1-title" maxlength="255" required><label>Descrição</label><textarea id="hero1-text" maxlength="5000"></textarea></article><article class="editor-card"><h3>Banner 2</h3><label>Imagem</label><select id="hero2-image"><option value="">Usar imagem original</option></select><img id="hero2-preview" class="media-preview" alt="Prévia do banner"><label>Chamada pequena</label><input id="hero2-eyebrow" maxlength="160"><label>Título</label><input id="hero2-title" maxlength="255" required><label>Descrição</label><textarea id="hero2-text" maxlength="5000"></textarea></article><article class="editor-card"><h3>Banner 3</h3><label>Imagem</label><select id="hero3-image"><option value="">Usar imagem original</option></select><img id="hero3-preview" class="media-preview" alt="Prévia do banner"><label>Chamada pequena</label><input id="hero3-eyebrow" maxlength="160"><label>Título</label><input id="hero3-title" maxlength="255" required><label>Descrição</label><textarea id="hero3-text" maxlength="5000"></textarea></article>
+</div>
+<article class="editor-card"><h3>Apresentação da empresa</h3><label>Título</label><input id="intro-title" maxlength="255"><label>Texto</label><textarea id="intro-text" maxlength="5000"></textarea></article>
+<div class="actions"><button type="submit">Salvar página inicial</button><button class="secondary" type="button" id="home-reload">Recarregar</button></div>
+</form>
+</section>
+
+<section class="panel" id="tab-empresa"><h2>A empresa</h2><p class="hint">História institucional, missão, visão e valores.</p><form id="empresa-editor"><div id="empresa-fields" class="field-grid"></div><div class="actions"><button type="submit">Salvar conteúdo da empresa</button></div></form></section>
+
+<section class="panel" id="tab-servicos"><h2>Serviços</h2><p class="hint">Cadastre, edite e organize os serviços apresentados no site.</p><div id="servicos-list"></div><article class="editor-card"><h3 id="servico-form-title">Adicionar serviço</h3><form id="servico-form"><input type="hidden" name="id"><div class="field-grid"><div><label>Identificador (slug)</label><input name="slug" pattern="[a-z0-9]+(-[a-z0-9]+)*" placeholder="corte-a-laser" required></div><div><label>Título</label><input name="titulo" maxlength="255" required></div><div><label>Imagem</label><select name="imagem_id"><option value="">Sem imagem</option></select></div><div><label>Ordem de exibição</label><input name="ordem" type="number" min="0" value="0"></div></div><label>Resumo</label><textarea name="resumo"></textarea><label>Descrição completa</label><textarea name="descricao"></textarea><div class="actions"><button type="submit">Salvar serviço</button><button class="secondary" type="button" data-reset="servico-form">Limpar</button></div></form></article></section>
+
+<section class="panel" id="tab-projetos"><h2>Projetos especiais</h2><p class="hint">Gerencie os projetos e cases apresentados no portfólio.</p><div id="projetos-list"></div><article class="editor-card"><h3 id="projeto-form-title">Adicionar projeto</h3><form id="projeto-form"><input type="hidden" name="id"><div class="field-grid"><div><label>Identificador (slug)</label><input name="slug" pattern="[a-z0-9]+(-[a-z0-9]+)*" required></div><div><label>Título</label><input name="titulo" maxlength="255" required></div><div><label>Imagem</label><select name="imagem_id"><option value="">Sem imagem</option></select></div><div><label>Ordem</label><input name="ordem" type="number" min="0" value="0"></div></div><label>Categoria / resumo</label><textarea name="resumo"></textarea><label>Descrição</label><textarea name="descricao"></textarea><div class="actions"><button type="submit">Salvar projeto</button><button class="secondary" type="button" data-reset="projeto-form">Limpar</button></div></form></article></section>
+
+<section class="panel" id="tab-galeria"><h2>Galeria de imagens</h2><p class="hint">Escolha as imagens que devem compor a galeria e ajuste as legendas.</p><div id="galeria-list"></div><article class="editor-card"><h3>Adicionar imagem à galeria</h3><form id="galeria-form"><input type="hidden" name="id"><div class="field-grid"><div><label>Identificador (slug)</label><input name="slug" pattern="[a-z0-9]+(-[a-z0-9]+)*" required></div><div><label>Legenda / título</label><input name="titulo" maxlength="255" required></div><div><label>Imagem</label><select name="imagem_id"><option value="">Selecione uma imagem</option></select></div><div><label>Ordem</label><input name="ordem" type="number" min="0" value="0"></div></div><label>Descrição alternativa (acessibilidade)</label><textarea name="descricao"></textarea><div class="actions"><button type="submit">Salvar na galeria</button><button class="secondary" type="button" data-reset="galeria-form">Limpar</button></div></form></article></section>
+
+<section class="panel" id="tab-contato"><h2>Contato e localização</h2><form id="contato-editor"><div id="contato-fields" class="field-grid"></div><div class="actions"><button type="submit">Salvar informações de contato</button></div></form></section>
+
+<section class="panel" id="tab-carreiras"><h2>Trabalhe Conosco</h2><p class="hint">Personalize a apresentação da página de candidaturas. O formulário e a proteção dos currículos continuam funcionando normalmente.</p><form id="carreiras-editor"><div id="carreiras-fields" class="field-grid"></div><div class="actions"><button type="submit">Salvar Trabalhe Conosco</button></div></form></section>
+<section class="panel" id="tab-login"><h2>Login — Acesso restrito</h2><p class="hint">Edite a identidade visual e os textos da página de entrada. A autenticação e as regras de segurança não são alteradas.</p><form id="login-editor"><div id="login-fields" class="field-grid"></div><div class="actions"><button type="submit">Salvar página de login</button></div></form></section>
+
+<section class="panel" id="tab-identidade"><h2>Cabeçalho e rodapé</h2><form id="identidade-editor"><div id="identidade-fields" class="field-grid"></div><div class="actions"><button type="submit">Salvar identidade do site</button></div></form></section>
+
+<section class="panel" id="tab-midias"><h2>Biblioteca de imagens</h2><p class="hint">Envie imagens JPG, PNG ou WebP de até 5 MB. As imagens ficam privadas no portal de testes.</p><form id="upload" class="editor-card"><label>Selecionar imagem</label><input type="file" name="imagem" accept="image/jpeg,image/png,image/webp" required><label>Descrição da imagem</label><input name="descricao" maxlength="255"><div class="actions"><button type="submit">Enviar imagem</button></div></form><div id="midias"></div></section>
+<p><a href="painel.html">← Voltar ao Portal do Colaborador</a></p>
+</main>
+<script src="app.js"></script><script src="site-admin.js"></script>
+</body></html>
