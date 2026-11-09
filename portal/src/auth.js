@@ -2,8 +2,7 @@ import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
 import { q, auditar } from "./db.js";
 import { pode, MAX_TENTATIVAS, BLOQUEIO_MINUTOS } from "./permissions.js";
-import { validarSenhaHostinger } from "./hostinger-auth.js";
-import { EmailAuthUnavailableError } from "./hostinger-auth.js";
+import { validarSenhaHostinger, EmailAuthUnavailableError } from "./hostinger-auth.js";
 
 export const COOKIE = "rp_sessao";
 const HORAS = Number(process.env.SESSION_HOURS || 8);
