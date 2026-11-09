@@ -210,6 +210,6 @@ r.use((err, _req, res, _next) => {
   res.status(500).json({ erro: "Erro interno" });
 });
 
-// O prefixo /colaborador é removido pelo adaptador Nitro antes de chegar ao Express.
-app.use(r);
+// O Express monta o portal no prefixo público e remove esse prefixo internamente.
+app.use(BASE, r);
 export default app;
