@@ -202,7 +202,7 @@ r.get("/api/admin/usuarios", exigir("admin.usuarios"), wrap(async (_req, res) =>
 
 r.post("/api/admin/usuarios", exigir("admin.usuarios"), wrap(async (req, res) => {
   const { nome, email, perfil = "colaborador", setor_id = null, cargo_id = null } = req.body || {};
-  if (!nome?.trim() || !email?.trim() || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email.trim()) || !PERFIS.includes(perfil))
+  if (!nome?.trim() || !email?.trim() || !/^[^\s@]+@[^\s@]+\\.[^\s@]+$/.test(email.trim()) || !PERFIS.includes(perfil))
     return res.status(400).json({ erro: "Informe nome, e-mail válido e perfil." });
   // O hash legado é aleatório: a senha real nunca é armazenada no portal.
   const hashInutilizavel = await gerarHash(crypto.randomBytes(48).toString("hex"));
