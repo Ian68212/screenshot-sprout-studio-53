@@ -9,6 +9,7 @@
     "start": "node src/server.js",
     "db:init": "node scripts/init-db.js",
     "admin:create": "node scripts/create-admin.js",
+    "admin:reset-password": "node scripts/reset-admin-password.js",
     "test": "node --test test/*.test.js"
   },
   "dependencies": {
