@@ -1,10 +1,9 @@
 import { Router } from "express";
 import { readFile } from "node:fs/promises";
-import path from "node:path";
 import { q } from "./db.js";
+import { SITE_MEDIA_DIR } from "./media-storage.js";
 
 export const publicSiteRouter = Router();
-const DIR = path.resolve(process.env.SITE_UPLOAD_DIR || "./storage/site");
 const IMAGE_NAME = /^[a-f0-9-]{36}\.(jpg|png|webp)$/;
 const ALLOWED_ORIGIN = process.env.SITE_PUBLIC_ORIGIN || "https://rodrinoxpro.com.br";
 
@@ -56,7 +55,7 @@ publicSiteRouter.get("/midias/:id", async (req, res, next) => {
       [id, '%"imagem_id":' + id + ',%', '%"imagem_id":' + id + '}%'],
     );
     if (!media || !IMAGE_NAME.test(media.caminho)) return res.status(404).json({ erro: "Imagem pública não encontrada" });
-    const buffer = await readFile(path.join(DIR, media.caminho));
+    const buffer = await readFile(path.join(SITE_MEDIA_DIR, media.caminho));
     res.set("Content-Type", media.mime);
     res.set("X-Content-Type-Options", "nosniff");
     res.set("Cache-Control", "public, max-age=3600");
