@@ -11,6 +11,9 @@ import multer from "multer";
 import { q, auditar } from "./db.js";
 import { COOKIE, login, logout, carregarUsuario, exigir, gerarHash } from "./auth.js";
 import { PERFIS, podeVerFerramenta } from "./permissions.js";
+import { siteRouter } from "./site-cms.js";
+import { mediaRouter } from "./site-media.js";
+import { publicSiteRouter } from "./public-site.js";
 
 const BASE = process.env.BASE_PATH || "/colaborador";
 const dir = path.dirname(fileURLToPath(import.meta.url));
@@ -103,11 +106,18 @@ r.use((req, res, next) => {
   next();
 });
 
+// API pública de leitura do CMS: sem sessão, somente conteúdo publicado.
+r.use("/api/public/site", publicSiteRouter);
+
 // Proteção CSRF: toda escrita exige cabeçalho próprio (não enviável por formulários de outros sites)
 r.use((req, res, next) => {
   if (req.method !== "GET" && req.get("X-Portal") !== "1") return res.status(403).json({ erro: "Requisição inválida" });
   next();
 });
+
+// CMS administrativo e biblioteca privada de imagens (exigem sessão/permissão).
+r.use("/api/site", siteRouter);
+r.use("/api/site/midias", mediaRouter);
 
 const limiteLogin = rateLimit({ windowMs: 15 * 60000, limit: 20, standardHeaders: true, legacyHeaders: false });
 
