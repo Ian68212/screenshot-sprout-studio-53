@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { q } from "./db.js";
 import { SITE_MEDIA_DIR } from "./media-storage.js";
 
