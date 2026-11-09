@@ -4,6 +4,7 @@ const CATS = { documentos: "Documentos", comunicados: "Comunicados", treinamento
   ola.textContent = `Olá, ${eu.nome.split(" ")[0]}`;
   info.textContent = [eu.setor, eu.cargo, eu.perfil].filter(Boolean).join(" · ");
   if (eu.perfil === "admin" || eu.perfil === "gestor") lnkAdmin.hidden = false;
+  if (eu.perfil === "admin") lnkSiteAdmin.hidden = false;
   const itens = await api("ferramentas");
   cats.innerHTML = Object.entries(CATS).map(([k, t]) => {
     const l = itens.filter((i) => i.categoria === k);
