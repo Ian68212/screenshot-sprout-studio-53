@@ -41,5 +41,6 @@ jobs:
       - run: node --check public/painel.js
       - run: node --check public/site-admin.js
       - run: node --check src/site-cms.js
+      - run: node --check src/media-storage.js
       - run: node --check src/site-media.js
       - run: node --check src/public-site.js
