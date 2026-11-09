@@ -10,7 +10,7 @@ export default defineConfig({
       dir: "./portal/public",
       baseURL: "colaborador",
       maxAge: 0,
-      fallthrough: false,
+      fallthrough: true,
     },
   ],
   serverDir: "./server",
