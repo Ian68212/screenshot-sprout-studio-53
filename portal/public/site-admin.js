@@ -55,8 +55,8 @@ function dadosCamposGrupo(nome){
  const out={};for(const [id] of grupos[nome].campos)out[id]=$('#'+nome+'-fields [name="'+id+'"]').value.trim();return out;
 }
 async function salvarConteudo(chave,titulo,body){
- await api("site/conteudos/"+encodeURIComponent(chave),{method:"PUT",body:{titulo,corpo:JSON.stringify(body),status:"rascunho"}});
- conteudosSalvos.set(chave,{chave,titulo,corpo:JSON.stringify(body),status:"rascunho"});
+ await api("site/conteudos/"+encodeURIComponent(chave),{method:"PUT",body:{titulo,corpo:JSON.stringify(body),status:"publicado"}});
+ conteudosSalvos.set(chave,{chave,titulo,corpo:JSON.stringify(body),status:"publicado"});
 }
 async function carregarConteudos(){
  const dados=await api("site/conteudos");conteudosSalvos=new Map(dados.map(x=>[x.chave,x]));
@@ -118,7 +118,7 @@ $("#home-editor").addEventListener("submit",async e=>{
     imagem_id:i<3&&$("#"+prefix+"-image").value?Number($("#"+prefix+"-image").value):null
    });
   }
-  aviso("Página inicial salva como rascunho no banco de testes.");
+  aviso("Página inicial publicada no site institucional.");
  }catch(err){aviso("Falha ao salvar a página inicial: "+err.message,true);}
 });
 $("#home-reload").addEventListener("click",async()=>{try{await carregarConteudos();await carregarHome();aviso("Página inicial recarregada.");}catch(e){aviso(e.message,true);}});
@@ -127,7 +127,7 @@ for(const nome of Object.keys(grupos)){
  if(nome==="carreiras"||nome==="login"){const seletor=$('#'+nome+'-fields [name="imagem_id"]');if(seletor)seletor.addEventListener("change",()=>atualizarPreviewGrupo(nome,"imagem_id"));}
  const form=$("#"+nome+"-editor");
  form.addEventListener("submit",async e=>{
-  e.preventDefault();try{const dados=dadosCamposGrupo(nome);await salvarConteudo(grupos[nome].chave,grupos[nome].titulo,dados);aviso("Informações de "+grupos[nome].titulo.toLowerCase()+" salvas como rascunho.");}
+  e.preventDefault();try{const dados=dadosCamposGrupo(nome);await salvarConteudo(grupos[nome].chave,grupos[nome].titulo,dados);aviso("Informações de "+grupos[nome].titulo.toLowerCase()+" publicadas no site institucional.");}
   catch(err){aviso("Não foi possível salvar: "+err.message,true);}
  });
 }
@@ -183,11 +183,11 @@ for(const tipo of ["servico","projeto","galeria"]){
  const form=$("#"+tipoParaForm[tipo]);
  form.addEventListener("submit",async e=>{
   e.preventDefault();const d=Object.fromEntries(new FormData(form));const id=d.id;
-  const payload={titulo:d.titulo.trim(),resumo:d.resumo,descricao:d.descricao,imagem_id:d.imagem_id?Number(d.imagem_id):null,ordem:Number(d.ordem||0),status:"rascunho"};
+  const payload={titulo:d.titulo.trim(),resumo:d.resumo,descricao:d.descricao,imagem_id:d.imagem_id?Number(d.imagem_id):null,ordem:Number(d.ordem||0),status:"publicado"};
   try{
    if(id)await api("site/itens/"+id,{method:"PATCH",body:payload});
    else await api("site/itens",{method:"POST",body:{...payload,tipo,slug:d.slug.trim(),status:"rascunho"}});
-   limparFormulario(tipoParaForm[tipo]);await carregarItens(tipo);aviso((tipo==="servico"?"Serviço":tipo==="projeto"?"Projeto":"Imagem da galeria")+" salvo como rascunho.");
+   limparFormulario(tipoParaForm[tipo]);await carregarItens(tipo);aviso((tipo==="servico"?"Serviço":tipo==="projeto"?"Projeto":"Imagem da galeria")+" publicado no site institucional.");
   }catch(err){aviso("Não foi possível salvar: "+err.message,true);}
  });
 }
@@ -215,9 +215,16 @@ async function carregarMidias(){
 $("#upload").addEventListener("submit",async e=>{
  e.preventDefault();const form=e.currentTarget;
  try{
+  const arquivo=form.elements.imagem.files[0];
+  const descricao=form.elements.descricao.value.trim();
   const r=await fetch("api/site/midias",{method:"POST",credentials:"same-origin",headers:{"X-Portal":"1"},body:new FormData(form)});
   const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.erro||"Falha no envio");
-  form.reset();await carregarMidias();aviso("Imagem enviada para a biblioteca.");
+  const titulo=descricao||arquivo.name.replace(/\\.[^.]+$/,"").replace(/[-_]+/g," ").trim()||"Imagem da Rodrinox Pro";
+  const slugBase=titulo.normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,120)||"imagem";
+  const slug=slugBase+"-"+Date.now().toString(36);
+  await api("site/itens",{method:"POST",body:{tipo:"galeria",slug,titulo,resumo:descricao,descricao,imagem_id:Number(data.id),ordem:0,status:"publicado"}});
+  form.reset();await Promise.all([carregarMidias(),carregarItens("galeria")]);
+  aviso("Imagem enviada e publicada automaticamente na galeria do site.");
  }catch(err){aviso("Falha no upload: "+err.message,true);}
 });
 (async()=>{
@@ -225,6 +232,6 @@ $("#upload").addEventListener("submit",async e=>{
   const usuario=await api("eu");if(usuario.perfil!=="admin"){aviso("Acesso restrito ao administrador.",true);return;}
   await carregarConteudos();await carregarMidias();await carregarHome();await carregarGrupos();
   await Promise.all([carregarItens("servico"),carregarItens("projeto"),carregarItens("galeria")]);
-  aviso("Gerenciador carregado. As alterações ficam em rascunho no banco de testes.");
+  aviso("Gerenciador conectado ao banco de produção. Novas alterações são publicadas automaticamente.");
  }catch(e){aviso(e.message,true);setTimeout(()=>location.href="index.html",1200);}
 })();
