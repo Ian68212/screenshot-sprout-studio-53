@@ -15,6 +15,38 @@ import { PERFIS, podeVerFerramenta, senhaValida } from "./permissions.js";
 const BASE = process.env.BASE_PATH || "/colaborador";
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
+
+// O Nitro pode empacotar este handler em .output/server, mudando import.meta.url.
+// Localize a pasta pública tanto no checkout original quanto no diretório de execução.
+function localizarPastaPublica() {
+  const candidatos = [
+    process.env.PORTAL_PUBLIC_DIR,
+    path.resolve(process.cwd(), "portal", "public"),
+    path.resolve(process.cwd(), "public"),
+    path.resolve(dir, "..", "public"),
+    path.resolve(dir, "..", "..", "portal", "public"),
+    path.resolve(dir, "..", "..", "..", "portal", "public"),
+  ].filter(Boolean);
+  for (const pasta of candidatos) {
+    if (fs.existsSync(path.join(pasta, "index.html"))) return pasta;
+  }
+  // Busca também subindo a árvore de diretórios, útil em instalações com raiz variável.
+  for (const inicio of [process.cwd(), dir]) {
+    let atual = path.resolve(inicio);
+    for (let nivel = 0; nivel < 7; nivel++) {
+      for (const relativa of [path.join("portal", "public"), "public"]) {
+        const pasta = path.join(atual, relativa);
+        if (fs.existsSync(path.join(pasta, "index.html"))) return pasta;
+      }
+      const pai = path.dirname(atual);
+      if (pai === atual) break;
+      atual = pai;
+    }
+  }
+  console.error("Portal: pasta pública não encontrada", { cwd: process.cwd(), moduleDir: dir, candidatos });
+  return null;
+}
+const publicDir = localizarPastaPublica();
 const uploadDir = path.join(dir, "..", "private", "curriculos");
 fs.mkdirSync(uploadDir, { recursive: true });
 const upload = multer({
@@ -38,7 +70,12 @@ app.use(cookieParser());
 const r = express.Router();
 const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 // Arquivos públicos do portal não dependem do MySQL nem de sessão.
-r.use(express.static(path.join(dir, "..", "public"), { index: "index.html" }));
+if (publicDir) {
+  console.info("Portal: arquivos públicos servidos de", publicDir);
+  r.use(express.static(publicDir, { index: "index.html", fallthrough: true }));
+} else {
+  r.get("/", (_req, res) => res.status(500).type("text/plain").send("Portal: arquivos da interface não encontrados no servidor."));
+}
 r.use(wrap(carregarUsuario));
 
 // CORS restrito ao site institucional para receber candidaturas sem expor a API administrativa.
