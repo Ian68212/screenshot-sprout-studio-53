@@ -2,7 +2,7 @@
 export const PERFIS = ["admin", "gestor", "colaborador"];
 
 const PERMISSOES = {
-  admin: ["painel", "admin.usuarios", "admin.estrutura", "admin.ferramentas", "admin.auditoria"],
+  admin: ["painel", "admin.usuarios", "admin.estrutura", "admin.ferramentas", "admin.auditoria", "site.editar", "site.publicar"],
   gestor: ["painel", "admin.auditoria"],
   colaborador: ["painel"],
 };
