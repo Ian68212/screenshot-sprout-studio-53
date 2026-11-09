@@ -136,8 +136,8 @@ mediaRouter.delete("/:id", exigir("site.editar"), async (req,res,next) => {
 
     // Protege também imagens selecionadas nos banners da página inicial.
     const [conteudoEmUso] = await q(
-      "SELECT chave FROM site_conteudos WHERE corpo LIKE ? LIMIT 1",
-      ['%"imagem_id":' + id + '%']
+      "SELECT chave FROM site_conteudos WHERE corpo LIKE ? OR corpo LIKE ? LIMIT 1",
+      ['%"imagem_id":' + id + '%', '%"logo_imagem_id":' + id + '%']
     );
     if (conteudoEmUso) {
       return res.status(409).json({
