@@ -1,0 +1,11 @@
+ARQUIVOS ORIGINAIS DO APLICATIVO RODRINOX PRO
+
+Arquivos originais enviados para esta atualização, mantidos sem redesenho:
+- login-original.jpeg — tela integral de acesso (824 × 1600)
+- app-icon-original.jpeg — ícone do aplicativo (1254 × 1254)
+
+Caminhos usados pelo aplicativo:
+/colaborador/assets/login-original.jpeg
+/colaborador/assets/app-icon-original.jpeg
+
+A tela de login usa a imagem integral como fundo, sem redesenho. Os campos de usuário e senha, botão de entrar, alternância de senha e recuperação continuam sendo controles funcionais posicionados sobre a arte. O ícone JPEG original é usado no manifesto PWA, na instalação e como favicon.

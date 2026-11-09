@@ -13,6 +13,6 @@
   "theme_color": "#071d38",
   "categories": ["business", "productivity"],
   "icons": [
-    {"src": "/colaborador/app-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}
+    {"src": "/colaborador/assets/app-icon-original.jpeg", "sizes": "1254x1254", "type": "image/jpeg", "purpose": "any"}
   ]
 }
