@@ -52,7 +52,26 @@ mediaRouter.get("/:id/arquivo", exigir("site.editar"), async (req,res,next) => {
     res.set("Cache-Control","private, no-store");
     res.set("X-Content-Type-Options","nosniff");
     res.send(buffer);
-  } catch(e) { next(e); }
+  } catch(e) {
+    console.error("[site-media] Falha ao entregar imagem", {
+      id: req.params.id,
+      code: e?.code || "UNKNOWN",
+      message: e?.message || String(e),
+    });
+    if (e?.code === "ENOENT") {
+      return res.status(404).json({
+        erro: "Arquivo físico não encontrado na pasta de armazenamento configurada.",
+        codigo: "ARQUIVO_AUSENTE",
+      });
+    }
+    if (e?.code === "EACCES" || e?.code === "EPERM") {
+      return res.status(500).json({
+        erro: "O servidor não tem permissão para ler o arquivo de imagem.",
+        codigo: "PERMISSAO_ARQUIVO",
+      });
+    }
+    next(e);
+  }
 });
 
 mediaRouter.delete("/:id", exigir("site.editar"), async (req,res,next) => {
