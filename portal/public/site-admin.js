@@ -201,12 +201,15 @@ async function carregarMidias(){
   const info=document.createElement("div"),strong=document.createElement("strong"),p=document.createElement("p");
   strong.textContent=m.descricao||m.nome_original;p.textContent="#"+m.id+" · "+m.mime+" · "+Math.round(m.tamanho/1024)+" KB";
   info.append(strong,p);
+  const actions=document.createElement("div");actions.className="item-actions actions";
+  const download=document.createElement("a");download.className="secondary";download.textContent="Baixar";
+  download.href="api/site/midias/"+m.id+"/arquivo?download=1";download.download=m.nome_original||("imagem-"+m.id);
   const del=document.createElement("button");del.className="danger";del.textContent="Excluir";del.addEventListener("click",async()=>{
    if(!confirm("Excluir esta imagem da biblioteca?"))return;
    try{await api("site/midias/"+m.id,{method:"DELETE"});await carregarMidias();aviso("Imagem excluída.");}
    catch(e){aviso(e.message,true);}
   });
-  card.append(img,info,del);alvo.append(card);
+  actions.append(download,del);card.append(img,info,actions);alvo.append(card);
  }
 }
 $("#upload").addEventListener("submit",async e=>{
