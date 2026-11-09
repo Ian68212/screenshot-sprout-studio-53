@@ -19,6 +19,7 @@
     const logoId = Number(config.logo_imagem_id);
     const painelFoto = document.querySelector(".hero-panel");
     const logo = document.getElementById("login-logo");
+    const brandLockup = document.getElementById("login-brand");
 
     if (Number.isSafeInteger(fotoId) && fotoId > 0 && painelFoto) {
       const url = "/colaborador/api/public/site/midias/" + fotoId + "?v=" + versao;
@@ -35,7 +36,7 @@
     if (Number.isSafeInteger(logoId) && logoId > 0 && logo) {
       const url = "/colaborador/api/public/site/midias/" + logoId + "?v=" + versao;
       const imagem = new Image();
-      imagem.onload = () => { logo.src = url; };
+      imagem.onload = () => { logo.src = url; logo.hidden = false; brandLockup?.classList.add("has-custom-logo"); };
       imagem.src = url;
     }
   } catch (error) {
