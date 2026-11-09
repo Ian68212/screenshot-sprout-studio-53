@@ -65,7 +65,7 @@ mediaRouter.get("/:id/arquivo", exigir("site.editar"), async (req,res,next) => {
     const arquivo = await localizarArquivo(m.caminho);
     if (!arquivo) {
       console.error("[site-media] Arquivo de mídia ausente em todos os diretórios", {
-        id, diretorios: storageDirs,
+        id, diretorio: SITE_MEDIA_DIR,
       });
       return res.status(404).json({
         erro: "Arquivo físico não encontrado nos diretórios de armazenamento verificados.",
