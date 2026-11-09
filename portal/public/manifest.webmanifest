@@ -1,0 +1,18 @@
+{
+  "id": "/colaborador/",
+  "name": "Rodrinox Pro — Portal do Colaborador",
+  "short_name": "Rodrinox Pro",
+  "description": "Aplicativo oficial de acesso dos colaboradores e administradores da Rodrinox Pro.",
+  "lang": "pt-BR",
+  "start_url": "/colaborador/",
+  "scope": "/colaborador/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#03162d",
+  "theme_color": "#071d38",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {"src": "/colaborador/app-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}
+  ]
+}

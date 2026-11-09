@@ -41,3 +41,8 @@ form.addEventListener("submit", async (event) => {
     submit.querySelector("span").textContent = "Entrar com segurança";
   }
 });
+
+const forgotPassword = document.getElementById("forgot-password");
+forgotPassword?.addEventListener("click", () => {
+  erro.textContent = "Para redefinir sua senha corporativa, entre em contato com o administrador responsável pelo seu e-mail.";
+});
