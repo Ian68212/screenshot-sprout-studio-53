@@ -1,0 +1,81 @@
+name: Build Rodrinox Pro Android APK
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "android-app/**"
+      - ".github/workflows/build-android-apk.yml"
+      - "portal/public/assets/app-icon-original.jpeg"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-apk:
+    name: Build installable Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android 36 SDK
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.13"
+
+      - name: Prepare exact original app icon
+        run: |
+          python3 -m pip install --quiet Pillow
+          python3 - <<'PY'
+          from PIL import Image
+          from pathlib import Path
+          source = Path("portal/public/assets/app-icon-original.jpeg")
+          if not source.exists():
+              raise SystemExit("Original app icon not found")
+          image = Image.open(source).convert("RGBA")
+          if image.width != image.height:
+              raise SystemExit(f"App icon must be square; got {image.size}")
+          targets = {
+              "mipmap-mdpi": 48,
+              "mipmap-hdpi": 72,
+              "mipmap-xhdpi": 96,
+              "mipmap-xxhdpi": 144,
+              "mipmap-xxxhdpi": 192,
+          }
+          for folder, size in targets.items():
+              out = Path("android-app/app/src/main/res") / folder
+              out.mkdir(parents=True, exist_ok=True)
+              image.resize((size, size), Image.Resampling.LANCZOS).save(out / "ic_launcher.png")
+              image.resize((size, size), Image.Resampling.LANCZOS).save(out / "ic_launcher_round.png")
+          PY
+
+      - name: Build debug APK for direct installation
+        working-directory: android-app
+        run: gradle --no-daemon assembleDebug
+
+      - name: Rename APK
+        run: |
+          mkdir -p output
+          cp android-app/app/build/outputs/apk/debug/app-debug.apk output/Rodrinox-Pro-teste.apk
+
+      - name: Upload installable APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Rodrinox-Pro-APK-Android
+          path: output/Rodrinox-Pro-teste.apk
+          if-no-files-found: error
+          retention-days: 30
