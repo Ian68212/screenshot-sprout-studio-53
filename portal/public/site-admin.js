@@ -219,8 +219,8 @@ $("#upload").addEventListener("submit",async e=>{
   const descricao=form.elements.descricao.value.trim();
   const r=await fetch("api/site/midias",{method:"POST",credentials:"same-origin",headers:{"X-Portal":"1"},body:new FormData(form)});
   const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.erro||"Falha no envio");
-  const titulo=descricao||arquivo.name.replace(/\\.[^.]+$/,"").replace(/[-_]+/g," ").trim()||"Imagem da Rodrinox Pro";
-  const slugBase=titulo.normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,120)||"imagem";
+  const titulo=descricao||arquivo.name.replace(/\.[^.]+$/,"").replace(/[-_]+/g," ").trim()||"Imagem da Rodrinox Pro";
+  const slugBase=titulo.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,120)||"imagem";
   const slug=slugBase+"-"+Date.now().toString(36);
   await api("site/itens",{method:"POST",body:{tipo:"galeria",slug,titulo,resumo:descricao,descricao,imagem_id:Number(data.id),ordem:0,status:"publicado"}});
   form.reset();await Promise.all([carregarMidias(),carregarItens("galeria")]);
