@@ -73,11 +73,13 @@
     "express-rate-limit": "^7.4.1",
     "helmet": "^8.0.0",
     "mysql2": "^3.11.5",
-    "multer": "^2.0.2"
+    "multer": "^2.0.2",
+    "@lovable.dev/vite-tanstack-config": "2.26.5",
+    "vite": "8.1.5",
+    "nitro": "3.0.260603-beta"
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
-    "@lovable.dev/vite-tanstack-config": "2.26.5",
     "@testing-library/jest-dom": "^6.6.0",
     "@testing-library/react": "^16.0.0",
     "@types/node": "^22.16.5",
@@ -91,11 +93,9 @@
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^15.15.0",
     "jsdom": "^20.0.3",
-    "nitro": "3.0.260603-beta",
     "prettier": "^3.7.3",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.56.1",
-    "vite": "8.1.5",
     "vitest": "^4.1.10"
   }
 }
