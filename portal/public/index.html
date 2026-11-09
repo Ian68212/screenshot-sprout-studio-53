@@ -35,13 +35,13 @@ button,input{font:inherit}
 .eyebrow{margin:0 0 12px;color:#f36b19;font-size:14px;font-weight:800;letter-spacing:.03em}
 .welcome h1{margin:0 0 12px;color:#0b1f3a;font-size:clamp(27px,2.6vw,42px);line-height:1.08;letter-spacing:-1.2px}
 .welcome p{margin:0;max-width:460px;color:#1e2e46;font-size:clamp(14px,1.1vw,18px);line-height:1.55}
-.login-form{width:100%;display:grid;gap:14px;margin:0}
+.login-form{position:relative;width:100%;display:grid;gap:14px;margin:0}
 .field{position:relative;width:100%;margin:0}
 .field input{width:100%;height:54px;border:1px solid #d3dbe6;border-radius:11px;background:#fff;color:#10233e;padding:0 48px 0 58px;font-size:15px;outline:none;box-shadow:0 1px 2px rgba(13,36,67,.03);transition:border-color .18s,box-shadow .18s}
 .field input::placeholder{color:#24334a;opacity:1}
 .field input:focus{border-color:#6c91b7;box-shadow:0 0 0 3px rgba(33,101,160,.12)}
 .field-icon{position:absolute;left:18px;top:50%;width:22px;height:22px;transform:translateY(-50%);stroke:#10233e;fill:none;stroke-width:2;pointer-events:none}
-#toggle-password{position:absolute;right:12px;top:50%;transform:translateY(-50%);width:32px;height:32px;border:0;background:transparent;color:#10233e;padding:4px;display:grid;place-items:center;cursor:pointer}
+#toggle-password{position:absolute;right:12px;top:95px;transform:translateY(-50%);width:32px;height:32px;border:0;background:transparent;color:#10233e;padding:4px;display:grid;place-items:center;cursor:pointer}
 #toggle-password svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2}
 .erro{min-height:18px;margin:0;color:#b42318;font-size:13px;line-height:1.35}
 #submit{width:100%;min-height:60px;border:0;border-radius:12px;background:linear-gradient(100deg,#ff7900,#f15b16);color:#fff;font-size:17px;font-weight:750;display:flex;align-items:center;justify-content:center;gap:14px;cursor:pointer;box-shadow:0 7px 16px rgba(235,96,13,.18);transition:filter .18s,transform .18s}
@@ -138,6 +138,7 @@ body[data-view="app"] .login-panel .mobile-install{display:none!important}
 </style>
 </head>
 <body>
+<script>document.body.dataset.view=(/RodrinoxAndroid\\/1\\.0/i.test(navigator.userAgent||"")||window.matchMedia("(display-mode: standalone)").matches||navigator.standalone===true)?"app":"browser";</script>
 <div class="browser-shell">
   <section class="hero-panel" aria-label="Fachada da Rodrinox Pro"></section>
   <main class="login-panel">
