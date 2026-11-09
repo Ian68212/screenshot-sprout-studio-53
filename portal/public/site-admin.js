@@ -10,7 +10,7 @@ const homeDefaults=[
 ];
 const grupos={
  carreiras:{chave:"pagina.trabalhe-conosco",titulo:"Trabalhe Conosco",campos:[["chamada","Chamada superior","text"],["titulo","Título principal","text"],["descricao","Texto de apresentação","textarea"],["form_titulo","Título do formulário","text"],["form_descricao","Orientação para candidatos","textarea"],["botao","Texto do botão de envio","text"],["imagem_id","Imagem da página","media"],["cor_primaria","Cor principal (ex.: #0b1f3a)","text"],["cor_destaque","Cor de destaque (ex.: #f26a1b)","text"]]},
- login:{chave:"pagina.login",titulo:"Login — Acesso restrito",campos:[["chamada","Chamada do painel visual","text"],["titulo_visual","Título do painel visual","text"],["descricao_visual","Descrição do painel visual","textarea"],["titulo_form","Título do formulário de acesso","text"],["descricao_form","Descrição do formulário","textarea"],["botao","Texto do botão de acesso","text"],["imagem_id","Imagem de fundo do login","media"],["cor_primaria","Cor principal (ex.: #0b1f3a)","text"],["cor_destaque","Cor de destaque (ex.: #f26a1b)","text"]]},
+ login:{chave:"pagina.login",titulo:"Login — Acesso restrito",campos:[["chamada","Chamada do painel visual","text"],["titulo_visual","Título do painel visual","text"],["descricao_visual","Descrição do painel visual","textarea"],["titulo_form","Título do formulário de acesso","text"],["descricao_form","Descrição do formulário","textarea"],["botao","Texto do botão de acesso","text"],["imagem_id","Foto principal do painel esquerdo","media"],["logo_imagem_id","Logotipo PNG sobre o painel branco","media-logo"],["cor_primaria","Cor principal (ex.: #0b1f3a)","text"],["cor_destaque","Cor de destaque (ex.: #f26a1b)","text"]]},
  empresa:{chave:"empresa.institucional",titulo:"A empresa",campos:[
   ["historia","História da Rodrinox Pro","textarea"],["apresentacao","Apresentação institucional","textarea"],["missao","Missão","textarea"],["visao","Visão","textarea"],["valores","Valores","textarea"]
  ]},
@@ -22,11 +22,32 @@ const grupos={
  ]}
 };
 function parseCorpo(item){try{return JSON.parse(item?.corpo||"{}")}catch{return {texto:item?.corpo||""}}}
+async function uploadMidiaGrupo(nome,id,tipo){
+ const input=$('#'+nome+'-fields #'+id+'-upload');
+ const arquivo=input?.files?.[0];
+ if(!arquivo){aviso("Selecione um arquivo antes de enviar.",true);return;}
+ if(tipo==="media-logo"&&arquivo.type!=="image/png"){aviso("Para a logomarca, envie um arquivo PNG.",true);return;}
+ const form=new FormData();form.append("imagem",arquivo);form.append("descricao",tipo==="media-logo"?"Login - logotipo Rodrinox Pro":"Login - fotografia do painel");
+ try{
+  const resposta=await fetch("api/site/midias",{method:"POST",credentials:"same-origin",headers:{"X-Portal":"1"},body:form});
+  const dados=await resposta.json().catch(()=>({}));
+  if(!resposta.ok)throw new Error(dados.erro||"Falha ao enviar a imagem.");
+  await carregarMidias();
+  const seletor=$('#'+nome+'-fields [name="'+id+'"]');
+  seletor.value=String(dados.id);atualizarPreviewGrupo(nome,id);input.value="";
+  aviso("Imagem enviada e selecionada. Clique em Salvar página de login para aplicar a alteração.");
+ }catch(error){aviso("Não foi possível enviar a imagem: "+error.message,true);}
+}
 function fieldMarkup(id,label,type,value=""){
  const val=String(value??"");
- return '<div><label for="'+id+'">'+label+'</label>'+(type==="media" ? '<select id="'+id+'" name="'+id+'"><option value="">Sem imagem personalizada</option></select><img class="media-preview" id="'+id+'-preview" alt="Prévia da imagem escolhida" hidden><p class="hint">Para enviar outra foto, use a aba Imagens.</p>' : type==="textarea"
- ? '<textarea id="'+id+'" name="'+id+'">'+esc(val)+'</textarea>'
- : '<input id="'+id+'" name="'+id+'" type="'+type+'" value="'+esc(val)+'">')+'</div>';
+ const mediaField=type==="media"||type==="media-logo";
+ const accept=type==="media-logo"?"image/png":"image/jpeg,image/png,image/webp";
+ const mediaMarkup=mediaField
+  ? '<select id="'+id+'" name="'+id+'"><option value="">Manter imagem padrão</option></select><img class="media-preview '+(type==="media-logo"?"logo-preview":"")+'" id="'+id+'-preview" alt="Prévia: '+label+'" hidden><label for="'+id+'-upload">Arquivo para substituir</label><input id="'+id+'-upload" type="file" accept="'+accept+'"><button class="secondary" type="button" data-upload-media="'+id+'">Enviar e selecionar</button><p class="hint">'+(type==="media-logo"?"Envie um PNG com fundo transparente para o logotipo.":"Envie JPG, PNG ou WebP para a fotografia.")+' O arquivo será salvo na biblioteca de imagens.</p>'
+  : type==="textarea"
+   ? '<textarea id="'+id+'" name="'+id+'">'+esc(val)+'</textarea>'
+   : '<input id="'+id+'" name="'+id+'" type="'+type+'" value="'+esc(val)+'">';
+ return '<div><label for="'+id+'">'+label+'</label>'+mediaMarkup+'</div>';
 }
 function montarCamposGrupo(nome){
  const grupo=grupos[nome], alvo=$("#"+nome+"-fields");
@@ -39,20 +60,29 @@ function atualizarPreviewGrupo(nome,id){
  const el=$('#'+nome+'-fields [name="'+id+'"]'),img=$('#'+nome+'-fields #'+id+'-preview');
  if(!el||!img)return;
  const m=midiasDisponiveis.find(x=>String(x.id)===String(el.value));
+ img.classList.toggle("logo-preview",id==="logo_imagem_id");
  if(m){img.src="api/site/midias/"+m.id+"/arquivo";img.alt=m.descricao||m.nome_original;img.hidden=false;}
  else{img.removeAttribute("src");img.hidden=true;}
 }
 function preencherMidiasGrupos(){
  for(const nome of ["carreiras","login"]){
-  const el=$('#'+nome+'-fields [name="imagem_id"]');if(!el)continue;
-  const atual=el.value;el.replaceChildren(new Option("Sem imagem personalizada",""));
-  midiasDisponiveis.forEach(m=>el.add(new Option((m.descricao||m.nome_original)+" (#"+m.id+")",String(m.id))));
-  el.value=atual;
-  atualizarPreviewGrupo(nome,"imagem_id");
+  const campos=grupos[nome].campos.filter(([, ,tipo])=>tipo==="media"||tipo==="media-logo");
+  for(const [id,,tipo] of campos){
+   const el=$('#'+nome+'-fields [name="'+id+'"]');if(!el)continue;
+   const atual=el.value;el.replaceChildren(new Option("Manter imagem padrão",""));
+   midiasDisponiveis.forEach(m=>el.add(new Option((m.descricao||m.nome_original)+" (#"+m.id+")",String(m.id))));
+   el.value=atual;atualizarPreviewGrupo(nome,id);
+  }
  }
 }
 function dadosCamposGrupo(nome){
- const out={};for(const [id] of grupos[nome].campos)out[id]=$('#'+nome+'-fields [name="'+id+'"]').value.trim();return out;
+ const out={};
+ for(const [id,,tipo] of grupos[nome].campos){
+  const el=$('#'+nome+'-fields [name="'+id+'"]');
+  if(tipo==="media"||tipo==="media-logo")out[id]=el.value?Number(el.value):null;
+  else out[id]=el.value.trim();
+ }
+ return out;
 }
 async function salvarConteudo(chave,titulo,body){
  await api("site/conteudos/"+encodeURIComponent(chave),{method:"PUT",body:{titulo,corpo:JSON.stringify(body),status:"publicado"}});
@@ -124,7 +154,13 @@ $("#home-editor").addEventListener("submit",async e=>{
 $("#home-reload").addEventListener("click",async()=>{try{await carregarConteudos();await carregarHome();aviso("Página inicial recarregada.");}catch(e){aviso(e.message,true);}});
 for(const nome of Object.keys(grupos)){
  montarCamposGrupo(nome);
- if(nome==="carreiras"||nome==="login"){const seletor=$('#'+nome+'-fields [name="imagem_id"]');if(seletor)seletor.addEventListener("change",()=>atualizarPreviewGrupo(nome,"imagem_id"));}
+ for(const [id,,tipo] of grupos[nome].campos){
+  if(tipo!=="media"&&tipo!=="media-logo")continue;
+  const seletor=$('#'+nome+'-fields [name="'+id+'"]');
+  seletor?.addEventListener("change",()=>atualizarPreviewGrupo(nome,id));
+  const botao=$('#'+nome+'-fields [data-upload-media="'+id+'"]');
+  botao?.addEventListener("click",()=>uploadMidiaGrupo(nome,id,tipo));
+ }
  const form=$("#"+nome+"-editor");
  form.addEventListener("submit",async e=>{
   e.preventDefault();try{const dados=dadosCamposGrupo(nome);await salvarConteudo(grupos[nome].chave,grupos[nome].titulo,dados);aviso("Informações de "+grupos[nome].titulo.toLowerCase()+" publicadas no site institucional.");}
