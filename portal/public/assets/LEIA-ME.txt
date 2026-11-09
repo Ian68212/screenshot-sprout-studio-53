@@ -1,0 +1,11 @@
+ARQUIVOS ORIGINAIS DO APLICATIVO RODRINOX PRO
+
+Coloque nesta pasta, sem editar ou converter, os dois arquivos JPEG originais enviados:
+- login-original.jpeg (824 x 1600)
+- app-icon-original.jpeg (1254 x 1254)
+
+Os caminhos finais usados pelo aplicativo são:
+/colaborador/assets/login-original.jpeg
+/colaborador/assets/app-icon-original.jpeg
+
+A tela de login usa a imagem original integralmente, com campos HTML funcionais posicionados sobre os campos desenhados na arte. O manifesto PWA usa diretamente o JPEG original como ícone.
