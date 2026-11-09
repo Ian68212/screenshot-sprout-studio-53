@@ -2,7 +2,6 @@ import { Router } from "express";
 import { randomUUID } from "node:crypto";
 import { mkdir, writeFile, readFile, unlink, access } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import multer from "multer";
 import { fileTypeFromBuffer } from "file-type";
 import { q, auditar } from "./db.js";
