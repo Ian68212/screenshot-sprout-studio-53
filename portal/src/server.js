@@ -821,7 +821,7 @@ r.use((err, _req, res, _next) => {
 
 // A raiz do subdomínio deve abrir o login do portal, não responder "Cannot GET /".
 app.get("/", (_req, res) => {
-  res.redirect(302, `${BASE.replace(/\\/+$/, "")}/`);
+  res.redirect(302, `${BASE}/`);
 });
 
 app.use(BASE, r);
