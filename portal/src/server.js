@@ -210,6 +210,24 @@ r.use((err, _req, res, _next) => {
   res.status(500).json({ erro: "Erro interno" });
 });
 
-// O Express monta o portal no prefixo público e remove esse prefixo internamente.
+// Nitro pode entregar ao handler Node o caminho relativo ao padrão da rota
+// (por exemplo, "/" ou "/portal.css"), enquanto o Express está montado em BASE.
+// Normalize nos dois cenários: com ou sem o prefixo, sem duplicá-lo.
+app.use((req, _res, next) => {
+  const current = req.url || "/";
+  const queryAt = current.indexOf("?");
+  const pathname = queryAt < 0 ? current : current.slice(0, queryAt);
+  const search = queryAt < 0 ? "" : current.slice(queryAt);
+  if (pathname !== BASE && !pathname.startsWith(BASE + "/")) {
+    req.url = `${BASE}${pathname.startsWith("/") ? pathname : `/${pathname}`}${search}`;
+  }
+  next();
+});
+
+// Health check sem dependência do banco, para validar o roteamento HTTP.
+app.get(`${BASE}/health`, (_req, res) => {
+  res.status(200).json({ ok: true, service: "portal-colaborador" });
+});
+
 app.use(BASE, r);
 export default app;
