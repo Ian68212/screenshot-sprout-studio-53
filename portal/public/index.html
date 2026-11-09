@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
-<meta name="theme-color" content="#03162d">
+<meta name="theme-color" content="#071d38">
 <link rel="manifest" href="/colaborador/manifest.webmanifest">
 <link rel="icon" type="image/jpeg" href="/colaborador/assets/app-icon-original.jpeg">
 <link rel="apple-touch-icon" href="/colaborador/assets/app-icon-original.jpeg">
@@ -15,78 +15,191 @@
 <meta name="application-name" content="Rodrinox Pro">
 <title>Acesso restrito — Rodrinox Pro</title>
 <style>
-:root{color-scheme:dark;font-family:Inter,"Segoe UI",Arial,sans-serif}
+:root{font-family:Inter,"Segoe UI",Arial,sans-serif;color:#10233e;background:#071d38;font-synthesis:none;text-rendering:optimizeLegibility}
 *{box-sizing:border-box}
-html,body{margin:0;min-height:100%;background:#03162d}
-body{min-height:100dvh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:0;overflow-x:hidden}
-.login-shell{position:relative;width:min(100vw,480px);aspect-ratio:824/1600;flex:none;isolation:isolate}
-.login-art{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;display:block;user-select:none;-webkit-user-drag:none}
-.login-form{position:absolute;inset:0;margin:0}
-.field{position:absolute;left:25.2%;width:65.8%;height:6.15%;margin:0}
-.field input{position:absolute;inset:0;width:100%;height:100%;padding:0 4px;border:1px solid transparent;border-radius:8px;background:transparent;color:#fff;font:500 clamp(14px,4.8vw,21px)/1.2 Inter,"Segoe UI",Arial,sans-serif;outline:none;caret-color:#fff}
-.field input:focus{border-color:rgba(112,198,255,.9);background:rgba(0,20,42,.12);box-shadow:0 0 0 2px rgba(67,177,255,.14)}
-.field input:-webkit-autofill,.field input:-webkit-autofill:focus{-webkit-text-fill-color:#fff;transition:background-color 9999s ease-in-out 0s}
-#email-field{top:36.45%}
-#password-field{top:44.1%;width:55.5%}
-#toggle-password{position:absolute;top:44.1%;left:80.1%;width:10.8%;height:6.1%;padding:0;border:0;background:transparent;color:#fff;cursor:pointer}
-#toggle-password svg{width:100%;height:100%;stroke:currentColor;fill:none;stroke-width:2;filter:drop-shadow(0 1px 2px #001)}
-#submit{position:absolute;left:8.8%;top:52.35%;width:83.6%;height:6.35%;border:0;border-radius:30px;background:transparent;cursor:pointer;color:transparent}
-#submit:disabled{cursor:wait;background:rgba(255,255,255,.12)}
-#submit span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
-#forgot-password{position:absolute;left:20%;top:60.15%;width:60%;height:4.5%;border:0;background:transparent;color:transparent;cursor:pointer}
-.erro{position:absolute;top:50.1%;left:13%;width:74%;margin:0;color:#ffd0c8;text-align:center;font-size:clamp(10px,2.8vw,13px);line-height:1.15;text-shadow:0 1px 4px #001;pointer-events:none}
-.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-/* A arte de login permanece intacta; o convite de instalação fica abaixo dela e só aparece em celulares. */
-.mobile-install{display:none;width:min(calc(100% - 28px),452px);margin:14px 14px 28px;padding:14px;border:1px solid rgba(91,174,238,.38);border-radius:18px;background:linear-gradient(145deg,rgba(12,43,75,.98),rgba(3,20,39,.98));box-shadow:0 12px 34px rgba(0,0,0,.28);color:#fff;align-items:center;gap:12px}
-.mobile-install img{width:54px;height:54px;flex:none;border-radius:13px;object-fit:cover}
-.mobile-install-copy{min-width:0;flex:1}
-.mobile-install-copy strong{display:block;font-size:15px;line-height:1.25}
-.mobile-install-copy span{display:block;margin-top:4px;color:#c7d9eb;font-size:12px;line-height:1.35}
-.mobile-install a{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 14px;border:0;border-radius:12px;background:#ff7900;color:#fff;text-decoration:none;font-size:13px;font-weight:700;white-space:nowrap}
+html,body{margin:0;min-height:100%;width:100%}
+body{min-height:100vh;min-height:100dvh;overflow-x:hidden;background:#f6f8fb}
+button,input{font:inherit}
+.browser-shell{min-height:100vh;min-height:100dvh;display:grid;grid-template-columns:minmax(0,58%) minmax(0,42%);grid-template-rows:minmax(0,1fr) 44px;position:relative;background:#f7f8fa;overflow:hidden}
+.hero-panel{grid-column:1;grid-row:1;position:relative;min-height:0;overflow:hidden;background-image:linear-gradient(90deg,rgba(3,19,40,.16),rgba(3,19,40,0)),url("/colaborador/assets/login-original.jpeg");background-repeat:no-repeat;background-size:cover,auto 280%;background-position:center,center bottom}
+.hero-panel:before{content:"";position:absolute;inset:0 auto 0 0;width:13%;background:linear-gradient(145deg,rgba(4,25,52,.92),rgba(4,25,52,.35));clip-path:polygon(0 0,100% 0,48% 100%,0 100%);z-index:1}
+.hero-panel:after{content:"";position:absolute;top:0;right:0;width:9%;height:100%;background:linear-gradient(180deg,#ff7900,#f15a24);clip-path:polygon(80% 0,100% 0,20% 100%,0 100%);z-index:2}
+.login-panel{grid-column:2;grid-row:1;position:relative;display:flex;flex-direction:column;justify-content:center;align-items:stretch;padding:clamp(30px,4.2vw,76px) clamp(30px,5vw,84px) 32px;background:#fbfcfe;min-width:0}
+.brand-lockup{display:flex;align-items:center;justify-content:flex-end;gap:12px;margin:0 0 clamp(34px,5vh,58px)}
+.brand-mark{width:76px;height:76px;object-fit:contain;flex:none}
+.brand-name{font-weight:800;letter-spacing:-1.5px;font-size:clamp(26px,2.3vw,38px);line-height:1;color:#0b1f3a;white-space:nowrap}
+.brand-name span{color:#f36b19;font-style:italic}
+.brand-tagline{margin-top:7px;font-size:12px;letter-spacing:.02em;color:#1b2d48;text-align:right}
+.welcome{position:relative;padding-left:24px;margin-bottom:28px}
+.welcome:before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;border-radius:4px;background:#f36b19}
+.eyebrow{margin:0 0 12px;color:#f36b19;font-size:14px;font-weight:800;letter-spacing:.03em}
+.welcome h1{margin:0 0 12px;color:#0b1f3a;font-size:clamp(27px,2.6vw,42px);line-height:1.08;letter-spacing:-1.2px}
+.welcome p{margin:0;max-width:460px;color:#1e2e46;font-size:clamp(14px,1.1vw,18px);line-height:1.55}
+.login-form{width:100%;display:grid;gap:14px;margin:0}
+.field{position:relative;width:100%;margin:0}
+.field input{width:100%;height:54px;border:1px solid #d3dbe6;border-radius:11px;background:#fff;color:#10233e;padding:0 48px 0 58px;font-size:15px;outline:none;box-shadow:0 1px 2px rgba(13,36,67,.03);transition:border-color .18s,box-shadow .18s}
+.field input::placeholder{color:#24334a;opacity:1}
+.field input:focus{border-color:#6c91b7;box-shadow:0 0 0 3px rgba(33,101,160,.12)}
+.field-icon{position:absolute;left:18px;top:50%;width:22px;height:22px;transform:translateY(-50%);stroke:#10233e;fill:none;stroke-width:2;pointer-events:none}
+#toggle-password{position:absolute;right:12px;top:50%;transform:translateY(-50%);width:32px;height:32px;border:0;background:transparent;color:#10233e;padding:4px;display:grid;place-items:center;cursor:pointer}
+#toggle-password svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2}
+.erro{min-height:18px;margin:0;color:#b42318;font-size:13px;line-height:1.35}
+#submit{width:100%;min-height:60px;border:0;border-radius:12px;background:linear-gradient(100deg,#ff7900,#f15b16);color:#fff;font-size:17px;font-weight:750;display:flex;align-items:center;justify-content:center;gap:14px;cursor:pointer;box-shadow:0 7px 16px rgba(235,96,13,.18);transition:filter .18s,transform .18s}
+#submit:hover{filter:brightness(1.04);transform:translateY(-1px)}
+#submit:disabled{opacity:.72;cursor:wait;transform:none}
+#submit svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2}
+#forgot-password{justify-self:center;border:0;background:transparent;padding:8px 12px;color:#10233e;font-size:14px;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.back-link{display:flex;align-items:center;justify-content:center;gap:9px;margin:18px 0 28px;color:#10233e;font-size:14px;font-weight:650;text-decoration:underline;text-underline-offset:3px}
+.back-link svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2}
+.benefits{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid #e1e6ed;padding-top:22px;margin-top:auto}
+.benefit{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;text-align:center;padding:0 9px;gap:7px;color:#10233e;font-size:13px;line-height:1.3}
+.benefit+.benefit{border-left:1px solid #d5dce5}
+.benefit svg{width:28px;height:28px;stroke:#10233e;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.footer{grid-column:1/-1;grid-row:2;display:flex;align-items:center;gap:18px;padding:0 clamp(20px,4vw,64px);background:#061b36;color:#fff;border-top:3px solid #f36b19;font-size:13px}
+.footer strong{font-weight:750}
+.footer .separator{height:18px;width:1px;background:rgba(255,255,255,.6)}
+.footer .tagline{color:#d9e0e9}
+.footer:after{content:"";position:absolute;right:0;bottom:0;width:4%;height:44px;background:#f36b19;clip-path:polygon(100% 0,100% 100%,0 100%)}
+.mobile-install{display:none}
+.mobile-install img{width:44px;height:44px;border-radius:10px;object-fit:cover;flex:none}
+.mobile-install-copy{flex:1;min-width:0}
+.mobile-install-copy strong{display:block;font-size:13px}
+.mobile-install-copy span{display:block;color:#526176;font-size:12px;line-height:1.35;margin-top:3px}
+.mobile-install a{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:0 13px;border-radius:10px;background:#f36b19;color:#fff;font-size:12px;font-weight:750;text-decoration:none;white-space:nowrap}
 .mobile-install.ios{align-items:flex-start}
-.mobile-install.ios .mobile-install-copy span{font-size:13px;line-height:1.45}
-@media(max-width:767px){
+.mobile-install.ios .mobile-install-copy span{font-size:12px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+/* Layout adaptado para navegador em celular: foto acima, painel de acesso abaixo. */
+@media(max-width:900px){
+ .browser-shell{grid-template-columns:1fr;grid-template-rows:minmax(220px,34vh) auto auto;overflow:visible}
+ .hero-panel{grid-column:1;grid-row:1;min-height:220px}
+ .hero-panel:before{width:8%}
+ .hero-panel:after{width:7%}
+ .login-panel{grid-column:1;grid-row:2;padding:30px clamp(22px,7vw,64px) 28px;min-height:600px}
+ .brand-lockup{justify-content:center;margin-bottom:28px}
+ .brand-mark{width:64px;height:64px}
+ .brand-name{font-size:30px}
+ .welcome h1{font-size:32px}
+ .footer{grid-column:1;grid-row:3;min-height:44px}
+ .benefits{margin-top:22px}
  body[data-install-platform="android"] #android-install,
  body[data-install-platform="ios"] #ios-install{display:flex}
 }
-@media(min-width:600px){body{padding:18px 0}.login-shell{width:min(calc(100dvh * .515),480px);max-height:calc(100dvh - 36px)}}
-@media(max-height:680px) and (max-width:599px){body{align-items:flex-start}.login-shell{width:min(100vw,350px)}}
-@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+@media(max-width:480px){
+ .browser-shell{grid-template-rows:230px auto auto}
+ .hero-panel{min-height:230px}
+ .login-panel{padding:26px 22px 26px;min-height:0}
+ .brand-lockup{margin-bottom:26px}
+ .brand-mark{width:56px;height:56px}
+ .brand-name{font-size:27px}
+ .brand-tagline{font-size:10px}
+ .welcome{margin-bottom:22px}
+ .welcome h1{font-size:29px}
+ .welcome p{font-size:14px}
+ .field input{height:52px}
+ #submit{min-height:56px}
+ .benefits{margin-top:22px;padding-top:18px}
+ .benefit{font-size:11px;padding:0 5px}
+ .benefit svg{width:24px;height:24px}
+ .mobile-install{align-items:center;gap:10px;margin-top:18px;padding:12px;border:1px solid #e0e5ec;border-radius:13px;background:#fff}
+ .footer{font-size:11px;gap:10px;padding:0 16px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+/* O app instalado conserva a composição vertical original; o navegador usa o layout corporativo acima. */
+body[data-view="app"]{display:flex;align-items:center;justify-content:center;background:#03162d;overflow:hidden}
+body[data-view="app"] .browser-shell{display:block;position:relative;width:min(100vw,480px);height:auto;min-height:0;aspect-ratio:824/1600;max-height:100dvh;overflow:hidden;background-image:url("/colaborador/assets/login-original.jpeg");background-size:100% 100%;background-repeat:no-repeat;background-position:center}
+body[data-view="app"] .hero-panel,
+body[data-view="app"] .brand-lockup,
+body[data-view="app"] .welcome,
+body[data-view="app"] .back-link,
+body[data-view="app"] .benefits,
+body[data-view="app"] .footer,
+body[data-view="app"] .mobile-install{display:none!important}
+body[data-view="app"] .login-panel{position:absolute;inset:0;display:block;padding:0;background:transparent;min-height:0}
+body[data-view="app"] .login-form{position:absolute;inset:0;display:block}
+body[data-view="app"] .field{position:absolute;left:25.2%;width:65.8%;height:6.15%}
+body[data-view="app"] .field input{position:absolute;inset:0;width:100%;height:100%;padding:0 4px;border:1px solid transparent;border-radius:8px;background:transparent;color:#fff;font:500 clamp(14px,4.8vw,21px)/1.2 Inter,"Segoe UI",Arial,sans-serif;box-shadow:none}
+body[data-view="app"] .field input::placeholder{color:rgba(255,255,255,.68)}
+body[data-view="app"] .field input:focus{border-color:rgba(112,198,255,.9);background:rgba(0,20,42,.12)}
+body[data-view="app"] #email-field{top:36.45%}
+body[data-view="app"] #password-field{top:44.1%;width:55.5%}
+body[data-view="app"] .field-icon{display:none}
+body[data-view="app"] #toggle-password{position:absolute;top:44.1%;left:80.1%;right:auto;width:10.8%;height:6.1%;padding:0;transform:none;color:#fff}
+body[data-view="app"] #toggle-password svg{width:100%;height:100%;filter:drop-shadow(0 1px 2px #001)}
+body[data-view="app"] .erro{position:absolute;top:50.1%;left:13%;width:74%;min-height:0;color:#ffd0c8;text-align:center;font-size:clamp(10px,2.8vw,13px);text-shadow:0 1px 4px #001;pointer-events:none}
+body[data-view="app"] #submit{position:absolute;left:8.8%;top:52.35%;width:83.6%;height:6.35%;min-height:0;border-radius:30px;background:transparent;box-shadow:none;color:transparent}
+body[data-view="app"] #submit span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+body[data-view="app"] #submit svg{display:none}
+body[data-view="app"] #forgot-password{position:absolute;left:20%;top:60.15%;width:60%;height:4.5%;padding:0;border:0;background:transparent;color:transparent;font-size:0}
+body[data-view="app"] .login-panel .mobile-install{display:none!important}
+@media(min-width:600px){
+ body[data-view="app"] .browser-shell{width:min(calc(100dvh * .515),480px);max-height:calc(100dvh - 36px)}
+}
 </style>
 </head>
 <body>
-<main class="login-shell" aria-label="Acesso ao aplicativo Rodrinox Pro">
-  <img class="login-art" src="/colaborador/assets/login-original.jpeg" alt="Tela de acesso original da Rodrinox Pro" fetchpriority="high">
-  <form class="login-form" id="f" novalidate>
-    <div class="field" id="email-field"><label class="sr-only" for="email">Usuário ou e-mail</label><input id="email" name="email" type="text" autocomplete="username" aria-label="Usuário ou e-mail" required></div>
-    <div class="field" id="password-field"><label class="sr-only" for="senha">Senha</label><input id="senha" name="senha" type="password" autocomplete="current-password" aria-label="Senha" required></div>
-    <button id="toggle-password" type="button" aria-label="Mostrar senha" aria-pressed="false"></button>
-    <p class="erro" id="erro" role="alert" aria-live="polite"></p>
-    <button id="submit" type="submit"><span>Entrar</span></button>
-    <button id="forgot-password" type="button" aria-label="Esqueci minha senha"></button>
-  </form>
-</main>
+<div class="browser-shell">
+  <section class="hero-panel" aria-label="Fachada da Rodrinox Pro"></section>
+  <main class="login-panel">
+    <div class="brand-lockup" aria-label="Rodrinox Pro">
+      <img class="brand-mark" src="/colaborador/assets/app-icon-original.jpeg" alt="">
+      <div>
+        <div class="brand-name">Rodrinox<span>pro</span></div>
+        <div class="brand-tagline">Soluções, Inovação e Resultado</div>
+      </div>
+    </div>
 
-<section class="mobile-install" id="android-install" aria-label="Baixar aplicativo Android">
-  <img src="/colaborador/assets/app-icon-original.jpeg" alt="Ícone Rodrinox Pro">
-  <div class="mobile-install-copy">
-    <strong>Tenha o Rodrinox Pro no celular</strong>
-    <span>Instale o aplicativo oficial para abrir direto pela tela inicial.</span>
-  </div>
-  <a href="https://github.com/Ian68212/screenshot-sprout-studio-53/releases/latest/download/Rodrinox-Pro-Android.apk" download>Baixar app</a>
-</section>
+    <header class="welcome">
+      <div class="eyebrow">ACESSO RESTRITO</div>
+      <h1>Bem-vindo de volta</h1>
+      <p>Entre com suas credenciais corporativas para acessar o ambiente Rodrinox Pro.</p>
+    </header>
 
-<section class="mobile-install ios" id="ios-install" aria-label="Adicionar Rodrinox Pro à tela inicial">
-  <img src="/colaborador/assets/app-icon-original.jpeg" alt="Ícone Rodrinox Pro">
-  <div class="mobile-install-copy">
-    <strong>Adicione à tela inicial</strong>
-    <span>No Safari, toque em Compartilhar e escolha “Adicionar à Tela de Início” para acessar o Rodrinox Pro como aplicativo.</span>
-  </div>
-</section>
+    <form class="login-form" id="f" novalidate>
+      <div class="field" id="email-field">
+        <svg class="field-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2Z"/></svg>
+        <label class="sr-only" for="email">E-mail corporativo</label>
+        <input id="email" name="email" type="text" autocomplete="username" placeholder="E-mail corporativo" aria-label="E-mail corporativo" required>
+      </div>
+      <div class="field" id="password-field">
+        <svg class="field-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><path d="M12 14v3"/></svg>
+        <label class="sr-only" for="senha">Senha do e-mail corporativo</label>
+        <input id="senha" name="senha" type="password" autocomplete="current-password" placeholder="Senha do e-mail corporativo" aria-label="Senha do e-mail corporativo" required>
+      </div>
+      <button id="toggle-password" type="button" aria-label="Mostrar senha" aria-pressed="false">
+        <svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path d="m3 3 18 18"/></svg>
+      </button>
+      <p class="erro" id="erro" role="alert" aria-live="polite"></p>
+      <button id="submit" type="submit"><span>Entrar com segurança</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>
+      <button id="forgot-password" type="button">Esqueci minha senha</button>
+    </form>
 
-<script src="/colaborador/app.js"></script>
-<script src="/colaborador/login.js"></script>
-<script src="/colaborador/pwa.js"></script>
-<script src="/colaborador/mobile-install.js"></script>
+    <a class="back-link" href="/" aria-label="Voltar ao site institucional">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4 10 14"/><path d="M18 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h6"/></svg>
+      Voltar ao site institucional
+    </a>
+
+    <div class="benefits">
+      <div class="benefit"><svg viewBox="0 0 24 24"><path d="M12 2 20 5v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5Z"/><path d="m8.5 12 2.2 2.2 4.8-5"/></svg><span>Segurança<br>em primeiro lugar</span></div>
+      <div class="benefit"><svg viewBox="0 0 24 24"><path d="m13 2-9 12h7l-1 8 10-13h-7Z"/></svg><span>Acesso rápido<br>e eficiente</span></div>
+      <div class="benefit"><svg viewBox="0 0 24 24"><path d="m8 12-2 2a3 3 0 0 1-4-4l4-4a3 3 0 0 1 4 0"/><path d="m16 12 2-2a3 3 0 0 1 4 4l-4 4a3 3 0 0 1-4 0"/><path d="m8 12 3-3a3 3 0 0 1 4 0l1 1"/><path d="m7 13 4 4a3 3 0 0 0 4 0l2-2"/></svg><span>Parceria que<br>gera resultados</span></div>
+    </div>
+
+    <section class="mobile-install android" id="android-install" aria-label="Baixar aplicativo Android">
+      <img src="/colaborador/assets/app-icon-original.jpeg" alt="Ícone Rodrinox Pro">
+      <div class="mobile-install-copy"><strong>Prefere usar o aplicativo?</strong><span>Instale o Rodrinox Pro diretamente no Android.</span></div>
+      <a href="https://github.com/Ian68212/screenshot-sprout-studio-53/releases/latest/download/Rodrinox-Pro-Android.apk">Baixar app</a>
+    </section>
+    <section class="mobile-install ios" id="ios-install" aria-label="Adicionar Rodrinox Pro à tela inicial">
+      <img src="/colaborador/assets/app-icon-original.jpeg" alt="Ícone Rodrinox Pro">
+      <div class="mobile-install-copy"><strong>Adicione à tela inicial</strong><span>No Safari, toque em Compartilhar e escolha “Adicionar à Tela de Início”.</span></div>
+    </section>
+  </main>
+  <footer class="footer"><strong>Rodrinox Pro</strong><span class="separator"></span><span class="tagline">Soluções, Inovação e Resultado</span></footer>
+</div>
+<script src="/colaborador/app.js?v=browser-layout-1"></script>
+<script src="/colaborador/login.js?v=browser-layout-1"></script>
+<script src="/colaborador/pwa.js?v=browser-layout-1"></script>
+<script src="/colaborador/mobile-install.js?v=browser-layout-1"></script>
 </body>
 </html>
