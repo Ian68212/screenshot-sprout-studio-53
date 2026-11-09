@@ -1,4 +1,4 @@
-const CACHE_NAME = "rodrinox-app-shell-v2";
+const CACHE_NAME = "rodrinox-app-shell-v3-original-art";
 const SHELL = [
   "/colaborador/",
   "/colaborador/index.html",
@@ -7,7 +7,8 @@ const SHELL = [
   "/colaborador/login.js",
   "/colaborador/pwa.js",
   "/colaborador/manifest.webmanifest",
-  "/colaborador/app-icon.svg"
+  "/colaborador/assets/login-original.jpeg",
+  "/colaborador/assets/app-icon-original.jpeg"
 ];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(SHELL)).then(() => self.skipWaiting()));
