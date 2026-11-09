@@ -8,7 +8,7 @@ export default defineConfig({
   publicAssets: [
     {
       dir: "./portal/public",
-      baseURL: "/colaborador",
+      baseURL: "colaborador",
       maxAge: 0,
       fallthrough: false,
     },
