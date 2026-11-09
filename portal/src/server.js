@@ -26,6 +26,8 @@ function localizarPastaPublica() {
     process.env.PORTAL_PUBLIC_DIR,
     // Durante o build Nitro copia publicAssets para .output/public.
     path.resolve(process.cwd(), ".output", "public", "colaborador"),
+    path.resolve(process.cwd(), "public", "colaborador"),
+    path.resolve(process.cwd(), "nodejs", "public", "colaborador"),
     path.resolve(process.cwd(), ".output", "public"),
     path.resolve(process.cwd(), "portal", "public"),
     path.resolve(process.cwd(), "public"),
@@ -45,6 +47,8 @@ function localizarPastaPublica() {
     for (let nivel = 0; nivel < 7; nivel++) {
       for (const relativa of [
         path.join(".output", "public", "colaborador"),
+        path.join("public", "colaborador"),
+        path.join("nodejs", "public", "colaborador"),
         path.join(".output", "public"),
         path.join("portal", "public"),
         "public",

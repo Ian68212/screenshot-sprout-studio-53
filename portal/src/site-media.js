@@ -2,51 +2,25 @@ import { Router } from "express";
 import { randomUUID } from "node:crypto";
 import { mkdir, writeFile, readFile, unlink, access } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import multer from "multer";
 import { fileTypeFromBuffer } from "file-type";
 import { q, auditar } from "./db.js";
 import { exigir } from "./auth.js";
 
-// Resolve caminhos absolutos a partir do módulo, não apenas do cwd do processo.
-// Mantém compatibilidade com instalações antigas que gravaram em ./storage/site
-// a partir da raiz do repositório ou da pasta portal.
+// Todas as rotas do portal e do site usam a mesma pasta persistente.
+import { SITE_MEDIA_DIR } from "./media-storage.js";
+
 export const mediaRouter = Router();
-const moduleDir = path.dirname(fileURLToPath(import.meta.url));
-const configuredDir = process.env.SITE_UPLOAD_DIR
-  ? path.resolve(process.env.SITE_UPLOAD_DIR)
-  : null;
-const storageDirs = [...new Set([
-  configuredDir,
-  path.resolve(moduleDir, "..", "storage", "site"),
-  path.resolve(process.cwd(), "storage", "site"),
-  path.resolve(process.cwd(), "portal", "storage", "site"),
-  path.resolve(moduleDir, "..", "..", "storage", "site"),
-].filter(Boolean))];
 
 async function localizarArquivo(nome) {
-  for (const dir of storageDirs) {
-    const arquivo = path.join(dir, nome);
-    try {
-      await access(arquivo);
-      return { dir, arquivo };
-    } catch (e) {
-      if (e?.code !== "ENOENT" && e?.code !== "ENOTDIR") throw e;
-    }
+  const arquivo = path.join(SITE_MEDIA_DIR, nome);
+  try {
+    await access(arquivo);
+    return { dir: SITE_MEDIA_DIR, arquivo };
+  } catch (e) {
+    if (e?.code === "ENOENT" || e?.code === "ENOTDIR") return null;
+    throw e;
   }
-  return null;
-}
-
-// Se os arquivos antigos estiverem em um dos caminhos legados, continua usando
-// essa pasta. Assim, a implantação não cria uma biblioteca vazia em outro local.
-async function escolherDiretorioDeUpload() {
-  const midias = await q("SELECT caminho FROM site_midias ORDER BY id DESC LIMIT 200");
-  for (const midia of midias) {
-    if (!/^[a-f0-9-]{36}\.(jpg|png|webp)$/.test(midia.caminho || "")) continue;
-    const encontrado = await localizarArquivo(midia.caminho);
-    if (encontrado) return encontrado.dir;
-  }
-  return configuredDir || path.resolve(moduleDir, "..", "storage", "site");
 }
 const tipos = new Map([["image/jpeg","jpg"],["image/png","png"],["image/webp","webp"]]);
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024, files: 1 } });
@@ -65,7 +39,7 @@ mediaRouter.post("/", exigir("site.editar"), upload.single("imagem"), async (req
     if (!tipo || !tipos.has(tipo.mime)) return res.status(415).json({ erro: "Envie JPG, PNG ou WebP válido" });
     const descricao = String(req.body?.descricao || "").trim().slice(0,255);
     nome = randomUUID() + "." + tipos.get(tipo.mime);
-    const dir = await escolherDiretorioDeUpload();
+    const dir = SITE_MEDIA_DIR;
     await mkdir(dir,{recursive:true,mode:0o700});
     await writeFile(path.join(dir,nome),req.file.buffer,{flag:"wx",mode:0o600});
     const out = await q("INSERT INTO site_midias (caminho,nome_original,mime,tamanho,descricao,criado_por) VALUES (?,?,?,?,?,?)",
@@ -74,7 +48,7 @@ mediaRouter.post("/", exigir("site.editar"), upload.single("imagem"), async (req
     res.status(201).json({id:out.insertId,nome_original:req.file.originalname});
   } catch(e) {
     if(nome) {
-      const dir = await escolherDiretorioDeUpload().catch(() => configuredDir || path.resolve(moduleDir, "..", "storage", "site"));
+      const dir = SITE_MEDIA_DIR;
       await unlink(path.join(dir,nome)).catch(()=>{});
     }
     next(e);
@@ -85,7 +59,7 @@ mediaRouter.get("/:id/arquivo", exigir("site.editar"), async (req,res,next) => {
   try {
     const id = valido(req.params.id);
     if (!id) return res.status(400).json({ erro:"ID inválido" });
-    const [m] = await q("SELECT caminho,mime FROM site_midias WHERE id=?",[id]);
+    const [m] = await q("SELECT caminho,mime,nome_original FROM site_midias WHERE id=?",[id]);
     if (!m || !/^[a-f0-9-]{36}\.(jpg|png|webp)$/.test(m.caminho))
       return res.status(404).json({ erro:"Imagem não encontrada" });
     const arquivo = await localizarArquivo(m.caminho);
@@ -102,6 +76,10 @@ mediaRouter.get("/:id/arquivo", exigir("site.editar"), async (req,res,next) => {
     res.set("Content-Type",m.mime);
     res.set("Cache-Control","private, no-store");
     res.set("X-Content-Type-Options","nosniff");
+    if (req.query.download === "1") {
+      const nome = String(m.nome_original || ("imagem-" + id)).replace(/[\r\n"]/g, "_");
+      res.set("Content-Disposition", "attachment; filename*=UTF-8''" + encodeURIComponent(nome));
+    }
     res.send(buffer);
   } catch(e) {
     console.error("[site-media] Falha ao entregar imagem", {
