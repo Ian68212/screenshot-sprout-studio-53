@@ -138,7 +138,7 @@ export const nav = [
   { to: "/contato", label: "Contato" },
   { to: "/trabalhe-conosco", label: "Trabalhe Conosco" },
   {
-    to: "https://portal.rodrinoxpro.com.br/colaborador/",
+    to: "/colaborador/",
     label: "Login — Acesso restrito",
     external: true,
   },
