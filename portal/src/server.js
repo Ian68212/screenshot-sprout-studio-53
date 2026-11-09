@@ -10,7 +10,7 @@ import rateLimit from "express-rate-limit";
 import multer from "multer";
 import { q, auditar } from "./db.js";
 import { COOKIE, login, logout, carregarUsuario, exigir, gerarHash } from "./auth.js";
-import { PERFIS, podeVerFerramenta, senhaValida } from "./permissions.js";
+import { PERFIS, podeVerFerramenta } from "./permissions.js";
 
 const BASE = process.env.BASE_PATH || "/colaborador";
 const dir = path.dirname(fileURLToPath(import.meta.url));
@@ -116,6 +116,7 @@ r.post("/api/login", limiteLogin, wrap(async (req, res) => {
   if (!email || !senha) return res.status(400).json({ erro: "Informe e-mail e senha" });
   const s = await login(email, senha, req.ip);
   if (s?.bloqueado) return res.status(423).json({ erro: "Acesso bloqueado temporariamente. Tente mais tarde." });
+  if (s?.indisponivel) return res.status(503).json({ erro: "Não foi possível validar seu e-mail na Hostinger agora. Tente novamente em alguns minutos." });
   if (!s) return res.status(401).json({ erro: "E-mail ou senha incorretos" });
   res.cookie(COOKIE, s.token, {
     httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "strict", path: BASE, maxAge: s.maxAge,
@@ -200,18 +201,22 @@ r.get("/api/admin/usuarios", exigir("admin.usuarios"), wrap(async (_req, res) =>
 }));
 
 r.post("/api/admin/usuarios", exigir("admin.usuarios"), wrap(async (req, res) => {
-  const { nome, email, senha, perfil = "colaborador", setor_id = null, cargo_id = null } = req.body || {};
-  if (!nome || !email || !PERFIS.includes(perfil)) return res.status(400).json({ erro: "Dados inválidos" });
-  if (!senhaValida(senha)) return res.status(400).json({ erro: "Senha precisa de 10+ caracteres, com letras e números" });
+  const { nome, email, perfil = "colaborador", setor_id = null, cargo_id = null } = req.body || {};
+  if (!nome?.trim() || !email?.trim() || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email.trim()) || !PERFIS.includes(perfil))
+    return res.status(400).json({ erro: "Informe nome, e-mail válido e perfil." });
+  // O hash legado é aleatório: a senha real nunca é armazenada no portal.
+  const hashInutilizavel = await gerarHash(crypto.randomBytes(48).toString("hex"));
   await q("INSERT INTO usuarios (nome, email, senha_hash, perfil, setor_id, cargo_id) VALUES (?,?,?,?,?,?)",
-    [nome.trim(), email.trim().toLowerCase(), await gerarHash(senha), perfil, setor_id || null, cargo_id || null]);
+    [nome.trim(), email.trim().toLowerCase(), hashInutilizavel, perfil, setor_id || null, cargo_id || null]);
   await auditar(req.usuario.id, "criou_usuario", email, req.ip);
   res.json({ ok: true });
 }));
 
 r.patch("/api/admin/usuarios/:id", exigir("admin.usuarios"), wrap(async (req, res) => {
   const id = Number(req.params.id);
-  const { perfil, setor_id, cargo_id, ativo, senha } = req.body || {};
+  const { perfil, setor_id, cargo_id, ativo } = req.body || {};
+  if (Object.prototype.hasOwnProperty.call(req.body || {}, "senha"))
+    return res.status(400).json({ erro: "A senha é gerenciada pela Hostinger. Altere-a nas configurações da caixa postal." });
   if (id === req.usuario.id && (ativo === false || (perfil && perfil !== "admin")))
     return res.status(400).json({ erro: "Você não pode remover seu próprio acesso de administrador" });
   if (perfil && !PERFIS.includes(perfil)) return res.status(400).json({ erro: "Perfil inválido" });
@@ -221,11 +226,6 @@ r.patch("/api/admin/usuarios/:id", exigir("admin.usuarios"), wrap(async (req, re
   if (ativo !== undefined) {
     await q("UPDATE usuarios SET ativo=? WHERE id=?", [ativo ? 1 : 0, id]);
     if (!ativo) await q("DELETE FROM sessoes WHERE usuario_id=?", [id]);
-  }
-  if (senha !== undefined) {
-    if (!senhaValida(senha)) return res.status(400).json({ erro: "Senha precisa de 10+ caracteres, com letras e números" });
-    await q("UPDATE usuarios SET senha_hash=? WHERE id=?", [await gerarHash(senha), id]);
-    await q("DELETE FROM sessoes WHERE usuario_id=?", [id]);
   }
   await auditar(req.usuario.id, "alterou_usuario", String(id), req.ip);
   res.json({ ok: true });
