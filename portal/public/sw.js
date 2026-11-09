@@ -1,4 +1,4 @@
-const CACHE_NAME = "rodrinox-app-shell-v1";
+const CACHE_NAME = "rodrinox-app-shell-v2";
 const SHELL = [
   "/colaborador/",
   "/colaborador/index.html",
