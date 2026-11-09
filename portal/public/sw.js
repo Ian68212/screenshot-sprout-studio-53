@@ -7,8 +7,8 @@ const SHELL = [
   "/colaborador/login.js",
   "/colaborador/pwa.js",
   "/colaborador/manifest.webmanifest",
-  "/colaborador/assets/login-original.jpeg",
-  "/colaborador/assets/app-icon-original.jpeg"
+  "/colaborador/assets/login-screen-original.jpg",
+  "/colaborador/assets/icon-512.png"
 ];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(SHELL)).then(() => self.skipWaiting()));
