@@ -26,7 +26,7 @@ button,input{font:inherit}
 .hero-panel:after{content:"";position:absolute;top:0;right:0;width:9%;height:100%;background:linear-gradient(180deg,#ff7900,#f15a24);clip-path:polygon(80% 0,100% 0,20% 100%,0 100%);z-index:2}
 .login-panel{grid-column:2;grid-row:1;position:relative;display:flex;flex-direction:column;justify-content:center;align-items:stretch;padding:clamp(18px,3.2vh,42px) clamp(24px,4vw,68px) 20px;background:#fbfcfe;min-width:0;min-height:0;overflow-y:auto;scrollbar-width:thin}
 .brand-lockup{display:flex;align-items:center;justify-content:flex-end;gap:12px;margin:0 0 clamp(18px,3vh,36px)}
-.brand-mark{width:76px;height:76px;object-fit:contain;flex:none}
+.brand-mark{width:76px;height:76px;object-fit:contain;flex:none}.brand-full-logo{display:none;max-width:min(100%,460px);max-height:130px;width:auto;height:auto;object-fit:contain}.brand-lockup.has-custom-logo .brand-mark,.brand-lockup.has-custom-logo .brand-copy{display:none}.brand-lockup.has-custom-logo .brand-full-logo{display:block}
 .brand-name{font-weight:800;letter-spacing:-1.5px;font-size:clamp(26px,2.3vw,38px);line-height:1;color:#0b1f3a;white-space:nowrap}
 .brand-name span{color:#f36b19;font-style:italic}
 .brand-tagline{margin-top:7px;font-size:12px;letter-spacing:.02em;color:#1b2d48;text-align:right}
@@ -142,12 +142,13 @@ body[data-view="app"] .login-panel .mobile-install{display:none!important}
 <div class="browser-shell">
   <section class="hero-panel" aria-label="Fachada da Rodrinox Pro"></section>
   <main class="login-panel">
-    <div class="brand-lockup" aria-label="Rodrinox Pro">
-      <img class="brand-mark" id="login-logo" src="/colaborador/assets/app-icon-original.jpeg" alt="Logotipo Rodrinox Pro">
-      <div>
+    <div class="brand-lockup" id="login-brand" aria-label="Rodrinox Pro">
+      <img class="brand-mark" src="/colaborador/assets/app-icon-original.jpeg" alt="">
+      <div class="brand-copy">
         <div class="brand-name">Rodrinox<span>pro</span></div>
         <div class="brand-tagline">Soluções, Inovação e Resultado</div>
       </div>
+      <img class="brand-full-logo" id="login-logo" alt="Logotipo Rodrinox Pro" hidden>
     </div>
 
     <header class="welcome">
