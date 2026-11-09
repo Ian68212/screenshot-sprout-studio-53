@@ -37,6 +37,8 @@ app.use(cookieParser());
 
 const r = express.Router();
 const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
+// Arquivos públicos do portal não dependem do MySQL nem de sessão.
+r.use(express.static(path.join(dir, "..", "public"), { index: "index.html" }));
 r.use(wrap(carregarUsuario));
 
 // CORS restrito ao site institucional para receber candidaturas sem expor a API administrativa.
@@ -200,7 +202,6 @@ r.get("/api/admin/auditoria", exigir("admin.auditoria"), wrap(async (_req, res) 
     LEFT JOIN usuarios u ON u.id=a.usuario_id ORDER BY a.id DESC LIMIT 200`));
 }));
 
-r.use(express.static(path.join(dir, "..", "public"), { index: "index.html" }));
 r.use((err, _req, res, _next) => {
   if (err?.code === "LIMIT_FILE_SIZE") return res.status(413).json({ erro: "O currículo deve ter no máximo 5 MB." });
   if (err?.message?.includes("currículo")) return res.status(400).json({ erro: err.message });
@@ -209,5 +210,6 @@ r.use((err, _req, res, _next) => {
   res.status(500).json({ erro: "Erro interno" });
 });
 
-app.use(BASE, r);
+// O prefixo /colaborador é removido pelo adaptador Nitro antes de chegar ao Express.
+app.use(r);
 export default app;
