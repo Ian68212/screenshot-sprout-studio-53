@@ -78,7 +78,7 @@ mediaRouter.get("/:id/arquivo", exigir("site.editar"), async (req,res,next) => {
     res.set("X-Content-Type-Options","nosniff");
     if (req.query.download === "1") {
       const nome = String(m.nome_original || ("imagem-" + id)).replace(/[\r\n"]/g, "_");
-      res.set("Content-Disposition", 'attachment; filename="' + nome + '"');
+      res.set("Content-Disposition", "attachment; filename*=UTF-8''" + encodeURIComponent(nome));
     }
     res.send(buffer);
   } catch(e) {
