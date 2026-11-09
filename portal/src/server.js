@@ -21,6 +21,9 @@ const app = express();
 function localizarPastaPublica() {
   const candidatos = [
     process.env.PORTAL_PUBLIC_DIR,
+    // Durante o build Nitro copia publicAssets para .output/public.
+    path.resolve(process.cwd(), ".output", "public", "colaborador"),
+    path.resolve(process.cwd(), ".output", "public"),
     path.resolve(process.cwd(), "portal", "public"),
     path.resolve(process.cwd(), "public"),
     path.resolve(dir, "..", "public"),
@@ -28,13 +31,21 @@ function localizarPastaPublica() {
     path.resolve(dir, "..", "..", "..", "portal", "public"),
   ].filter(Boolean);
   for (const pasta of candidatos) {
-    if (fs.existsSync(path.join(pasta, "index.html"))) return pasta;
+    if (
+      fs.existsSync(path.join(pasta, "index.html")) &&
+      fs.existsSync(path.join(pasta, "portal.css"))
+    ) return pasta;
   }
   // Busca também subindo a árvore de diretórios, útil em instalações com raiz variável.
   for (const inicio of [process.cwd(), dir]) {
     let atual = path.resolve(inicio);
     for (let nivel = 0; nivel < 7; nivel++) {
-      for (const relativa of [path.join("portal", "public"), "public"]) {
+      for (const relativa of [
+        path.join(".output", "public", "colaborador"),
+        path.join(".output", "public"),
+        path.join("portal", "public"),
+        "public",
+      ]) {
         const pasta = path.join(atual, relativa);
         if (fs.existsSync(path.join(pasta, "index.html"))) return pasta;
       }
