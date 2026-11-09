@@ -210,5 +210,4 @@ r.use((err, _req, res, _next) => {
 });
 
 app.use(BASE, r);
-const port = Number(process.env.PORT || 3000);
-app.listen(port, () => console.log(`Portal em http://localhost:${port}${BASE}`));
+export default app;
