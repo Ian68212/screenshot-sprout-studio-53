@@ -1,4 +1,4 @@
-const CACHE_NAME = "rodrinox-app-shell-v4-mobile-install";
+const CACHE_NAME = "rodrinox-app-shell-v5-browser-layout";
 const SHELL = [
   "/colaborador/",
   "/colaborador/index.html",
@@ -21,8 +21,7 @@ self.addEventListener("fetch", event => {
   const request = event.request;
   const url = new URL(request.url);
   if (request.method !== "GET" || url.origin !== self.location.origin) return;
-  // APKs devem ser baixados diretamente da rede, nunca armazenados no cache offline.
-  if (url.pathname.includes("/downloads/")) return;
+  if (url.pathname.endsWith(".apk") || url.pathname.includes("/downloads/")) return;
   if (url.pathname.includes("/api/") || url.pathname.includes("/site/")) return;
   if (request.mode === "navigate") {
     event.respondWith(fetch(request).then(response => {
