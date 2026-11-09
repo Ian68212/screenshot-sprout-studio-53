@@ -138,7 +138,7 @@ body[data-view="app"] .login-panel .mobile-install{display:none!important}
 </style>
 </head>
 <body>
-<script>document.body.dataset.view=(/RodrinoxAndroid\\/1\\.0/i.test(navigator.userAgent||"")||window.matchMedia("(display-mode: standalone)").matches||navigator.standalone===true)?"app":"browser";</script>
+<script>document.body.dataset.view=((navigator.userAgent||"").includes("RodrinoxAndroid/1.0")||window.matchMedia("(display-mode: standalone)").matches||navigator.standalone===true)?"app":"browser";</script>
 <div class="browser-shell">
   <section class="hero-panel" aria-label="Fachada da Rodrinox Pro"></section>
   <main class="login-panel">
