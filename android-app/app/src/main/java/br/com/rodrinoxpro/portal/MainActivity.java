@@ -242,10 +242,6 @@ public class MainActivity extends Activity {
                 });
               };
               applyAppLogo();
-              new MutationObserver(applyAppLogo).observe(document.documentElement, {
-                childList:true, subtree:true, attributes:true, attributeFilter:['src']
-              });
-
               const style = document.createElement('style');
               style.id = 'rod-app-native-style';
               style.textContent = `
@@ -287,8 +283,10 @@ public class MainActivity extends Activity {
                 body[data-view="app"] .brand-lockup .brand-copy { display:none !important; }
                 body[data-view="app"] .brand-lockup .brand-full-logo {
                   display:block !important; visibility:visible !important; width:100% !important;
-                  max-width:390px !important; height:100% !important; max-height:100% !important;
+                  max-width:390px !important; width:100% !important; height:auto !important;
+                  max-height:100% !important; aspect-ratio:2048 / 741 !important;
                   object-fit:contain !important; object-position:center !important;
+                  image-rendering:auto !important; -webkit-transform:translateZ(0);
                   filter:drop-shadow(0 5px 14px rgba(0,0,0,.2));
                 }
                 body[data-view="app"] .login-form {
