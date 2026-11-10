@@ -16,7 +16,7 @@ function Servicos() {
   const cms = usePublicSite();
   const p = cms.content("servicos.pagina", {});
   const saved = cms.items("servico");
-  const list = saved.length ? saved.map(s=>({slug:s.slug,title:s.titulo,description:s.descricao||s.resumo||"",image:mediaUrl(s.imagem_id,images.componentes)})) : defaults;
+  const list = saved.length ? saved.map(s=>({slug:s.slug,title:s.titulo,description:s.descricao||s.resumo||"",image:mediaUrl(s.imagem_id,defaults.find(d=>d.slug===s.slug)?.image ?? images.componentes)})) : defaults;
   return <>
     <PageHero eyebrow={String(p.hero_chamada??"Serviços e soluções")} title={String(p.hero_titulo??"Soluções completas em processamento de metais.")} text={String(p.hero_texto??"A disponibilidade e o escopo de cada serviço são confirmados com nossa equipe.")} image={mediaUrl(p.hero_imagem_id,images.soldaLaser)} />
     <section className="py-20 md:py-28"><div className="container-site space-y-20 md:space-y-28">
