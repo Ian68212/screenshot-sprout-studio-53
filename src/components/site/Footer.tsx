@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { MessageCircle } from "lucide-react";
-import logoNavy from "@/assets/rodrinox-logo-navy.png.asset.json";
+import logoOficial from "@/assets/rodrinox-oficial.png";
 import { company, nav, services } from "@/content/site";
 import { whatsappUrl } from "@/lib/whatsapp";
 import { btn } from "./primitives";
@@ -34,13 +35,15 @@ export function Footer() {
   const slogan = String(identity.slogan ?? company.slogan);
   const footerText = String(identity.texto_rodape ?? "Mais do que soluções. Parcerias que geram resultados.");
   const logoUrl = String(identity.logo_url ?? "");
+  const [logoFalhou, setLogoFalhou] = useState(false);
+  const srcLogo = logoUrl && !logoFalhou ? logoUrl : logoOficial;
   const serviceItems = cms.items("servico");
   const footerServices = serviceItems.length ? serviceItems.map(s=>({slug:s.slug,title:s.titulo})) : services;
   return (
     <footer className="bg-navy-deep text-navy-foreground/75">
       <div className="container-site grid gap-12 py-16 md:grid-cols-2 lg:grid-cols-4">
         <div>
-          <img src={logoUrl || logoNavy.url} alt="Rodrinox Pro" className="h-16 w-auto" width={270} height={84} loading="lazy" />
+          <div className="inline-flex max-w-full items-center rounded-md bg-white px-3 py-2"><img src={srcLogo} onError={() => setLogoFalhou(true)} alt="Rodrinox Pro — Soluções, Inovação e Resultados" className="h-auto max-h-20 w-auto max-w-full object-contain" width={270} height={90} loading="lazy" /></div>
           <p className="mt-5 text-sm leading-relaxed">{footerText}</p>
         </div>
         <div>
