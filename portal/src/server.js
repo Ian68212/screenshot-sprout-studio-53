@@ -159,6 +159,18 @@ r.post("/api/logout", wrap(async (req, res) => {
 
 r.get("/api/eu", exigir("painel"), (req, res) => res.json(req.usuario));
 
+// Diretório interno: apenas usuários ativos, e-mail corporativo e setor cadastrado.
+// Não expõe cargos, perfis, telefones, senhas ou dados administrativos.
+r.get("/api/contatos", exigir("painel"), wrap(async (_req, res) => {
+  const contatos = await q(`SELECT u.nome, u.email, s.nome AS departamento
+    FROM usuarios u LEFT JOIN setores s ON s.id = u.setor_id
+    WHERE u.ativo = 1 AND LOWER(u.email) LIKE '%@rodrinoxpro.com.br'
+    ORDER BY s.nome, u.nome`);
+  res.json(contatos.map(({ nome, email, departamento }) => ({
+    nome, email, departamento: departamento || "Sem departamento cadastrado"
+  })));
+}));
+
 r.get("/api/ferramentas", exigir("painel"), wrap(async (req, res) => {
   await garantirColunaImagemFerramentas();
   const ferramentas = await q("SELECT id, nome, descricao, url, imagem_url, categoria FROM ferramentas WHERE ativo = 1 ORDER BY nome");
