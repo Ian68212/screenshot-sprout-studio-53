@@ -13,6 +13,6 @@
   "theme_color": "#071d38",
   "categories": ["business", "productivity"],
   "icons": [
-    {"src": "/favicon-rodrinox.png?v=20261110", "sizes": "128x128", "type": "image/png", "purpose": "any"}
+    {"src": "/favicon-rodrinox.png?v=20261110-brand", "sizes": "128x128", "type": "image/png", "purpose": "any"}
   ]
 }
