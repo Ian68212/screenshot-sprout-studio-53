@@ -137,6 +137,7 @@ export const nav = [
   { to: "/galeria", label: "Galeria" },
   { to: "/contato", label: "Contato" },
   { to: "/trabalhe-conosco", label: "Trabalhe Conosco" },
+  { to: "/aplicativo", label: "Aplicativo", external: true },
   {
     to: "/colaborador/",
     label: "Login — Acesso restrito",
