@@ -49,3 +49,7 @@ test("Administração permanece em rota separada",()=>{
  assert.match(html,/href="\/colaborador\/site-admin\.html"/);
  assert.match(js,/siteLink"\)\.hidden=me\.perfil!=="admin"/);
 });
+
+test("Link administrativo não é exibido para perfil gestor ou colaborador",()=>{
+ assert.match(js,/adminLink"\)\.hidden=me\.perfil!=="admin"/);
+});
