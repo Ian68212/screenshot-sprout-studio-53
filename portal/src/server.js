@@ -228,20 +228,66 @@ r.post("/api/admin/usuarios", exigir("admin.usuarios"), wrap(async (req, res) =>
 
 r.patch("/api/admin/usuarios/:id", exigir("admin.usuarios"), wrap(async (req, res) => {
   const id = Number(req.params.id);
-  const { perfil, setor_id, cargo_id, ativo } = req.body || {};
-  if (Object.prototype.hasOwnProperty.call(req.body || {}, "senha"))
+  if (!Number.isSafeInteger(id) || id < 1) return res.status(400).json({ erro: "Identificador inválido." });
+  const body = req.body || {};
+  if (Object.prototype.hasOwnProperty.call(body, "senha"))
     return res.status(400).json({ erro: "A senha é gerenciada pela Hostinger. Altere-a nas configurações da caixa postal." });
-  if (id === req.usuario.id && (ativo === false || (perfil && perfil !== "admin")))
-    return res.status(400).json({ erro: "Você não pode remover seu próprio acesso de administrador" });
-  if (perfil && !PERFIS.includes(perfil)) return res.status(400).json({ erro: "Perfil inválido" });
-  if (perfil) await q("UPDATE usuarios SET perfil=? WHERE id=?", [perfil, id]);
-  if (setor_id !== undefined) await q("UPDATE usuarios SET setor_id=? WHERE id=?", [setor_id || null, id]);
-  if (cargo_id !== undefined) await q("UPDATE usuarios SET cargo_id=? WHERE id=?", [cargo_id || null, id]);
-  if (ativo !== undefined) {
-    await q("UPDATE usuarios SET ativo=? WHERE id=?", [ativo ? 1 : 0, id]);
+  const [alvo] = await q("SELECT id, perfil, ativo FROM usuarios WHERE id=?", [id]);
+  if (!alvo) return res.status(404).json({ erro: "Colaborador não encontrado." });
+  const campos = [];
+  const valores = [];
+  if (body.nome !== undefined) {
+    const nome = String(body.nome).trim();
+    if (!nome || nome.length > 160) return res.status(400).json({ erro: "Informe um nome válido (até 160 caracteres)." });
+    campos.push("nome=?"); valores.push(nome);
+  }
+  if (body.email !== undefined) {
+    const email = String(body.email).trim().toLowerCase();
+    if (!/^\S+@\S+\.\S+$/.test(email) || email.length > 190) return res.status(400).json({ erro: "Informe um e-mail válido." });
+    campos.push("email=?"); valores.push(email);
+  }
+  if (body.perfil !== undefined) {
+    if (!PERFIS.includes(body.perfil)) return res.status(400).json({ erro: "Perfil inválido." });
+    if (id === req.usuario.id && body.perfil !== "admin") return res.status(400).json({ erro: "Você não pode retirar seu próprio perfil de administrador." });
+    campos.push("perfil=?"); valores.push(body.perfil);
+  }
+  for (const campo of ["setor_id", "cargo_id"]) {
+    if (body[campo] !== undefined) {
+      const valor = body[campo] === "" || body[campo] === null ? null : Number(body[campo]);
+      if (valor !== null && (!Number.isSafeInteger(valor) || valor < 1)) return res.status(400).json({ erro: "Setor ou cargo inválido." });
+      campos.push(campo + "=?"); valores.push(valor);
+    }
+  }
+  if (body.ativo !== undefined) {
+    if (typeof body.ativo !== "boolean" && ![0, 1].includes(body.ativo)) return res.status(400).json({ erro: "Status inválido." });
+    const ativo = body.ativo ? 1 : 0;
+    if (id === req.usuario.id && !ativo) return res.status(400).json({ erro: "Você não pode desativar seu próprio acesso." });
+    if (!ativo && alvo.perfil === "admin" && alvo.ativo) {
+      const [contagem] = await q("SELECT COUNT(*) total FROM usuarios WHERE perfil='admin' AND ativo=1");
+      if (Number(contagem.total) <= 1) return res.status(400).json({ erro: "Não é possível desativar o último administrador ativo." });
+    }
+    campos.push("ativo=?"); valores.push(ativo);
     if (!ativo) await q("DELETE FROM sessoes WHERE usuario_id=?", [id]);
   }
+  if (!campos.length) return res.status(400).json({ erro: "Nenhuma informação para atualizar." });
+  valores.push(id);
+  await q("UPDATE usuarios SET " + campos.join(", ") + " WHERE id=?", valores);
   await auditar(req.usuario.id, "alterou_usuario", String(id), req.ip);
+  res.json({ ok: true });
+}));
+
+r.delete("/api/admin/usuarios/:id", exigir("admin.usuarios"), wrap(async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isSafeInteger(id) || id < 1) return res.status(400).json({ erro: "Identificador inválido." });
+  if (id === req.usuario.id) return res.status(400).json({ erro: "Você não pode excluir o próprio usuário." });
+  const [alvo] = await q("SELECT id, email, perfil, ativo FROM usuarios WHERE id=?", [id]);
+  if (!alvo) return res.status(404).json({ erro: "Colaborador não encontrado." });
+  if (alvo.perfil === "admin" && alvo.ativo) {
+    const [contagem] = await q("SELECT COUNT(*) total FROM usuarios WHERE perfil='admin' AND ativo=1");
+    if (Number(contagem.total) <= 1) return res.status(400).json({ erro: "Não é possível excluir o último administrador ativo." });
+  }
+  await q("DELETE FROM usuarios WHERE id=?", [id]);
+  await auditar(req.usuario.id, "excluiu_usuario", alvo.email, req.ip);
   res.json({ ok: true });
 }));
 
