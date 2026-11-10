@@ -212,8 +212,8 @@ public class MainActivity extends Activity {
      * As imagens são lidas das mídias públicas já configuradas no Gerenciador do Site.
      */
     private String readAppLogoDataUri() {
-        // Usa diretamente o PNG original enviado pelo usuário, sem conversão para SVG.
-        try (InputStream input = getAssets().open("Logo Vertical Rodrinoxpro Soluções Inovação Resultados Colorida 2  PNG.png");
+        // PNG original copiado para o nome fixo pelo workflow antes da compilação.
+        try (InputStream input = getAssets().open("rod-logo-vertical.png");
              ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             byte[] buffer = new byte[8192];
             int count;
