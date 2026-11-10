@@ -7,8 +7,12 @@ async function carregar() {
   document.querySelectorAll(".selCargo").forEach((s) => (s.innerHTML = opts(cargos, "Qualquer / nenhum")));
   lista.textContent = `Setores: ${setores.map((s) => s.nome).join(", ") || "—"} | Cargos: ${cargos.map((c) => c.nome).join(", ") || "—"}`;
   const us = await api("admin/usuarios");
-  tu.innerHTML = us.map((u) => `<tr><td>${esc(u.nome)}</td><td>${esc(u.email)}</td><td>${esc(u.perfil)}</td><td>${esc(u.setor)}</td><td>${esc(u.cargo)}</td>
-    <td>${u.ativo ? "Ativo" : "Inativo"}</td><td><button class="sec" data-id="${u.id}" data-ativo="${u.ativo ? 0 : 1}">${u.ativo ? "Desativar" : "Ativar"}</button></td></tr>`).join("");
+  tu.innerHTML = us.map((u) => `<tr><td>${esc(u.nome)}</td><td>${esc(u.email)}</td><td>${esc(u.perfil)}</td><td>${esc(u.setor || "—")}</td><td>${esc(u.cargo || "—")}</td>
+    <td>${u.ativo ? "Ativo" : "Inativo"}</td><td class="acoes-usuario">
+      <button class="sec" data-acao="editar" data-id="${u.id}">Editar</button>
+      <button class="sec" data-acao="status" data-id="${u.id}" data-ativo="${u.ativo ? 0 : 1}">${u.ativo ? "Desativar" : "Ativar"}</button>
+      <button class="perigo" data-acao="excluir" data-id="${u.id}" data-nome="${esc(u.nome)}">Excluir</button>
+    </td></tr>`).join("");
 }
 async function candidaturas() {
  const items=await api("admin/candidaturas");
@@ -46,9 +50,51 @@ const enviar = (f, url, erroEl, montar = form) => f.addEventListener("submit", a
       return { nome: d.nome, url: d.url, descricao: d.descricao, categoria: d.categoria,
         regras: d.setor_id || d.cargo_id || d.perfil ? [{ setor_id: d.setor_id, cargo_id: d.cargo_id, perfil: d.perfil }] : [{}] };
     });
+    const dialog = document.getElementById("editarUsuario");
+    const editarForm = document.getElementById("formEditarUsuario");
     tu.addEventListener("click", async (e) => {
       const b = e.target.closest("button[data-id]"); if (!b) return;
-      try { await api(`admin/usuarios/${b.dataset.id}`, { method: "PATCH", body: { ativo: b.dataset.ativo === "1" } }); await carregar(); } catch (err) { alert(err.message); }
+      const id = b.dataset.id;
+      try {
+        if (b.dataset.acao === "editar") {
+          const usuarios = await api("admin/usuarios");
+          const u = usuarios.find((item) => String(item.id) === String(id));
+          if (!u) throw new Error("Colaborador não encontrado.");
+          editarForm.elements.id.value = u.id;
+          editarForm.elements.nome.value = u.nome || "";
+          editarForm.elements.email.value = u.email || "";
+          editarForm.elements.perfil.value = u.perfil || "colaborador";
+          editarForm.elements.setor_id.value = u.setor_id || "";
+          editarForm.elements.cargo_id.value = u.cargo_id || "";
+          dialog.showModal();
+          return;
+        }
+        if (b.dataset.acao === "status") {
+          await api(`admin/usuarios/${id}`, { method: "PATCH", body: { ativo: b.dataset.ativo === "1" } });
+          await carregar();
+          return;
+        }
+        if (b.dataset.acao === "excluir") {
+          if (!confirm(`Tem certeza de que deseja excluir definitivamente o cadastro de ${b.dataset.nome}? Essa ação não poderá ser desfeita.`)) return;
+          await api(`admin/usuarios/${id}`, { method: "DELETE" });
+          await carregar();
+        }
+      } catch (err) { alert(err.message); }
+    });
+    editarForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const dados = Object.fromEntries(new FormData(editarForm));
+      const id = dados.id;
+      delete dados.id;
+      dados.setor_id = dados.setor_id || null;
+      dados.cargo_id = dados.cargo_id || null;
+      const erro = document.getElementById("erroEditarUsuario");
+      erro.textContent = "";
+      try {
+        await api(`admin/usuarios/${id}`, { method: "PATCH", body: dados });
+        dialog.close();
+        await carregar();
+      } catch (err) { erro.textContent = err.message; }
     });
   }
   await auditoria().catch(() => (location.href = "painel.html"));
