@@ -6,8 +6,16 @@ import logo from "@/assets/rodrinox-oficial.png";
 import { company, nav } from "@/content/site";
 import { btn } from "./primitives";
 import { cn } from "@/lib/utils";
+import { usePublicSite } from "@/lib/site-cms";
 
 export function Header() {
+  const cms = usePublicSite();
+  const identity = cms.content("site.identidade", {});
+  const contact = cms.content("contato.dados", {});
+  const tagline = String(identity.tagline ?? company.tagline);
+  const email = String(contact.email ?? company.email);
+  const phone = String(contact.telefone ?? company.phone);
+  const phoneHref = String(contact.telefone_link ?? company.phoneHref);
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -27,21 +35,21 @@ export function Header() {
         )}
       >
         <div className="container-site flex h-9 items-center justify-between text-xs">
-          <span className="hidden sm:block">{company.tagline}</span>
+          <span className="hidden sm:block">{tagline}</span>
           <div className="flex items-center gap-5">
             <a
-              href={`mailto:${company.email}`}
+              href={`mailto:${email}`}
               className="flex items-center gap-1.5 hover:text-accent"
             >
               <Mail className="h-3.5 w-3.5" />
-              {company.email}
+              {email}
             </a>
             <a
-              href={company.phoneHref}
+              href={phoneHref}
               className="hidden items-center gap-1.5 hover:text-accent md:flex"
             >
               <Phone className="h-3.5 w-3.5" />
-              {company.phone}
+              {phone}
             </a>
           </div>
         </div>
