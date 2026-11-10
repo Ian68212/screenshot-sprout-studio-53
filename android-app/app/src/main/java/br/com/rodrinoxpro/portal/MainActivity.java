@@ -229,20 +229,31 @@ public class MainActivity extends Activity {
     private String appLoginScript() {
         return """
             (() => {
-              if (document.body.dataset.view !== 'app' || !document.getElementById('f')) return;
+              // O APK sempre abre o portal hospedado. Não dependa de um atributo
+              // data-view="app" que pode não existir na versão publicada do portal.
+              if (!document.getElementById('f')) return;
               if (document.getElementById('rod-app-native-style')) return;
 
               const appLogo = "__RODRINOX_APP_LOGO_DATA__";
+              const logoSelector = '#login-logo, .brand-full-logo, .brand-lockup img, .brand-logo img, .brand-lockup .brand-full-logo, img[data-brand-logo], img[alt*="Logotipo Rodrinox"]';
               const applyAppLogo = () => {
                 if (!appLogo || !appLogo.startsWith('data:image/')) return;
-                document.querySelectorAll('#login-logo, .brand-full-logo, .brand-lockup img, .brand-logo img, img[data-brand-logo]').forEach(image => {
+                document.querySelectorAll(logoSelector).forEach(image => {
                   if (image instanceof HTMLImageElement) {
                     if (image.getAttribute('src') !== appLogo) image.setAttribute('src', appLogo);
                     image.hidden = false;
+                    image.removeAttribute('srcset');
                   }
                 });
               };
               applyAppLogo();
+              // Alguns elementos de marca são inseridos depois do carregamento inicial.
+              // Reaplica a imagem local do APK quando o portal atualizar o DOM.
+              const logoObserver = new MutationObserver(() => applyAppLogo());
+              logoObserver.observe(document.documentElement, {
+                childList: true, subtree: true, attributes: true,
+                attributeFilter: ['src', 'srcset']
+              });
               const style = document.createElement('style');
               style.id = 'rod-app-native-style';
               style.textContent = `
