@@ -91,8 +91,11 @@ let ferramentaImagemSchema;
 async function garantirColunaImagemFerramentas() {
   if (!ferramentaImagemSchema) {
     ferramentaImagemSchema = (async () => {
-      const [colunas] = await q("SHOW COLUMNS FROM ferramentas LIKE 'imagem_url'");
-      if (!colunas.length) await q("ALTER TABLE ferramentas ADD COLUMN imagem_url VARCHAR(500) NULL AFTER url");
+      const colunas = await q("SHOW COLUMNS FROM ferramentas LIKE 'imagem_url'");
+      if (!Array.isArray(colunas)) throw new Error("O banco retornou um formato inesperado ao verificar imagem_url.");
+      if (colunas.length === 0) {
+        await q("ALTER TABLE ferramentas ADD COLUMN imagem_url VARCHAR(500) NULL AFTER url");
+      }
     })().catch((error) => { ferramentaImagemSchema = null; throw error; });
   }
   await ferramentaImagemSchema;
