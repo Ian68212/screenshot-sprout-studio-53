@@ -339,12 +339,25 @@ r.get("/api/admin/auditoria", exigir("admin.auditoria"), wrap(async (_req, res) 
     LEFT JOIN usuarios u ON u.id=a.usuario_id ORDER BY a.id DESC LIMIT 200`));
 }));
 
-r.use((err, _req, res, _next) => {
+r.use((err, req, res, _next) => {
   if (err?.code === "LIMIT_FILE_SIZE") return res.status(413).json({ erro: "O arquivo enviado deve ter no máximo 5 MB." });
   if (err?.message?.includes("currículo")) return res.status(400).json({ erro: err.message });
   if (err?.code === "ER_DUP_ENTRY") return res.status(409).json({ erro: "Registro já existe" });
-  console.error(err);
-  res.status(500).json({ erro: "Erro interno" });
+  const referencia = crypto.randomUUID().slice(0,8);
+  console.error("[portal] Erro não tratado", {
+    referencia, method: req.method, path: req.originalUrl,
+    code: err?.code || null, message: err?.message || String(err),
+    sqlMessage: err?.sqlMessage || null, stack: err?.stack || null,
+  });
+  if (err?.code === "ER_BAD_FIELD_ERROR")
+    return res.status(500).json({ erro: "A estrutura do banco está desatualizada. Referência: " + referencia, referencia });
+  if (err?.code === "ER_NO_SUCH_TABLE")
+    return res.status(500).json({ erro: "Uma tabela necessária não existe no banco. Referência: " + referencia, referencia });
+  if (err?.code === "EACCES" || err?.code === "EPERM")
+    return res.status(500).json({ erro: "O servidor não tem permissão para acessar a pasta de arquivos. Referência: " + referencia, referencia });
+  if (err?.code === "ENOSPC")
+    return res.status(507).json({ erro: "Não há espaço disponível no servidor. Referência: " + referencia, referencia });
+  res.status(500).json({ erro: "Erro interno. Referência: " + referencia, referencia });
 });
 
 // Nitro pode entregar ao handler Node o caminho relativo ao padrão da rota
