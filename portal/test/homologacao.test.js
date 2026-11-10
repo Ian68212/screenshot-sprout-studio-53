@@ -68,7 +68,7 @@ test("Suporte TI direciona ao endereço oficial sem credenciais embutidas",()=>{
 test("Destaques permitem abrir links válidos em nova aba com isolamento",()=>{
  assert.match(js,/recentItem/);
  assert.match(js,/recursoUrl\(x\)/);
- assert.match(js,/rel=\\"noopener noreferrer\\"/);
+ assert.ok(js.includes('rel="noopener noreferrer"'));
 });
 test("Navegação por setores e atalhos preserva ações existentes",()=>{
  for(const tab of ["pcp","almoxarifado","qualidade","rh","seguranca","suporte","contatos"]){
