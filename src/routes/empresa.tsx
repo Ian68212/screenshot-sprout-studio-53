@@ -13,7 +13,7 @@ export const Route = createFileRoute("/empresa")({
 function Empresa() {
   const cms = usePublicSite();
   const p = cms.content("empresa.institucional", {});
-  const text = (key: string, fallback: string) => String(p[key] ?? fallback);
+  const text = (key: string, fallback: string) => String(p[key] || fallback);
   return <>
     <PageHero eyebrow={text("hero_chamada","A empresa")} title={text("hero_titulo","Mais do que soluções. Parcerias que geram resultados.")} image={mediaUrl(p.hero_imagem_id, images.fabrica)} />
     <section className="py-24"><div className="container-site grid gap-14 lg:grid-cols-2">
