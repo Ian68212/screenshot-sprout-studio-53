@@ -84,3 +84,44 @@ button:focus-visible,a:focus-visible{outline:2px solid #ff912f;outline-offset:2p
 
 /* A logo enviada já é branca: não aplicar filtros que prejudiquem as engrenagens. */
 .brand-logo{filter:none!important;object-fit:contain;image-rendering:auto}
+
+/* Refinamento visual solicitado: tipografia, ícones e profundidade dos cartões. */
+body{font-family:Inter,"Segoe UI",Arial,Helvetica,sans-serif;-webkit-font-smoothing:antialiased}
+.hero h1{font-weight:300;letter-spacing:-.035em}
+.hero h1 b{font-weight:650}
+.hero h2{font-weight:350;letter-spacing:-.02em}
+.hero h2 b{font-weight:650}
+.hero p{font-weight:400;color:#e6edf6}
+.features button{box-shadow:inset 0 1px 0 rgba(255,255,255,.11),0 8px 18px rgba(0,8,20,.24);border-radius:19px}
+.features button:first-child{background:linear-gradient(155deg,#174f83 0%,#082e55 56%,#031c36 100%)}
+.features .orange{background:linear-gradient(145deg,#ff9024 0%,#e56a0d 48%,#b64c04 100%)}
+.features .blue{background:linear-gradient(145deg,#2085da 0%,#07589f 58%,#063969 100%)}
+.features .grey{background:linear-gradient(145deg,#5a7088 0%,#3d526c 58%,#1a3049 100%)}
+.features .feature-icon{display:flex;align-items:center;justify-content:center;width:55px;height:55px;font-size:inherit}
+.features .feature-icon svg{width:52px;height:52px;stroke-width:1.55}
+.features b{font-weight:700;letter-spacing:-.025em}
+.features em{width:31px;height:31px;display:flex;align-items:center;justify-content:center;padding:0;border-radius:50%;background:rgba(179,216,244,.48);font-size:0}
+.features em::before{content:"";display:block;width:9px;height:9px;border-top:2px solid #173955;border-right:2px solid #173955;transform:rotate(45deg);margin-right:4px}
+.features .orange em{background:#ffb782}
+.panel{background:linear-gradient(155deg,#213e5b 0%,#143350 60%,#0c2845 100%);box-shadow:0 8px 16px rgba(0,9,22,.18)}
+.panelhead h3{font-weight:700;letter-spacing:-.025em;display:flex;align-items:center;gap:8px}
+.heading-icon{display:inline-flex;color:#ff8c1f;width:24px;height:24px}
+.heading-icon svg{width:100%;height:100%;stroke-width:2}
+.access a,.access button{background:linear-gradient(160deg,#344e6b 0%,#1b3654 60%,#112a46 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.1);transition:filter .15s,transform .15s}
+.access a:hover,.access button:hover{transform:translateY(-2px)}
+.access-icon{display:flex;align-items:center;justify-content:center;width:39px;height:39px;font-size:inherit}
+.access-icon svg{width:35px;height:35px}
+.access-icon.icon-drive svg,.access-icon.icon-bling svg{stroke:none;fill:initial}
+.access small{font-weight:600;line-height:1.22;letter-spacing:-.015em}
+.side-icon{display:inline-flex;width:17px;height:17px;vertical-align:middle;align-items:center;justify-content:center;margin-right:6px}
+.side-icon svg{width:17px;height:17px}
+.quick a,.quick button{display:flex;align-items:center}
+.side nav button{font-weight:450;letter-spacing:-.01em}
+@media(min-width:1101px){
+ .hero h2{font-size:clamp(19px,1.85vw,28px)}
+ .features .feature-icon{height:clamp(35px,4.6vh,50px)}
+ .features .feature-icon svg{width:clamp(34px,3.2vw,48px);height:clamp(34px,3.2vw,48px)}
+ .features em{width:28px;height:28px}
+ .access-icon{height:clamp(27px,3.8vh,38px)}
+ .access-icon svg{width:clamp(27px,2.6vw,35px);height:clamp(27px,2.6vw,35px)}
+}
