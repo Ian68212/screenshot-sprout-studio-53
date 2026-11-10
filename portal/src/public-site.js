@@ -6,19 +6,19 @@ import { SITE_MEDIA_DIR } from "./media-storage.js";
 
 export const publicSiteRouter = Router();
 const IMAGE_NAME = /^[a-f0-9-]{36}\.(jpg|png|webp)$/;
-const ALLOWED_ORIGIN = process.env.SITE_PUBLIC_ORIGIN || "https://rodrinoxpro.com.br";
+const ALLOWED_ORIGINS = new Set([process.env.SITE_PUBLIC_ORIGIN || "https://rodrinoxpro.com.br", "https://www.rodrinoxpro.com.br"]);
 
 // API somente de leitura para o site institucional. Nunca expõe rascunhos.
 publicSiteRouter.use((req, res, next) => {
   res.set("Cross-Origin-Resource-Policy", "cross-origin");
   const origin = req.get("Origin");
-  if (origin === ALLOWED_ORIGIN) {
-    res.set("Access-Control-Allow-Origin", ALLOWED_ORIGIN);
+  if (ALLOWED_ORIGINS.has(origin)) {
+    res.set("Access-Control-Allow-Origin", origin);
     res.set("Vary", "Origin");
     res.set("Access-Control-Allow-Methods", "GET, OPTIONS");
     res.set("Access-Control-Allow-Headers", "Accept, Content-Type");
   }
-  if (req.method === "OPTIONS") return res.sendStatus(origin === ALLOWED_ORIGIN ? 204 : 403);
+  if (req.method === "OPTIONS") return res.sendStatus(ALLOWED_ORIGINS.has(origin) ? 204 : 403);
   next();
 });
 
