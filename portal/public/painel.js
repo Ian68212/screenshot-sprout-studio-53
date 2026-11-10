@@ -17,6 +17,7 @@ const CATS = { documentos: "Documentos", comunicados: "Comunicados", treinamento
   const ios = /iPhone|iPad|iPod/i.test(agente) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   if (android) {
     androidLink.href = "intent://#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=com.intelbras.isiclite;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.intelbras.isiclite;end";
+    androidLink.removeAttribute("target");
     androidLink.textContent = "Abrir aplicativo";
     iosLink.hidden = true;
     statusIsic.textContent = "Android: tentaremos abrir o iSIC Lite. Se não estiver instalado, abriremos a Google Play.";
