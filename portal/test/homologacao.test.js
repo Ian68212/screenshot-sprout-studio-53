@@ -53,3 +53,10 @@ test("Administração permanece em rota separada",()=>{
 test("Link administrativo não é exibido para perfil gestor ou colaborador",()=>{
  assert.match(js,/adminLink"\)\.hidden=me\.perfil!=="admin"/);
 });
+
+test("Logo oficial está disponível como arquivo real no portal",()=>{
+ assert.match(html,/src="\/colaborador\/assets\/rodrinox-logo-oficial\.png"/);
+ const logo=path.resolve("public/assets/rodrinox-logo-oficial.png");
+ assert.ok(fs.existsSync(logo),"Logo oficial não encontrada");
+ assert.ok(fs.statSync(logo).size>1000,"Logo oficial vazia ou inválida");
+});
