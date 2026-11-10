@@ -31,6 +31,8 @@ function Home() {
     return { ...s, image: mediaUrl(saved.imagem_id, s.image), eyebrow: String(saved.eyebrow ?? s.eyebrow), title: String(cms.data?.conteudos?.find((x) => x.chave === `home.hero.slide-${n + 1}`)?.titulo ?? s.title), text: String(saved.texto ?? s.text) };
   });
   const intro = cms.content("home.intro");
+  const featuredProjects = cms.content("home.featured-projects");
+  const featuredProjectsTitle = cms.data?.conteudos?.find((x) => x.chave === "home.featured-projects")?.titulo;
   const introValues = cms.content("home.values");
   const liveValues = Array.isArray(introValues.items) ? introValues.items : values;
   const introTitle = cms.data?.conteudos?.find((x) => x.chave === "home.intro")?.titulo;
@@ -148,10 +150,10 @@ function Home() {
       <section className="py-24 md:py-32">
         <div className="container-site grid items-center gap-14 lg:grid-cols-2">
           <Reveal className="order-2 lg:order-1">
-            <img src={images.projetos} alt="Desenvolvimento de projeto industrial" className="aspect-[4/3] w-full object-cover shadow-card" loading="lazy" width={1280} height={960} />
+            <img src={mediaUrl(featuredProjects.imagem_id, images.projetos)} alt="Desenvolvimento de projeto industrial" className="aspect-[4/3] w-full object-cover shadow-card" loading="lazy" width={1280} height={960} />
           </Reveal>
           <Reveal delay={150} className="order-1 lg:order-2">
-            <SectionTitle eyebrow="Projetos especiais" title="Projetos sob medida para desafios reais." text="Entendemos a demanda da sua operação e desenvolvemos alternativas adequadas, integrando corte, dobra, soldagem e fabricação em uma única solução." />
+            <SectionTitle eyebrow={String(featuredProjects.eyebrow ?? "Projetos especiais")} title={String(featuredProjectsTitle ?? "Projetos sob medida para desafios reais.")} text={String(featuredProjects.texto ?? "Entendemos a demanda da sua operação e desenvolvemos alternativas adequadas, integrando corte, dobra, soldagem e fabricação em uma única solução.")} />
             <div className="mt-9 flex flex-wrap gap-4">
               <Link to="/projetos" className={cn(btn.base, btn.navy)}>Ver projetos</Link>
               <Link to="/galeria" className={cn(btn.base, btn.outline)}>Galeria de fotos</Link>
