@@ -8,7 +8,7 @@ import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import rateLimit from "express-rate-limit";
 import multer from "multer";
-import { q, auditar } from "./db.js";
+import { q, auditar, pool } from "./db.js";
 import { COOKIE, login, logout, carregarUsuario, exigir, gerarHash } from "./auth.js";
 import { PERFIS, podeVerFerramenta } from "./permissions.js";
 import { siteRouter } from "./site-cms.js";
@@ -315,13 +315,77 @@ r.post("/api/admin/ferramentas", exigir("admin.ferramentas"), wrap(async (req, r
     return res.status(400).json({ erro: "Categoria inválida." });
   if (imagem_url != null && !/^\/colaborador\/api\/site\/midias\/\d+\/arquivo$/.test(imagem_url))
     return res.status(400).json({ erro: "Imagem inválida. Envie uma imagem pelo formulário." });
-  const out = await q("INSERT INTO ferramentas (nome, descricao, url, imagem_url, categoria) VALUES (?,?,?,?,?)",
-    [String(nome).trim(), String(descricao || "").trim().slice(0,255) || null, url, imagem_url, categoria]);
-  for (const g of regras)
-    await q("INSERT INTO ferramenta_acessos (ferramenta_id, setor_id, cargo_id, perfil) VALUES (?,?,?,?)",
-      [out.insertId, g.setor_id || null, g.cargo_id || null, PERFIS.includes(g.perfil) ? g.perfil : null]);
-  await auditar(req.usuario.id, "criou_ferramenta", String(out.insertId) + ": " + nome, req.ip);
-  res.status(201).json({ ok: true, id: out.insertId });
+
+  let conexao;
+  let etapa = "conectar ao banco";
+  const referencia = crypto.randomUUID().slice(0,8);
+  try {
+    conexao = await pool.getConnection();
+    await conexao.beginTransaction();
+
+    etapa = "gravar ferramenta/documento";
+    const [out] = await conexao.execute(
+      "INSERT INTO ferramentas (nome, descricao, url, imagem_url, categoria) VALUES (?,?,?,?,?)",
+      [String(nome).trim(), String(descricao || "").trim().slice(0,255) || null, url, imagem_url, categoria]
+    );
+
+    for (const g of (Array.isArray(regras) ? regras : [])) {
+      const setorId = g.setor_id ? Number(g.setor_id) : null;
+      const cargoId = g.cargo_id ? Number(g.cargo_id) : null;
+      const perfil = PERFIS.includes(g.perfil) ? g.perfil : null;
+
+      if (setorId !== null) {
+        etapa = "validar setor selecionado";
+        const [setoresEncontrados] = await conexao.execute("SELECT id FROM setores WHERE id=?", [setorId]);
+        if (!setoresEncontrados.length) {
+          const erro = new Error("O setor selecionado não existe mais. Atualize a página e tente novamente.");
+          erro.code = "SETOR_INEXISTENTE";
+          throw erro;
+        }
+      }
+      if (cargoId !== null) {
+        etapa = "validar cargo selecionado";
+        const [cargosEncontrados] = await conexao.execute("SELECT id FROM cargos WHERE id=?", [cargoId]);
+        if (!cargosEncontrados.length) {
+          const erro = new Error("O cargo selecionado não existe mais. Atualize a página e tente novamente.");
+          erro.code = "CARGO_INEXISTENTE";
+          throw erro;
+        }
+      }
+
+      etapa = "gravar permissões de acesso";
+      await conexao.execute(
+        "INSERT INTO ferramenta_acessos (ferramenta_id, setor_id, cargo_id, perfil) VALUES (?,?,?,?)",
+        [out.insertId, setorId, cargoId, perfil]
+      );
+    }
+
+    etapa = "registrar auditoria";
+    await conexao.execute(
+      "INSERT INTO auditoria (usuario_id, acao, detalhe, ip) VALUES (?,?,?,?)",
+      [req.usuario.id ?? null, "criou_ferramenta", String(out.insertId) + ": " + String(nome), req.ip ?? null]
+    );
+
+    etapa = "confirmar cadastro";
+    await conexao.commit();
+    res.status(201).json({ ok: true, id: out.insertId });
+  } catch (erro) {
+    if (conexao) await conexao.rollback().catch(() => {});
+    console.error("[ferramentas] Falha no cadastro", {
+      referencia, etapa, code: erro?.code || null,
+      message: erro?.message || String(erro), sqlMessage: erro?.sqlMessage || null
+    });
+    const mensagem = erro?.code === "ER_BAD_FIELD_ERROR"
+      ? "A tabela do portal precisa de atualização."
+      : erro?.code === "ER_NO_SUCH_TABLE"
+        ? "Uma tabela necessária do portal não foi encontrada."
+        : erro?.code === "ER_NO_REFERENCED_ROW_2"
+          ? "O setor ou cargo selecionado não corresponde ao banco de dados. Atualize a página e tente novamente."
+          : erro?.message || "Falha ao salvar o cadastro.";
+    res.status(500).json({ erro: "Falha ao " + etapa + ": " + mensagem + " Referência: " + referencia, referencia, etapa, codigo: erro?.code || null });
+  } finally {
+    conexao?.release();
+  }
 }));
 r.delete("/api/admin/ferramentas/:id", exigir("admin.ferramentas"), wrap(async (req, res) => {
   await garantirColunaImagemFerramentas();
