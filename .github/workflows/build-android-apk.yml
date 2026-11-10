@@ -51,9 +51,9 @@ jobs:
           python3 - <<'PY'
           from PIL import Image
           from pathlib import Path
-          source = Path("portal/public/assets/app-icon-original.jpeg")
+          source = Path("android-app/app/src/main/assets/app-icon.webp")
           if not source.exists():
-              raise SystemExit("Original app icon not found")
+              raise SystemExit("Android app icon asset not found")
           image = Image.open(source).convert("RGBA")
           if image.width != image.height:
               raise SystemExit(f"App icon must be square; got {image.size}")
