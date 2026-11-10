@@ -60,3 +60,20 @@ test("Logo oficial está disponível como arquivo real no portal",()=>{
  assert.ok(fs.existsSync(logo),"Logo oficial não encontrada");
  assert.ok(fs.statSync(logo).size>1000,"Logo oficial vazia ou inválida");
 });
+
+test("Suporte TI direciona ao endereço oficial sem credenciais embutidas",()=>{
+ assert.match(js,/mailto:suporte@rodrinoxpro\.com\.br\?subject=/);
+ assert.doesNotMatch(html+js,/password\s*[:=]/i);
+});
+test("Destaques permitem abrir links válidos em nova aba com isolamento",()=>{
+ assert.match(js,/recentItem/);
+ assert.match(js,/recursoUrl\(x\)/);
+ assert.match(js,/rel=\\"noopener noreferrer\\"/);
+});
+test("Navegação por setores e atalhos preserva ações existentes",()=>{
+ for(const tab of ["pcp","almoxarifado","qualidade","rh","seguranca","suporte","contatos"]){
+   assert.ok(html.includes('data-tab="'+tab+'"'),"Atalho ausente: "+tab);
+ }
+ assert.match(html,/https:\/\/mail\.hostinger\.com\//);
+ assert.match(html,/https:\/\/drive\.google\.com\//);
+});
