@@ -46,7 +46,7 @@ export function Footer() {
         <div>
           <h3 className="text-sm font-semibold uppercase tracking-widest text-navy-foreground">Navegação</h3>
           <ul className="mt-5 space-y-2.5 text-sm">
-            {nav.map((n) => <li key={n.to}><Link to={n.to} className="hover:text-accent">{n.label}</Link></li>)}
+            {nav.map((n) => <li key={n.to}>{ "external" in n && n.external ? <a href={n.to} className="hover:text-accent">{n.label}</a> : <Link to={n.to} className="hover:text-accent">{n.label}</Link> }</li>)}
             <li><Link to="/orcamento" className="hover:text-accent">Solicitar orçamento</Link></li>
           </ul>
         </div>
