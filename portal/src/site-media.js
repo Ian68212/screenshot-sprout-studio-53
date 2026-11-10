@@ -51,7 +51,24 @@ mediaRouter.post("/", exigir("site.editar"), upload.single("imagem"), async (req
       const dir = SITE_MEDIA_DIR;
       await unlink(path.join(dir,nome)).catch(()=>{});
     }
-    next(e);
+    const referencia = randomUUID().slice(0,8);
+    console.error("[site-media] Falha no upload", {
+      referencia, usuarioId: req.usuario?.id, code: e?.code || null,
+      message: e?.message || String(e), sqlMessage: e?.sqlMessage || null,
+    });
+    if (e?.code === "EACCES" || e?.code === "EPERM") {
+      return res.status(500).json({ erro: "O servidor não tem permissão para gravar a imagem.", referencia });
+    }
+    if (e?.code === "ENOSPC") {
+      return res.status(507).json({ erro: "Não há espaço disponível para armazenar a imagem.", referencia });
+    }
+    if (e?.code === "ER_NO_SUCH_TABLE") {
+      return res.status(500).json({ erro: "A tabela da biblioteca de imagens não existe no banco de dados.", referencia });
+    }
+    if (e?.code === "ER_BAD_FIELD_ERROR") {
+      return res.status(500).json({ erro: "A estrutura da biblioteca de imagens está desatualizada no banco de dados.", referencia });
+    }
+    return res.status(500).json({ erro: "Falha ao gravar a imagem no servidor. Referência: " + referencia, referencia });
   }
 });
 
