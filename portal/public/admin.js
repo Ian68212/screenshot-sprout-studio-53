@@ -44,11 +44,62 @@ const enviar = (f, url, erroEl, montar = form) => f.addEventListener("submit", a
     });
     enviar(fu, "admin/usuarios", document.getElementById("eu"));
     enviar(fs, "admin/setores"); enviar(fc, "admin/cargos");
-    enviar(ff, "admin/ferramentas", ef, (f) => {
-      const d = form(f);
-      return { nome: d.nome, url: d.url, descricao: d.descricao, categoria: d.categoria,
-        regras: d.setor_id || d.cargo_id || d.perfil ? [{ setor_id: d.setor_id, cargo_id: d.cargo_id, perfil: d.perfil }] : [{}] };
+    const preview = document.getElementById("previewFerramenta");
+    ff.elements.imagem.addEventListener("change", () => {
+      const file = ff.elements.imagem.files[0];
+      if (!file) { preview.hidden = true; preview.removeAttribute("src"); return; }
+      if (!["image/jpeg","image/png","image/webp"].includes(file.type) || file.size > 5 * 1024 * 1024) {
+        ff.elements.imagem.value = ""; preview.hidden = true;
+        alert("Selecione JPG, PNG ou WebP de até 5 MB."); return;
+      }
+      preview.src = URL.createObjectURL(file); preview.hidden = false;
     });
+    async function carregarFerramentas() {
+      const { ferramentas } = await api("admin/ferramentas");
+      const tbody = document.getElementById("listaFerramentas");
+      tbody.innerHTML = ferramentas.map((item) => `<tr>
+        <td>${item.imagem_url ? `<img class="miniatura-ferramenta" src="${esc(item.imagem_url)}" alt="">` : "—"}</td>
+        <td>${esc(item.nome)}</td><td>${esc(item.categoria)}</td><td>${esc(item.descricao || "—")}</td>
+        <td><button type="button" class="perigo" data-excluir-ferramenta="${item.id}" data-nome="${esc(item.nome)}">Excluir</button></td>
+      </tr>`).join("") || '<tr><td colspan="5">Nenhuma ferramenta ou documento cadastrado.</td></tr>';
+    }
+    ff.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const erro = document.getElementById("ef"); erro.textContent = "";
+      const d = form(ff);
+      try {
+        let imagem_url = null;
+        const arquivo = ff.elements.imagem.files[0];
+        if (arquivo) {
+          const dadosImagem = new FormData();
+          dadosImagem.append("imagem", arquivo);
+          dadosImagem.append("descricao", "Ferramenta/documento: " + d.nome);
+          const resposta = await fetch("/colaborador/api/site/midias", {
+            method: "POST", credentials: "same-origin", headers: { "X-Portal": "1" }, body: dadosImagem
+          });
+          const enviada = await resposta.json().catch(() => ({}));
+          if (!resposta.ok) throw new Error(enviada.erro || "Não foi possível enviar a imagem.");
+          imagem_url = "/colaborador/api/site/midias/" + enviada.id + "/arquivo";
+        }
+        await api("admin/ferramentas", { method: "POST", body: {
+          nome: d.nome, url: d.url, descricao: d.descricao, categoria: d.categoria, imagem_url,
+          regras: d.setor_id || d.cargo_id || d.perfil ? [{ setor_id: d.setor_id, cargo_id: d.cargo_id, perfil: d.perfil }] : [{}]
+        }});
+        ff.reset(); preview.hidden = true; preview.removeAttribute("src");
+        await carregarFerramentas();
+        alert("Ferramenta ou documento cadastrado com sucesso.");
+      } catch (err) { erro.textContent = err.message; }
+    });
+    document.getElementById("listaFerramentas").addEventListener("click", async (e) => {
+      const b = e.target.closest("button[data-excluir-ferramenta]");
+      if (!b) return;
+      if (!confirm(`Deseja excluir definitivamente "${b.dataset.nome}"? A imagem continuará na biblioteca de mídias e poderá ser reutilizada.`)) return;
+      try {
+        await api("admin/ferramentas/" + b.dataset.excluirFerramenta, { method: "DELETE" });
+        await carregarFerramentas();
+      } catch (err) { alert(err.message); }
+    });
+    await carregarFerramentas();
     const dialog = document.getElementById("editarUsuario");
     const editarForm = document.getElementById("formEditarUsuario");
     tu.addEventListener("click", async (e) => {
