@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS ferramentas (
   nome VARCHAR(160) NOT NULL,
   descricao VARCHAR(255) NULL,
   url VARCHAR(500) NOT NULL,
+  imagem_url VARCHAR(500) NULL,
   categoria ENUM('documentos','comunicados','treinamentos','ferramentas') NOT NULL DEFAULT 'ferramentas',
   ativo TINYINT(1) NOT NULL DEFAULT 1,
   criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
