@@ -283,7 +283,7 @@ public class MainActivity extends Activity {
                 body[data-view="app"] .brand-lockup .brand-copy { display:none !important; }
                 body[data-view="app"] .brand-lockup .brand-full-logo {
                   display:block !important; visibility:visible !important; width:100% !important;
-                  max-width:390px !important; width:100% !important; height:auto !important;
+                  max-width:390px !important; height:auto !important;
                   max-height:100% !important; aspect-ratio:2048 / 741 !important;
                   object-fit:contain !important; object-position:center !important;
                   image-rendering:auto !important; -webkit-transform:translateZ(0);
