@@ -45,11 +45,6 @@ jobs:
         with:
           gradle-version: "8.13"
 
-      - name: Restore clean Rodrinox logo
-        run: |
-          base64 --decode android-app/rod-logo-vertical.png.b64 > android-app/app/src/main/assets/rod-logo-vertical.png
-          file android-app/app/src/main/assets/rod-logo-vertical.png
-
       - name: Prepare exact original app icon
         run: |
           python3 -m pip install --quiet Pillow

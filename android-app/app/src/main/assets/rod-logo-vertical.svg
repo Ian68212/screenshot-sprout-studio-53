@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="398" viewBox="0 0 480 398">
+<g>
+<path d="M292.0 14.0 L302.1 5.0 L311.9 8.0 L315.3 21.1 L321.7 26.3 L335.2 27.1 L340.0 36.1 L333.2 47.8 L334.0 56.0 L343.0 66.1 L340.0 75.9 L326.9 79.3 L321.7 85.7 L320.9 99.2 L311.9 104.0 L300.2 97.2 L292.0 98.0 L281.9 107.0 L272.1 104.0 L268.7 90.9 L262.3 85.7 L248.8 84.9 L244.0 75.9 L250.8 64.2 L250.0 56.0 L241.0 45.9 L244.0 36.1 L257.1 32.7 L262.3 26.3 L263.1 12.8 L272.1 8.0 L283.8 14.8Z" fill="#fff"/><circle cx="292" cy="56" r="22" fill="#03152d"/>
+<path d="M366.0 123.0 L375.2 113.9 L384.0 116.6 L386.6 129.2 L392.2 133.8 L405.1 133.9 L409.4 142.0 L402.3 152.8 L403.0 160.0 L412.1 169.2 L409.4 178.0 L396.8 180.6 L392.2 186.2 L392.1 199.1 L384.0 203.4 L373.2 196.3 L366.0 197.0 L356.8 206.1 L348.0 203.4 L345.4 190.8 L339.8 186.2 L326.9 186.1 L322.6 178.0 L329.7 167.2 L329.0 160.0 L319.9 150.8 L322.6 142.0 L335.2 139.4 L339.8 133.8 L339.9 120.9 L348.0 116.6 L358.8 123.7Z" fill="#0789e8"/><circle cx="366" cy="160" r="20" fill="#03152d"/>
+<path d="M182.0 73.0 L198.3 55.3 L214.1 59.1 L220.6 82.3 L232.0 89.2 L255.5 84.5 L266.1 96.9 L257.7 119.4 L262.8 131.7 L284.7 141.7 L286.0 158.0 L266.0 171.3 L262.8 184.3 L274.7 205.2 L266.1 219.1 L242.1 218.1 L232.0 226.8 L229.2 250.7 L214.1 256.9 L195.3 242.0 L182.0 243.0 L165.7 260.7 L149.9 256.9 L143.4 233.7 L132.0 226.8 L108.5 231.5 L97.9 219.1 L106.3 196.6 L101.2 184.3 L79.3 174.3 L78.0 158.0 L98.0 144.7 L101.2 131.7 L89.3 110.8 L97.9 96.9 L121.9 97.9 L132.0 89.2 L134.8 65.3 L149.9 59.1 L168.7 74.0Z" fill="#ff6900"/><circle cx="182" cy="158" r="59" fill="#03152d"/>
+<path d="M142 151 C149 125 169 107 193 103" fill="none" stroke="#ffb000" stroke-width="5" stroke-linecap="round"/>
+<g fill="none" stroke="#ff6900" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+<path d="M177 184 C153 184 143 165 149 148 C156 129 176 137 181 160 C184 174 184 190 184 232"/>
+<path d="M187 184 C211 184 221 165 215 148 C208 129 188 137 183 160 C180 174 180 190 180 232"/>
+</g>
+<text x="12" y="299" font-family="Arial, Helvetica, sans-serif" font-size="53" font-weight="700" fill="#fff" letter-spacing="-2">Rodrinox</text>
+<text x="305" y="299" font-family="Arial, Helvetica, sans-serif" font-size="53" font-weight="700" font-style="italic" fill="#ff6900" letter-spacing="-2">pro</text>
+<path d="M18 326 H240" stroke="#0789e8" stroke-width="4"/><path d="M240 326 H462" stroke="#ff6900" stroke-width="4"/>
+<g font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="600" letter-spacing=".2" fill="#fff">
+<text x="20" y="366">SOLUÇÕES</text><text x="166" y="366">INOVAÇÃO</text><text x="319" y="366">RESULTADOS</text>
+</g>
+<g fill="#ff6900"><circle cx="148" cy="360" r="5"/><circle cx="302" cy="360" r="5"/></g>
+</g></svg>

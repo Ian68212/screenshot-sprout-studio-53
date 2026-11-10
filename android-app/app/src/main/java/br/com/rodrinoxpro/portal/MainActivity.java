@@ -212,14 +212,14 @@ public class MainActivity extends Activity {
      * As imagens são lidas das mídias públicas já configuradas no Gerenciador do Site.
      */
     private String readAppLogoDataUri() {
-        try (InputStream input = getAssets().open("rod-logo-vertical.png");
+        try (InputStream input = getAssets().open("rod-logo-vertical.svg");
              ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             byte[] buffer = new byte[8192];
             int count;
             while ((count = input.read(buffer)) != -1) {
                 output.write(buffer, 0, count);
             }
-            return "data:image/png;base64," + Base64.encodeToString(output.toByteArray(), Base64.NO_WRAP);
+            return "data:image/svg+xml;base64," + Base64.encodeToString(output.toByteArray(), Base64.NO_WRAP);
         } catch (Exception ignored) {
             return "";
         }
