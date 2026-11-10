@@ -5,6 +5,7 @@ import { company, nav, services } from "@/content/site";
 import { whatsappUrl } from "@/lib/whatsapp";
 import { btn } from "./primitives";
 import { cn } from "@/lib/utils";
+import { mediaUrl, usePublicSite } from "@/lib/site-cms";
 
 export function CtaBand() {
   return (
@@ -21,12 +22,26 @@ export function CtaBand() {
 }
 
 export function Footer() {
+  const cms = usePublicSite();
+  const identity = cms.content("site.identidade", {});
+  const contact = cms.content("contato.dados", {});
+  const email = String(contact.email ?? company.email);
+  const phone = String(contact.telefone ?? company.phone);
+  const phoneHref = String(contact.telefone_link ?? company.phoneHref);
+  const whatsapp = String(contact.whatsapp ?? company.whatsapp);
+  const whatsappNumber = String(contact.whatsapp_numero ?? company.whatsappNumber);
+  const address = String(contact.endereco ?? company.address);
+  const slogan = String(identity.slogan ?? company.slogan);
+  const footerText = String(identity.texto_rodape ?? "Mais do que soluções. Parcerias que geram resultados.");
+  const logoUrl = String(identity.logo_url ?? "");
+  const serviceItems = cms.items("servico");
+  const footerServices = serviceItems.length ? serviceItems.map(s=>({slug:s.slug,title:s.titulo})) : services;
   return (
     <footer className="bg-navy-deep text-navy-foreground/75">
       <div className="container-site grid gap-12 py-16 md:grid-cols-2 lg:grid-cols-4">
         <div>
-          <img src={logoNavy.url} alt="Rodrinox Pro" className="h-16 w-auto" width={270} height={84} loading="lazy" />
-          <p className="mt-5 text-sm leading-relaxed">Mais do que soluções. Parcerias que geram resultados.</p>
+          <img src={logoUrl || logoNavy.url} alt="Rodrinox Pro" className="h-16 w-auto" width={270} height={84} loading="lazy" />
+          <p className="mt-5 text-sm leading-relaxed">{footerText}</p>
         </div>
         <div>
           <h3 className="text-sm font-semibold uppercase tracking-widest text-navy-foreground">Navegação</h3>
@@ -38,24 +53,24 @@ export function Footer() {
         <div>
           <h3 className="text-sm font-semibold uppercase tracking-widest text-navy-foreground">Serviços</h3>
           <ul className="mt-5 space-y-2.5 text-sm">
-            {services.map((s) => <li key={s.slug}><Link to="/servicos" hash={s.slug} className="hover:text-accent">{s.title}</Link></li>)}
+            {footerServices.map((s) => <li key={s.slug}><Link to="/servicos" hash={s.slug} className="hover:text-accent">{s.title}</Link></li>)}
           </ul>
         </div>
         <div>
           <h3 className="text-sm font-semibold uppercase tracking-widest text-navy-foreground">Atendimento</h3>
           <ul className="mt-5 space-y-2.5 text-sm">
-            <li><a href={`mailto:${company.email}`} className="hover:text-accent">{company.email}</a></li>
-            <li><a href={company.phoneHref} className="hover:text-accent">{company.phone}</a></li>
-            <li><a href={whatsappUrl(company.whatsappNumber)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 hover:text-accent"><MessageCircle className="h-4 w-4" />WhatsApp: {company.whatsapp}</a></li>
-            <li>{company.address}</li>
-            <li>{company.site}</li>
+            <li><a href={`mailto:${email}`} className="hover:text-accent">{email}</a></li>
+            <li><a href={phoneHref} className="hover:text-accent">{phone}</a></li>
+            <li><a href={whatsappUrl(whatsappNumber)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 hover:text-accent"><MessageCircle className="h-4 w-4" />WhatsApp: {whatsapp}</a></li>
+            <li>{address}</li>
+            <li>{String(identity.site ?? company.site)}</li>
           </ul>
         </div>
       </div>
       <div className="border-t border-navy-foreground/10">
         <div className="container-site flex flex-col justify-between gap-2 py-6 text-xs md:flex-row">
           <span>© {new Date().getFullYear()} Rodrinox Pro. Todos os direitos reservados.</span>
-          <span>{company.slogan}</span>
+          <span>{slogan}</span>
         </div>
       </div>
     </footer>
@@ -65,7 +80,7 @@ export function Footer() {
 export function WhatsAppFab() {
   return (
     <a
-      href={whatsappUrl(company.whatsappNumber, "Olá, Rodrinox Pro! Gostaria de mais informações.")}
+      href={whatsappUrl(String(cms.content("contato.dados", {}).whatsapp_numero ?? company.whatsappNumber), "Olá, Rodrinox Pro! Gostaria de mais informações.")}
       target="_blank"
       rel="noreferrer"
       aria-label="Conversar pelo WhatsApp"
