@@ -12,9 +12,35 @@ const grupos={
  carreiras:{chave:"pagina.trabalhe-conosco",titulo:"Trabalhe Conosco",campos:[["chamada","Chamada superior","text"],["titulo","Título principal","text"],["descricao","Texto de apresentação","textarea"],["form_titulo","Título do formulário","text"],["form_descricao","Orientação para candidatos","textarea"],["botao","Texto do botão de envio","text"],["imagem_id","Imagem da página","media"],["cor_primaria","Cor principal (ex.: #0b1f3a)","text"],["cor_destaque","Cor de destaque (ex.: #f26a1b)","text"]]},
  login:{chave:"pagina.login",titulo:"Login — Acesso restrito",campos:[["chamada","Chamada do painel visual","text"],["titulo_visual","Título do painel visual","text"],["descricao_visual","Descrição do painel visual","textarea"],["titulo_form","Título do formulário de acesso","text"],["descricao_form","Descrição do formulário","textarea"],["botao","Texto do botão de acesso","text"],["imagem_id","Foto principal do painel esquerdo","media"],["logo_imagem_id","Logotipo PNG sobre o painel branco","media-logo"],["cor_primaria","Cor principal (ex.: #0b1f3a)","text"],["cor_destaque","Cor de destaque (ex.: #f26a1b)","text"]]},
  empresa:{chave:"empresa.institucional",titulo:"A empresa",campos:[
-  ["historia","História da Rodrinox Pro","textarea"],["apresentacao","Apresentação institucional","textarea"],["missao","Missão","textarea"],["visao","Visão","textarea"],["valores","Valores","textarea"]
+  ["hero_chamada","Chamada do banner","text"],["hero_titulo","Título do banner","text"],["hero_imagem_id","Imagem do banner","media"],
+  ["heading","Título da apresentação","text"],["apresentacao","Apresentação institucional","textarea"],["historia","História da Rodrinox Pro","textarea"],
+  ["missao","Missão","textarea"],["visao","Visão","textarea"],["valores","Valores","textarea"]
+ ]},
+ estrutura:{chave:"estrutura.institucional",titulo:"Estrutura",campos:[
+  ["hero_chamada","Chamada do banner","text"],["hero_titulo","Título do banner","text"],["hero_imagem_id","Imagem do banner","media"],
+  ["heading","Título da seção","text"],["descricao","Descrição da estrutura","textarea"],
+  ["area1_titulo","Área 1 — título","text"],["area1_descricao","Área 1 — descrição","textarea"],["area1_imagem_id","Área 1 — imagem","media"],
+  ["area2_titulo","Área 2 — título","text"],["area2_descricao","Área 2 — descrição","textarea"],["area2_imagem_id","Área 2 — imagem","media"],
+  ["area3_titulo","Área 3 — título","text"],["area3_descricao","Área 3 — descrição","textarea"],["area3_imagem_id","Área 3 — imagem","media"],
+  ["area4_titulo","Área 4 — título","text"],["area4_descricao","Área 4 — descrição","textarea"],["area4_imagem_id","Área 4 — imagem","media"],
+  ["metrica1_valor","Indicador 1 — valor","text"],["metrica1_label","Indicador 1 — legenda","text"],
+  ["metrica2_valor","Indicador 2 — valor","text"],["metrica2_label","Indicador 2 — legenda","text"],
+  ["metrica3_valor","Indicador 3 — valor","text"],["metrica3_label","Indicador 3 — legenda","text"]
+ ]},
+ servicosPagina:{chave:"servicos.pagina",titulo:"Apresentação de serviços",campos:[
+  ["hero_chamada","Chamada do banner","text"],["hero_titulo","Título do banner","text"],["hero_texto","Descrição do banner","textarea"],["hero_imagem_id","Imagem do banner","media"],
+  ["heading","Título da seção de serviços","text"],["descricao","Texto de apresentação","textarea"]
+ ]},
+ projetosPagina:{chave:"projetos.pagina",titulo:"Apresentação de projetos",campos:[
+  ["hero_chamada","Chamada do banner","text"],["hero_titulo","Título do banner","text"],["hero_imagem_id","Imagem do banner","media"],
+  ["heading","Título da seção","text"],["descricao","Texto de apresentação","textarea"]
+ ]},
+ galeriaPagina:{chave:"galeria.pagina",titulo:"Apresentação da galeria",campos:[
+  ["hero_chamada","Chamada do banner","text"],["hero_titulo","Título do banner","text"],["hero_imagem_id","Imagem do banner","media"],
+  ["heading","Título da seção","text"],["descricao","Texto de apresentação","textarea"]
  ]},
  contato:{chave:"contato.dados",titulo:"Contato",campos:[
+  ["hero_chamada","Chamada do banner","text"],["hero_titulo","Título do banner","text"],["hero_imagem_id","Imagem do banner","media"],
   ["email","E-mail","text"],["telefone","Telefone","text"],["telefone_link","Link de telefone (tel:)","text"],["whatsapp","WhatsApp exibido","text"],["whatsapp_numero","WhatsApp com código do país, só números","text"],["endereco","Endereço completo","textarea"],["horario","Horário de atendimento","text"],["mapa_url","Link do Google Maps","url"]
  ]},
  identidade:{chave:"site.identidade",titulo:"Cabeçalho e rodapé",campos:[
@@ -65,7 +91,7 @@ function atualizarPreviewGrupo(nome,id){
  else{img.removeAttribute("src");img.hidden=true;}
 }
 function preencherMidiasGrupos(){
- for(const nome of ["carreiras","login"]){
+ for(const nome of Object.keys(grupos)){
   const campos=grupos[nome].campos.filter(([, ,tipo])=>tipo==="media"||tipo==="media-logo");
   for(const [id,,tipo] of campos){
    const el=$('#'+nome+'-fields [name="'+id+'"]');if(!el)continue;
@@ -148,7 +174,7 @@ $("#home-editor").addEventListener("submit",async e=>{
     imagem_id:i<3&&$("#"+prefix+"-image").value?Number($("#"+prefix+"-image").value):null
    });
   }
-  aviso("Página inicial publicada no site institucional.");
+  aviso("Página inicial publicada no site institucional. O site carregará as alterações automaticamente.");
  }catch(err){aviso("Falha ao salvar a página inicial: "+err.message,true);}
 });
 $("#home-reload").addEventListener("click",async()=>{try{await carregarConteudos();await carregarHome();aviso("Página inicial recarregada.");}catch(e){aviso(e.message,true);}});
@@ -222,7 +248,7 @@ for(const tipo of ["servico","projeto","galeria"]){
   const payload={titulo:d.titulo.trim(),resumo:d.resumo,descricao:d.descricao,imagem_id:d.imagem_id?Number(d.imagem_id):null,ordem:Number(d.ordem||0),status:"publicado"};
   try{
    if(id)await api("site/itens/"+id,{method:"PATCH",body:payload});
-   else await api("site/itens",{method:"POST",body:{...payload,tipo,slug:d.slug.trim(),status:"rascunho"}});
+   else await api("site/itens",{method:"POST",body:{...payload,tipo,slug:d.slug.trim(),status:"publicado"}});
    limparFormulario(tipoParaForm[tipo]);await carregarItens(tipo);aviso((tipo==="servico"?"Serviço":tipo==="projeto"?"Projeto":"Imagem da galeria")+" publicado no site institucional.");
   }catch(err){aviso("Não foi possível salvar: "+err.message,true);}
  });
