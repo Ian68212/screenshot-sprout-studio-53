@@ -11,5 +11,10 @@ const [colunas] = await pool.query("SHOW COLUMNS FROM candidaturas LIKE 'consent
 if (!colunas.length) {
   await pool.query("ALTER TABLE candidaturas ADD COLUMN consent_at DATETIME NULL AFTER arquivo_path");
 }
+// Migração aditiva: imagem opcional nos cards de ferramentas/documentos.
+const [imagemColuna] = await pool.query("SHOW COLUMNS FROM ferramentas LIKE 'imagem_url'");
+if (!imagemColuna.length) {
+  await pool.query("ALTER TABLE ferramentas ADD COLUMN imagem_url VARCHAR(500) NULL AFTER url");
+}
 console.log(`Tabelas e migrações conferidas no banco ${process.env.DB_NAME}.`);
 await pool.end();
