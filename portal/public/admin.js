@@ -78,13 +78,18 @@ const enviar = (f, url, erroEl, montar = form) => f.addEventListener("submit", a
             method: "POST", credentials: "same-origin", headers: { "X-Portal": "1" }, body: dadosImagem
           });
           const enviada = await resposta.json().catch(() => ({}));
-          if (!resposta.ok) throw new Error(enviada.erro || "Não foi possível enviar a imagem.");
+          if (!resposta.ok) throw new Error("Falha ao enviar a foto: " + (enviada.erro || ("HTTP " + resposta.status)));
+          if (!enviada.id) throw new Error("O servidor recebeu a foto, mas não retornou o identificador da imagem.");
           imagem_url = "/colaborador/api/site/midias/" + enviada.id + "/arquivo";
         }
-        await api("admin/ferramentas", { method: "POST", body: {
-          nome: d.nome, url: d.url, descricao: d.descricao, categoria: d.categoria, imagem_url,
-          regras: d.setor_id || d.cargo_id || d.perfil ? [{ setor_id: d.setor_id, cargo_id: d.cargo_id, perfil: d.perfil }] : [{}]
-        }});
+        try {
+          await api("admin/ferramentas", { method: "POST", body: {
+            nome: d.nome, url: d.url, descricao: d.descricao, categoria: d.categoria, imagem_url,
+            regras: d.setor_id || d.cargo_id || d.perfil ? [{ setor_id: d.setor_id, cargo_id: d.cargo_id, perfil: d.perfil }] : [{}]
+          }});
+        } catch (falhaCadastro) {
+          throw new Error("A foto foi enviada, mas o cadastro não foi salvo: " + falhaCadastro.message);
+        }
         ff.reset(); preview.hidden = true; preview.removeAttribute("src");
         await carregarFerramentas();
         alert("Ferramenta ou documento cadastrado com sucesso.");
