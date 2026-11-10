@@ -13,6 +13,7 @@ export function Header() {
   const identity = cms.content("site.identidade", {});
   const contact = cms.content("contato.dados", {});
   const tagline = String(identity.tagline ?? company.tagline);
+  const logoUrl = String(identity.logo_url ?? "");
   const email = String(contact.email ?? company.email);
   const phone = String(contact.telefone ?? company.phone);
   const phoneHref = String(contact.telefone_link ?? company.phoneHref);
@@ -64,7 +65,7 @@ export function Header() {
         <div className="site-header-inner container-site flex h-20 items-center gap-6">
           <Link to="/" aria-label="Rodrinox Pro — início" className="site-header-brand shrink-0">
             <img
-              src={logo}
+              src={logoUrl || logo}
               alt="Rodrinox Pro"
               className="h-14 w-auto"
               width={1920}
