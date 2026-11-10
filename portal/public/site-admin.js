@@ -2,6 +2,7 @@ const $ = (s, root=document) => root.querySelector(s);
 const aviso = (msg, error=false) => { const el=$("#aviso"); el.textContent=msg; el.classList.toggle("error",error); };
 let midiasDisponiveis=[];
 let conteudosSalvos=new Map();
+const homeValueDefaults=[{title:"Visão técnica",text:"Entendimento das necessidades e atenção a cada etapa do projeto."},{title:"Inovação aplicada",text:"Soluções inteligentes com foco em funcionalidade e eficiência."},{title:"Compromisso",text:"Atendimento transparente e foco em construir relações duradouras."}];
 const homeDefaults=[
  {chave:"home.hero.slide-1",eyebrow:"Tecnologia a serviço da indústria",titulo:"Precisão em cada corte. Qualidade em cada peça.",texto:"Corte a laser, dobra e soldagem de componentes metálicos para impulsionar os projetos da sua empresa."},
  {chave:"home.hero.slide-2",eyebrow:"Fabricação industrial",titulo:"Da necessidade ao resultado.",texto:"Conectamos inovação, precisão e compromisso para transformar o seu projeto em realidade."},
@@ -144,7 +145,11 @@ async function carregarHome(){
   $("#"+prefix+"-title").value=salvo?.titulo??base.titulo;
   $("#"+prefix+"-text").value=extra.texto??base.texto;
   if(i<3){const select=$("#"+prefix+"-image");select.value=extra.imagem_id==null?"":String(extra.imagem_id);atualizarPreview(i+1,select.value);}
+  else {const select=$("#intro-image");select.value=extra.imagem_id==null?"":String(extra.imagem_id);atualizarIntroPreview(select.value);}
  }
+ const savedValues=parseCorpo(conteudosSalvos.get("home.values"));
+ const liveValues=Array.isArray(savedValues.items)?savedValues.items:homeValueDefaults;
+ homeValueDefaults.forEach((fallback,n)=>{const value=liveValues[n]||fallback;$("#value"+(n+1)+"-title").value=value.title||"";$("#value"+(n+1)+"-text").value=value.text||"";});
 }
 function atualizarPreview(n,id){
  const el=$("#hero"+n+"-preview"),m=midiasDisponiveis.find(x=>String(x.id)===String(id));
@@ -157,12 +162,15 @@ function preencherSelectsImagem(){
   midiasDisponiveis.forEach(m=>s.add(new Option((m.descricao||m.nome_original)+" (#"+m.id+")",String(m.id))));
   s.value=v;
  }
+ const introSelect=$("#intro-image"),introValue=introSelect.value;introSelect.replaceChildren(new Option("Usar imagem original",""));midiasDisponiveis.forEach(m=>introSelect.add(new Option((m.descricao||m.nome_original)+" (#"+m.id+")",String(m.id))));introSelect.value=introValue;
  for(const id of ["servico-form","projeto-form","galeria-form"]){
   const s=$('#'+id+' [name="imagem_id"]');if(!s)continue;const v=s.value;s.replaceChildren(new Option("Sem imagem",""));
   midiasDisponiveis.forEach(m=>s.add(new Option((m.descricao||m.nome_original)+" (#"+m.id+")",String(m.id))));s.value=v;
  }
 }
 for(let n=1;n<=3;n++)$("#hero"+n+"-image").addEventListener("change",e=>atualizarPreview(n,e.target.value));
+$("#intro-image").addEventListener("change",e=>atualizarIntroPreview(e.target.value));
+function atualizarIntroPreview(id){const el=$("#intro-preview"),m=midiasDisponiveis.find(x=>String(x.id)===String(id));if(m){el.src="api/site/midias/"+m.id+"/arquivo";el.alt=m.descricao||m.nome_original;}else{el.removeAttribute("src");el.alt="Imagem original do site será mantida.";}}
 $("#home-editor").addEventListener("submit",async e=>{
  e.preventDefault();
  try{
@@ -171,9 +179,11 @@ $("#home-editor").addEventListener("submit",async e=>{
    await salvarConteudo(base.chave,$("#"+prefix+"-title").value.trim(),{
     eyebrow:i<3?$("#"+prefix+"-eyebrow").value.trim():"",
     texto:$("#"+prefix+"-text").value.trim(),
-    imagem_id:i<3&&$("#"+prefix+"-image").value?Number($("#"+prefix+"-image").value):null
+    imagem_id:($("#"+prefix+"-image").value?Number($("#"+prefix+"-image").value):null)
    });
   }
+  const items=homeValueDefaults.map((fallback,n)=>({title:$("#value"+(n+1)+"-title").value.trim(),text:$("#value"+(n+1)+"-text").value.trim()}));
+  await salvarConteudo("home.values","Diferenciais — Quem somos",{items});
   aviso("Página inicial publicada no site institucional. O site carregará as alterações automaticamente.");
  }catch(err){aviso("Falha ao salvar a página inicial: "+err.message,true);}
 });

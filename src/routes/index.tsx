@@ -31,6 +31,8 @@ function Home() {
     return { ...s, image: mediaUrl(saved.imagem_id, s.image), eyebrow: String(saved.eyebrow ?? s.eyebrow), title: String(cms.data?.conteudos?.find((x) => x.chave === `home.hero.slide-${n + 1}`)?.titulo ?? s.title), text: String(saved.texto ?? s.text) };
   });
   const intro = cms.content("home.intro");
+  const introValues = cms.content("home.values");
+  const liveValues = Array.isArray(introValues.items) ? introValues.items : values;
   const introTitle = cms.data?.conteudos?.find((x) => x.chave === "home.intro")?.titulo;
   const liveServices = cms.items("servico");
   const visibleServices = liveServices.length ? liveServices.map((s) => ({ slug:s.slug, title:s.titulo, image:mediaUrl(s.imagem_id, services.find((item) => item.slug === s.slug)?.image ?? images.componentes) })) : services;
@@ -82,7 +84,7 @@ function Home() {
           <Reveal>
             <SectionTitle eyebrow="Quem somos" title={String(introTitle ?? "Seu próximo projeto merece um parceiro à altura.")} text={String(intro.texto ?? "Na Rodrinox Pro, acreditamos que grandes resultados começam com soluções bem planejadas. Conectamos necessidades industriais a caminhos eficientes, com atenção aos detalhes, tecnologia e relacionamento próximo.")} />
             <div className="mt-10 grid gap-6 sm:grid-cols-3">
-              {values.map((v, n) => (
+              {liveValues.map((v: { title: string; text: string }, n: number) => (
                 <div key={v.title} className="border-t-2 border-accent pt-4">
                   <span className="font-display text-sm font-bold text-accent">0{n + 1}</span>
                   <h3 className="mt-1 font-bold text-primary">{v.title}</h3>
