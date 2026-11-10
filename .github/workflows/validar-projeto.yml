@@ -3,6 +3,7 @@ name: Validar projeto Rodrinox Pro
 on:
   push:
     branches:
+      - main
       - feature/modulo-rh-recrutamento
       - recuperacao-painel-admin-2026-11-09
   pull_request:
