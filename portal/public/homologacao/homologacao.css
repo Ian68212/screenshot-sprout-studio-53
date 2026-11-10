@@ -81,3 +81,6 @@ button:focus-visible,a:focus-visible{outline:2px solid #ff912f;outline-offset:2p
 .resource-info a{color:#b5dcff;font-size:12px;font-weight:700}
 .resource-info span{color:#b9c9db;font-size:11px}
 @media(max-width:600px){.resource-thumb{width:88px;height:58px;flex-basis:88px}}
+
+/* A logo enviada já é branca: não aplicar filtros que prejudiquem as engrenagens. */
+.brand-logo{filter:none!important;object-fit:contain;image-rendering:auto}
