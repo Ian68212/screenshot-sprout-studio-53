@@ -9,7 +9,7 @@ const CATS = { documentos: "Documentos", comunicados: "Comunicados", treinamento
   cats.innerHTML = Object.entries(CATS).map(([k, t]) => {
     const l = itens.filter((i) => i.categoria === k);
     return `<section><h2>${t}</h2>${l.length ? `<div class="grid">${l.map((i) =>
-      `<a class="card" style="text-decoration:none;color:inherit" href="${esc(i.url)}" target="_blank" rel="noopener"><h3>${esc(i.nome)}</h3><p style="color:#5d6b7e;margin:0">${esc(i.descricao)}</p></a>`).join("")}</div>`
+      `<a class="card card-recurso" href="${esc(i.url)}" target="_blank" rel="noopener">${i.imagem_url ? `<img class="imagem-recurso" src="${esc(i.imagem_url)}" alt="">` : `<div class="imagem-recurso sem-imagem"><span>Rodrinox Pro</span></div>`}<div class="conteudo-recurso"><h3>${esc(i.nome)}</h3><p>${esc(i.descricao || "")}</p><span class="abrir-recurso">Abrir recurso ↗</span></div></a>`).join("")}</div>`
       : `<p style="color:#5d6b7e">Nenhum item disponível ainda.</p>`}</section>`;
   }).join("");
 })();
