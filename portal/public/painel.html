@@ -1,7 +1,52 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex,nofollow"><title>Painel — Portal Rodrinox Pro</title><link rel="stylesheet" href="/colaborador/portal.css?v=20261110-central-apps-v2"><link rel="icon" type="image/png" href="/favicon-rodrinox.png?v=20261110">
-</head><body>
-<header class="top"><strong>Rodrinox<span>Pro</span> · Portal</strong><nav><a href="/colaborador/painel.html">Início</a><a href="/colaborador/admin.html" id="lnkAdmin" hidden>Administração</a><a href="/colaborador/site-admin.html" id="lnkSiteAdmin" hidden>Gerenciar site</a><a href="#" id="sair">Sair</a></nav></header>
-<main><section class="card"><span class="tag" id="info"></span><h1 id="ola">Olá</h1><p style="color:#5d6b7e">Acesse abaixo os recursos liberados para você.</p></section>
-<section class="central-apps" aria-labelledby="tituloCentralApps"><div class="central-apps-cabecalho"><div><span class="tag">ACESSO RÁPIDO</span><h2 id="tituloCentralApps">Central de Aplicativos</h2><p>Aplicativos utilizados na operação da Rodrinox Pro.</p></div><span class="central-apps-simbolo" aria-hidden="true">▦</span></div><div class="central-apps-lista" id="listaCentralApps"><article class="app-tile"><div class="app-tile-icon app-tile-icon-image"><img src="https://play-lh.googleusercontent.com/55dkH_PEXafKaPTxntIvQWqd-bkNMRsKmPhTqUqvbx9MRE8jHhehI4HrG_8Dev8iuV6fG6rBgUVsB6TPntxv%3Dw240-h480" alt="Ícone oficial do Intelbras iSIC Lite" loading="lazy"></div><div class="app-tile-info"><h3>Intelbras iSIC Lite</h3><p>Monitoramento das câmeras e acesso às imagens do sistema de CFTV.</p><span class="app-tile-status" id="statusIsic">Selecione seu dispositivo para continuar</span></div><div class="app-tile-actions"><a class="app-store-link app-android-link" id="abrirIsicAndroid" href="https://play.google.com/store/apps/details?id=com.intelbras.isiclite" target="_blank" rel="noopener">Abrir no Android</a><a class="app-store-link app-ios-link" id="abrirIsicIOS" href="https://apps.apple.com/br/app/intelbras-isic-lite/id1323192678" target="_blank" rel="noopener">Abrir no iPhone</a></div></article></div></section><div id="cats"></div></main>
-<script src="/colaborador/app.js"></script><script src="/colaborador/painel.js?v=20261110-central-apps-v2"></script></body></html>
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>Portal do Colaborador — Rodrinox Pro</title>
+<link rel="stylesheet" href="/colaborador/portal.css?v=20261110-dashboard-v1">
+<link rel="icon" type="image/png" href="/favicon-rodrinox.png?v=20261110"></head>
+<body class="dashboard-body">
+<div class="dashboard-shell">
+<aside class="dashboard-sidebar" id="sidebar">
+  <div class="dashboard-brand"><div class="brand-gears">⚙ <span>⚙</span></div><strong>RODRINOX <em>PRO</em></strong><small>SOLUÇÕES · INOVAÇÃO · RESULTADOS</small></div>
+  <nav class="dashboard-nav" aria-label="Navegação do portal">
+    <a href="#inicio" class="dash-nav-link active" data-view="inicio"><span>⌂</span> Início</a>
+    <a href="#documentos" class="dash-nav-link" data-view="documentos"><span>▤</span> Documentos</a>
+    <a href="#comunicados" class="dash-nav-link" data-view="comunicados"><span>◉</span> Comunicados</a>
+    <a href="#treinamentos" class="dash-nav-link" data-view="treinamentos"><span>◇</span> Treinamentos</a>
+    <a href="#ferramentas" class="dash-nav-link" data-view="ferramentas"><span>⚒</span> Ferramentas</a>
+    <a href="#contatos" class="dash-nav-link" data-view="contatos"><span>♧</span> Contatos</a>
+    <a href="#suporte" class="dash-nav-link" data-view="suporte"><span>♧</span> Suporte / TI</a>
+  </nav>
+  <div class="sidebar-quick"><h3>Links Rápidos</h3>
+    <a href="https://mail.hostinger.com/" target="_blank" rel="noopener noreferrer">✉ &nbsp; E-mail Corporativo</a>
+    <a href="https://drive.google.com/" target="_blank" rel="noopener noreferrer">▲ &nbsp; Google Drive</a>
+    <a href="#aplicativos" data-view="aplicativos">▣ &nbsp; Câmeras (iSIC)</a>
+    <a href="https://www.bling.com.br/" target="_blank" rel="noopener noreferrer">▥ &nbsp; Bling (ERP)</a>
+  </div>
+  <div class="sidebar-bottom"><a href="/colaborador/admin.html" id="lnkAdmin" hidden>Administração</a><a href="/colaborador/site-admin.html" id="lnkSiteAdmin" hidden>Gerenciar site</a></div>
+</aside>
+<div class="dashboard-workspace">
+<header class="dashboard-topbar"><button type="button" id="toggleSidebar" aria-label="Abrir ou fechar menu">☰</button><span>PORTAL DO COLABORADOR</span><div class="topbar-user"><span id="userTop">Colaborador</span><a href="#" id="sair">Sair ↗</a></div></header>
+<main class="dashboard-main">
+<section class="dashboard-hero" id="inicio"><div class="hero-copy"><div class="hero-accent"></div><div><h1>Olá, <strong id="primeiroNome">Colaborador</strong></h1><h2>Bem-vindo ao <strong>Portal do Colaborador</strong></h2><p>Aqui você acessa documentos, comunicados, treinamentos, ferramentas e os principais sistemas da Rodrinox Pro.</p><span class="hero-meta" id="info"></span></div></div></section>
+<section class="dashboard-home" id="homeSections">
+<div class="dashboard-feature-grid">
+<button type="button" class="feature-card feature-doc" data-view="documentos"><span class="feature-icon">▤</span><strong>Documentos</strong><small>Normas, políticas,<br>procedimentos e formulários</small><span class="feature-arrow">➜</span></button>
+<button type="button" class="feature-card feature-com" data-view="comunicados"><span class="feature-icon">◉</span><strong>Comunicados</strong><small>Avisos, informações<br>e atualizações</small><span class="feature-arrow">➜</span></button>
+<button type="button" class="feature-card feature-tre" data-view="treinamentos"><span class="feature-icon">◇</span><strong>Treinamentos</strong><small>Cursos, materiais<br>e capacitações</small><span class="feature-arrow">➜</span></button>
+<button type="button" class="feature-card feature-fer" data-view="ferramentas"><span class="feature-icon">⚒</span><strong>Ferramentas</strong><small>Sistemas, aplicativos<br>e recursos de trabalho</small><span class="feature-arrow">➜</span></button>
+</div>
+<div class="dashboard-duo"><section class="dashboard-panel"><div class="panel-heading"><h2>📣 Comunicados Recentes</h2><button type="button" data-view="comunicados">Ver todos →</button></div><div id="recentComunicados" class="panel-content"></div></section>
+<section class="dashboard-panel"><div class="panel-heading"><h2>◇ Treinamentos em Destaque</h2><button type="button" data-view="treinamentos">Ver todos →</button></div><div id="featuredTreinamentos" class="panel-content"></div></section></div>
+<section class="dashboard-panel access-panel"><div class="panel-heading"><h2>⚡ Acesso Rápido</h2></div><div class="quick-grid">
+<a href="https://mail.hostinger.com/" target="_blank" rel="noopener noreferrer">✉ <span>E-mail<br>Corporativo</span></a>
+<a href="https://drive.google.com/" target="_blank" rel="noopener noreferrer">▲ <span>Google<br>Drive</span></a>
+<a href="https://www.bling.com.br/" target="_blank" rel="noopener noreferrer">▥ <span>Bling<br>(ERP)</span></a>
+<button type="button" data-view="aplicativos">▣ <span>Câmeras<br>(iSIC)</span></button>
+<button type="button" data-view="contatos">♧ <span>Contatos<br>da Equipe</span></button>
+<button type="button" data-view="suporte">♧ <span>Suporte / TI<br>Abrir contato</span></button>
+</div></section></section>
+<section id="categoryView" class="dashboard-category" hidden><div class="category-heading"><button type="button" data-view="inicio">← Início</button><h2 id="categoryTitle">Recursos</h2></div><div id="categoryContent"></div></section>
+<section id="appsView" class="dashboard-category" hidden><div class="category-heading"><button type="button" data-view="inicio">← Início</button><h2>Central de Aplicativos</h2></div>
+<div class="central-apps"><div class="central-apps-cabecalho"><div><span class="tag">ACESSO RÁPIDO</span><h2>Aplicativos</h2><p>Aplicativos utilizados na operação da Rodrinox Pro.</p></div></div>
+<div class="central-apps-lista"><article class="app-tile"><div class="app-tile-icon app-tile-icon-image"><img src="https://play-lh.googleusercontent.com/55dkH_PEXafKaPTxntIvQWqd-bkNMRsKmPhTqUqvbx9MRE8jHhehI4HrG_8Dev8iuV6fG6rBgUVsB6TPntxv%3Dw240-h480" alt="Ícone Intelbras iSIC Lite"></div><div class="app-tile-info"><h3>Intelbras iSIC Lite</h3><p>Acesso às câmeras de segurança.</p><span class="app-tile-status" id="statusIsic"></span></div><div class="app-tile-actions"><a class="app-store-link" id="abrirIsicAndroid" href="https://play.google.com/store/apps/details?id=com.intelbras.isiclite">Abrir no Android</a><a class="app-store-link" id="abrirIsicIOS" href="https://apps.apple.com/br/app/intelbras-isic-lite/id1323192678" target="_blank" rel="noopener">Abrir no iPhone</a></div></article></div></div></section>
+</main></div></div><script src="/colaborador/app.js"></script><script src="/colaborador/painel.js?v=20261110-dashboard-v1"></script></body></html>
