@@ -2,6 +2,7 @@ const $ = (s, root=document) => root.querySelector(s);
 const aviso = (msg, error=false) => { const el=$("#aviso"); el.textContent=msg; el.classList.toggle("error",error); };
 let midiasDisponiveis=[];
 let conteudosSalvos=new Map();
+const featuredProjectsDefaults={eyebrow:"Projetos especiais",titulo:"Projetos sob medida para desafios reais.",texto:"Entendemos a demanda da sua operação e desenvolvemos alternativas adequadas, integrando corte, dobra, soldagem e fabricação em uma única solução."};
 const homeValueDefaults=[{title:"Visão técnica",text:"Entendimento das necessidades e atenção a cada etapa do projeto."},{title:"Inovação aplicada",text:"Soluções inteligentes com foco em funcionalidade e eficiência."},{title:"Compromisso",text:"Atendimento transparente e foco em construir relações duradouras."}];
 const homeDefaults=[
  {chave:"home.hero.slide-1",eyebrow:"Tecnologia a serviço da indústria",titulo:"Precisão em cada corte. Qualidade em cada peça.",texto:"Corte a laser, dobra e soldagem de componentes metálicos para impulsionar os projetos da sua empresa."},
@@ -147,6 +148,12 @@ async function carregarHome(){
   if(i<3){const select=$("#"+prefix+"-image");select.value=extra.imagem_id==null?"":String(extra.imagem_id);atualizarPreview(i+1,select.value);}
   else {const select=$("#intro-image");select.value=extra.imagem_id==null?"":String(extra.imagem_id);atualizarIntroPreview(select.value);}
  }
+ const featuredSaved=conteudosSalvos.get("home.featured-projects"),featuredExtra=parseCorpo(featuredSaved);
+ $("#featured-projects-eyebrow").value=featuredExtra.eyebrow??featuredProjectsDefaults.eyebrow;
+ $("#featured-projects-title").value=featuredSaved?.titulo??featuredProjectsDefaults.titulo;
+ $("#featured-projects-text").value=featuredExtra.texto??featuredProjectsDefaults.texto;
+ $("#featured-projects-image").value=featuredExtra.imagem_id==null?"":String(featuredExtra.imagem_id);
+ atualizarFeaturedProjectsPreview($("#featured-projects-image").value);
  const savedValues=parseCorpo(conteudosSalvos.get("home.values"));
  const liveValues=Array.isArray(savedValues.items)?savedValues.items:homeValueDefaults;
  homeValueDefaults.forEach((fallback,n)=>{const value=liveValues[n]||fallback;$("#value"+(n+1)+"-title").value=value.title||"";$("#value"+(n+1)+"-text").value=value.text||"";});
@@ -163,6 +170,7 @@ function preencherSelectsImagem(){
   s.value=v;
  }
  const introSelect=$("#intro-image"),introValue=introSelect.value;introSelect.replaceChildren(new Option("Usar imagem original",""));midiasDisponiveis.forEach(m=>introSelect.add(new Option((m.descricao||m.nome_original)+" (#"+m.id+")",String(m.id))));introSelect.value=introValue;
+ const featuredSelect=$("#featured-projects-image"),featuredValue=featuredSelect.value;featuredSelect.replaceChildren(new Option("Usar imagem original",""));midiasDisponiveis.forEach(m=>featuredSelect.add(new Option((m.descricao||m.nome_original)+" (#"+m.id+")",String(m.id))));featuredSelect.value=featuredValue;
  for(const id of ["servico-form","projeto-form","galeria-form"]){
   const s=$('#'+id+' [name="imagem_id"]');if(!s)continue;const v=s.value;s.replaceChildren(new Option("Sem imagem",""));
   midiasDisponiveis.forEach(m=>s.add(new Option((m.descricao||m.nome_original)+" (#"+m.id+")",String(m.id))));s.value=v;
@@ -170,6 +178,11 @@ function preencherSelectsImagem(){
 }
 for(let n=1;n<=3;n++)$("#hero"+n+"-image").addEventListener("change",e=>atualizarPreview(n,e.target.value));
 $("#intro-image").addEventListener("change",e=>atualizarIntroPreview(e.target.value));
+function atualizarFeaturedProjectsPreview(id){const preview=$("#featured-projects-preview"),media=midiasDisponiveis.find(m=>String(m.id)===String(id));if(media){preview.src="/colaborador/api/site/midias/"+media.id+"/arquivo";preview.alt=media.descricao||media.nome_original;preview.hidden=false;}else{preview.removeAttribute("src");preview.hidden=true;}}
+$("#featured-projects-image").addEventListener("change",e=>atualizarFeaturedProjectsPreview(e.target.value));
+$("#featured-projects-upload").addEventListener("change",e=>{const file=e.target.files?.[0],preview=$("#featured-projects-preview");if(!file)return;if(!["image/jpeg","image/png","image/webp"].includes(file.type)||file.size>5*1024*1024){$("#featured-projects-status").textContent="Use JPG, PNG ou WebP de até 5 MB.";return;}const reader=new FileReader();reader.onload=()=>{preview.src=String(reader.result);preview.hidden=false;$("#featured-projects-status").textContent="Prévia carregada. Clique em Enviar e selecionar fotografia.";};reader.readAsDataURL(file);});
+$("#featured-projects-upload-button").addEventListener("click",async()=>{const input=$("#featured-projects-upload"),file=input.files?.[0],button=$("#featured-projects-upload-button"),status=$("#featured-projects-status");if(!file){status.textContent="Selecione uma fotografia.";return;}if(!["image/jpeg","image/png","image/webp"].includes(file.type)||file.size>5*1024*1024){status.textContent="Use JPG, PNG ou WebP de até 5 MB.";return;}button.disabled=true;status.textContent="Enviando fotografia…";try{const form=new FormData();form.append("imagem",file,file.name);form.append("descricao","Página inicial - Projetos especiais");const response=await fetch("/colaborador/api/site/midias",{method:"POST",credentials:"same-origin",headers:{"X-Portal":"1"},body:form});const data=await response.json().catch(()=>({}));if(!response.ok||!data.id)throw new Error(data.erro||"O servidor não confirmou o envio.");const select=$("#featured-projects-image"),id=String(data.id);if(!Array.from(select.options).some(o=>o.value===id))select.add(new Option(file.name+" (#"+id+")",id));select.value=id;atualizarFeaturedProjectsPreview(id);input.value="";try{await carregarMidias();select.value=id;atualizarFeaturedProjectsPreview(id);}catch(e){console.warn("Biblioteca não atualizada:",e);}status.textContent="Imagem enviada e selecionada. Clique em Salvar página inicial.";aviso("Fotografia de Projetos especiais enviada e selecionada.");}catch(error){status.textContent="Falha no envio: "+error.message;aviso(status.textContent,true);}finally{button.disabled=false;}});
+
 const introUploadInput=$("#intro-image-upload"),introUploadButton=$("#intro-image-upload-button"),introUploadStatus=$("#intro-upload-status");
 function statusUploadIntro(message,error=false){introUploadStatus.textContent=message;introUploadStatus.classList.toggle("error",error);}
 introUploadInput.addEventListener("change",()=>{const file=introUploadInput.files?.[0];if(!file){statusUploadIntro("Nenhum arquivo selecionado.");return;}if(!["image/jpeg","image/png","image/webp"].includes(file.type)){statusUploadIntro("Formato inválido. Use JPG, PNG ou WebP.",true);return;}if(file.size>5*1024*1024){statusUploadIntro("A imagem deve ter no máximo 5 MB.",true);return;}const preview=$("#intro-preview"),reader=new FileReader();reader.onload=()=>{preview.src=String(reader.result);preview.alt="Prévia local: "+file.name;preview.hidden=false;statusUploadIntro("Prévia carregada. Clique em Enviar e selecionar fotografia.");};reader.onerror=()=>statusUploadIntro("Não foi possível gerar a prévia deste arquivo.",true);reader.readAsDataURL(file);});
@@ -207,6 +220,7 @@ $("#home-editor").addEventListener("submit",async e=>{
     imagem_id:($("#"+prefix+"-image").value?Number($("#"+prefix+"-image").value):null)
    });
   }
+  await salvarConteudo("home.featured-projects",$("#featured-projects-title").value.trim(),{eyebrow:$("#featured-projects-eyebrow").value.trim(),texto:$("#featured-projects-text").value.trim(),imagem_id:$("#featured-projects-image").value?Number($("#featured-projects-image").value):null});
   const items=homeValueDefaults.map((fallback,n)=>({title:$("#value"+(n+1)+"-title").value.trim(),text:$("#value"+(n+1)+"-text").value.trim()}));
   await salvarConteudo("home.values","Diferenciais — Quem somos",{items});
   aviso("Página inicial publicada no site institucional. O site carregará as alterações automaticamente.");
