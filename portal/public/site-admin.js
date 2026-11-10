@@ -292,7 +292,7 @@ $("#upload").addEventListener("submit",async e=>{
 (async()=>{
  try{
   const usuario=await api("eu");if(usuario.perfil!=="admin"){aviso("Acesso restrito ao administrador.",true);return;}
-  await carregarConteudos();await carregarMidias();await carregarHome();await carregarGrupos();
+  await carregarConteudos();await carregarMidias();await garantirItensIniciais();await carregarHome();await carregarGrupos();
   await Promise.all([carregarItens("servico"),carregarItens("projeto"),carregarItens("galeria")]);
   aviso("Gerenciador conectado ao banco de produção. Novas alterações são publicadas automaticamente.");
  }catch(e){aviso(e.message,true);setTimeout(()=>location.href="index.html",1200);}
