@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 const field = "w-full rounded-sm border border-input bg-card px-4 py-3 text-sm text-foreground outline-none transition focus:border-accent focus:ring-2 focus:ring-ring/30";
 const label = "mb-1.5 block text-xs font-semibold uppercase tracking-wider text-primary";
-const API = "https://portal.rodrinoxpro.com.br/colaborador/api/candidaturas";
+const API = "/colaborador/api/candidaturas";
 
 export const Route = createFileRoute("/trabalhe-conosco")({
   head: () => ({ meta: pageMeta("Trabalhe Conosco", "Conheça oportunidades e envie seu currículo para fazer parte da equipe Rodrinox Pro.") }),
