@@ -32,7 +32,7 @@ function Home() {
   });
   const intro = cms.content("home.intro");
   const liveServices = cms.items("servico");
-  const visibleServices = liveServices.length ? liveServices.map((s) => ({ slug:s.slug, title:s.titulo, image:mediaUrl(s.imagem_id, images.componentes) })) : services;
+  const visibleServices = liveServices.length ? liveServices.map((s) => ({ slug:s.slug, title:s.titulo, image:mediaUrl(s.imagem_id, services.find((item) => item.slug === s.slug)?.image ?? images.componentes) })) : services;
   const [i, setI] = useState(0);
   useEffect(() => {
     const t = setInterval(() => setI((v) => (v + 1) % homeSlides.length), 6500);
