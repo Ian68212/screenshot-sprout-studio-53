@@ -12,16 +12,16 @@ export const Route = createFileRoute("/projetos")({
 });
 
 const defaults = [
-  {title:"Cilindros industriais",area:"Cilindros",description:"Desenvolvimento e fabricação conforme a aplicação.",image:images.cilindros},
-  {title:"Componentes metálicos",area:"Componentes metálicos",description:"Peças fabricadas conforme desenho e necessidade.",image:images.componentes},
-  {title:"Projeto personalizado",area:"Projeto personalizado",description:"Soluções industriais desenvolvidas sob medida.",image:images.projetos},
+  {slug:"cilindros-industriais",title:"Cilindros industriais",area:"Cilindros",description:"Desenvolvimento e fabricação conforme a aplicação.",image:images.cilindros},
+  {slug:"componentes-metalicos",title:"Componentes metálicos",area:"Componentes metálicos",description:"Peças fabricadas conforme desenho e necessidade.",image:images.componentes},
+  {slug:"projeto-personalizado",title:"Projeto personalizado",area:"Projeto personalizado",description:"Soluções industriais desenvolvidas sob medida.",image:images.projetos},
 ];
 
 function Projetos() {
   const cms = usePublicSite();
   const p = cms.content("projetos.pagina", {});
   const saved = cms.items("projeto");
-  const cases = saved.length ? saved.map(x=>({title:x.titulo,area:x.resumo||"Projeto especial",description:x.descricao||"",image:mediaUrl(x.imagem_id,images.projetos)})) : defaults;
+  const cases = saved.length ? saved.map(x=>({title:x.titulo,area:x.resumo||"Projeto especial",description:x.descricao||"",image:mediaUrl(x.imagem_id,defaults.find(d=>d.slug===x.slug)?.image ?? images.projetos)})) : defaults;
   return <>
     <PageHero eyebrow={String(p.hero_chamada??"Projetos especiais")} title={String(p.hero_titulo??"Soluções sob medida para cada desafio.")} image={mediaUrl(p.hero_imagem_id,images.projetos)} />
     <section className="py-24"><div className="container-site">
