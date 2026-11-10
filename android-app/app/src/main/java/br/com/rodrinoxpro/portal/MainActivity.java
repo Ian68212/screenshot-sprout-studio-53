@@ -14,6 +14,7 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
+import android.util.Base64;
 import android.webkit.CookieManager;
 import android.webkit.SslErrorHandler;
 import android.webkit.ValueCallback;
@@ -29,6 +30,9 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 
 public class MainActivity extends Activity {
     private static final String PORTAL_URL = "https://rodrinoxpro.com.br/colaborador/";
@@ -207,11 +211,40 @@ public class MainActivity extends Activity {
      * O HTML/CSS servido aos navegadores e o site institucional não são alterados.
      * As imagens são lidas das mídias públicas já configuradas no Gerenciador do Site.
      */
+    private String readAppLogoDataUri() {
+        try (InputStream input = getAssets().open("rod-logo-horizontal.png");
+             ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[8192];
+            int count;
+            while ((count = input.read(buffer)) != -1) {
+                output.write(buffer, 0, count);
+            }
+            return "data:image/png;base64," + Base64.encodeToString(output.toByteArray(), Base64.NO_WRAP);
+        } catch (Exception ignored) {
+            return "";
+        }
+    }
+
     private String appLoginScript() {
         return """
             (() => {
               if (document.body.dataset.view !== 'app' || !document.getElementById('f')) return;
               if (document.getElementById('rod-app-native-style')) return;
+
+              const appLogo = "__RODRINOX_APP_LOGO_DATA__";
+              const applyAppLogo = () => {
+                if (!appLogo || !appLogo.startsWith('data:image/')) return;
+                document.querySelectorAll('#login-logo, .brand-full-logo, .brand-lockup img, .brand-logo img, img[data-brand-logo]').forEach(image => {
+                  if (image instanceof HTMLImageElement) {
+                    if (image.getAttribute('src') !== appLogo) image.setAttribute('src', appLogo);
+                    image.hidden = false;
+                  }
+                });
+              };
+              applyAppLogo();
+              new MutationObserver(applyAppLogo).observe(document.documentElement, {
+                childList:true, subtree:true, attributes:true, attributeFilter:['src']
+              });
 
               const style = document.createElement('style');
               style.id = 'rod-app-native-style';
@@ -351,7 +384,7 @@ public class MainActivity extends Activity {
                 })
                 .catch(error => console.warn('Imagens do aplicativo Rodrinox Pro:', error));
             })();
-            """;
+            """.replace("__RODRINOX_APP_LOGO_DATA__", readAppLogoDataUri());
     }
 
     private void showMessage(String message, String buttonText) {
