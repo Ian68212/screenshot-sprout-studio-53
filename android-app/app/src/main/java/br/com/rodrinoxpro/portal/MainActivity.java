@@ -212,7 +212,7 @@ public class MainActivity extends Activity {
      * As imagens são lidas das mídias públicas já configuradas no Gerenciador do Site.
      */
     private String readAppLogoDataUri() {
-        try (InputStream input = getAssets().open("rod-logo-horizontal.png");
+        try (InputStream input = getAssets().open("rod-logo-vertical.png");
              ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             byte[] buffer = new byte[8192];
             int count;
@@ -276,15 +276,15 @@ public class MainActivity extends Activity {
                 }
                 body[data-view="app"] .brand-lockup {
                   display:flex !important; flex:0 0 auto !important; justify-content:center !important;
-                  align-items:center !important; width:100% !important; height:18vh !important;
-                  min-height:112px !important; max-height:180px !important; margin:0 0 4.2vh !important;
+                  align-items:center !important; width:100% !important; height:23vh !important;
+                  min-height:150px !important; max-height:260px !important; margin:0 0 2.8vh !important;
                 }
                 body[data-view="app"] .brand-lockup .brand-mark,
                 body[data-view="app"] .brand-lockup .brand-copy { display:none !important; }
                 body[data-view="app"] .brand-lockup .brand-full-logo {
-                  display:block !important; visibility:visible !important; width:100% !important;
-                  max-width:390px !important; height:auto !important;
-                  max-height:100% !important; aspect-ratio:2048 / 741 !important;
+                  display:block !important; visibility:visible !important; width:auto !important;
+                  max-width:100% !important; height:100% !important;
+                  max-height:100% !important; aspect-ratio:auto !important;
                   object-fit:contain !important; object-position:center !important;
                   image-rendering:auto !important; -webkit-transform:translateZ(0);
                   filter:drop-shadow(0 5px 14px rgba(0,0,0,.2));
@@ -363,21 +363,11 @@ public class MainActivity extends Activity {
                   try { config = JSON.parse(item.corpo || '{}'); } catch (_) { return; }
                   const version = encodeURIComponent(item.atualizado_em || Date.now());
                   const photoId = Number(config.imagem_id);
-                  const logoId = Number(config.logo_imagem_id);
                   if (Number.isSafeInteger(photoId) && photoId > 0) {
                     const photoUrl = '/colaborador/api/public/site/midias/' + photoId + '?v=' + version;
                     const image = new Image();
                     image.onload = () => document.documentElement.style.setProperty('--rod-factory-image', 'url("' + photoUrl + '")');
                     image.src = photoUrl;
-                  }
-                  if (Number.isSafeInteger(logoId) && logoId > 0) {
-                    const logoUrl = '/colaborador/api/public/site/midias/' + logoId + '?v=' + version;
-                    const logo = document.getElementById('login-logo');
-                    if (logo) {
-                      logo.onload = () => { logo.hidden = false; };
-                      logo.src = logoUrl;
-                      logo.hidden = false;
-                    }
                   }
                 })
                 .catch(error => console.warn('Imagens do aplicativo Rodrinox Pro:', error));
