@@ -5,7 +5,7 @@ import { company, nav, services } from "@/content/site";
 import { whatsappUrl } from "@/lib/whatsapp";
 import { btn } from "./primitives";
 import { cn } from "@/lib/utils";
-import { mediaUrl, usePublicSite } from "@/lib/site-cms";
+import { usePublicSite } from "@/lib/site-cms";
 
 export function CtaBand() {
   return (
@@ -78,6 +78,8 @@ export function Footer() {
 }
 
 export function WhatsAppFab() {
+  const cms = usePublicSite();
+  const contact = cms.content("contato.dados", {});
   return (
     <a
       href={whatsappUrl(String(cms.content("contato.dados", {}).whatsapp_numero ?? company.whatsappNumber), "Olá, Rodrinox Pro! Gostaria de mais informações.")}
