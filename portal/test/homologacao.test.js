@@ -31,3 +31,21 @@ test("Homologação tem navegação e adaptação a celular",()=>{
  for(const tab of ["documentos","comunicados","treinamentos","ferramentas","aplicativos"])assert.ok(html.includes('data-tab="'+tab+'"'));
  assert.match(css,/@media\(max-width:780px\)/);
 });
+test("Menu do colaborador inclui os cinco setores na ordem aprovada",()=>{
+ const ordem=["documentos","pcp","almoxarifado","qualidade","rh","seguranca","comunicados"];
+ const posicoes=ordem.map(tab=>html.indexOf('data-tab="'+tab+'"'));
+ assert.ok(posicoes.every(p=>p>=0),"Uma ou mais guias não foram encontradas");
+ assert.ok(posicoes.every((p,i)=>i===0||p>posicoes[i-1]),"Ordem das guias diverge da prévia aprovada");
+ for(const tab of ["pcp","almoxarifado","qualidade","rh","seguranca"])assert.match(js,new RegExp(tab+':'));
+});
+test("Identidade do colaborador vem da sessão e não de conteúdo demonstrativo",()=>{
+ assert.match(js,/read\("eu"\)/);
+ assert.match(js,/firstName/);
+ assert.doesNotMatch(html,/Olá,\s*Frank/i);
+ assert.doesNotMatch(html,/Olá,\s*Arraian/i);
+});
+test("Administração permanece em rota separada",()=>{
+ assert.match(html,/href="\/colaborador\/admin\.html"/);
+ assert.match(html,/href="\/colaborador\/site-admin\.html"/);
+ assert.match(js,/siteLink"\)\.hidden=me\.perfil!=="admin"/);
+});
