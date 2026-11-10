@@ -25,4 +25,27 @@
 </div>
 <section class="card"><h2>Candidaturas — Trabalhe Conosco</h2><p>Currículos e dados pessoais são restritos a administradores/RH autorizados.</p><div style="overflow-x:auto"><table><thead><tr><th>Data</th><th>Candidato</th><th>Contato</th><th>Área</th><th>Currículo</th><th>Status</th></tr></thead><tbody id="tc"></tbody></table></div></section>
 <section class="card"><h2>Registro de acessos</h2><table><thead><tr><th>Quando</th><th>Usuário</th><th>Ação</th><th>Detalhe</th></tr></thead><tbody id="ta"></tbody></table></section>
-</main><script src="app.js"></script><script src="admin.js"></script></body></html>
+
+<dialog id="editarUsuario" class="modal-usuario">
+  <form id="formEditarUsuario">
+    <h2>Editar colaborador</h2>
+    <input type="hidden" name="id">
+    <div class="campo-modal"><label>Nome completo</label><input name="nome" maxlength="160" required></div>
+    <div class="campo-modal"><label>E-mail</label><input name="email" type="email" maxlength="190" required></div>
+    <div class="campo-modal"><label>Perfil de acesso</label><select name="perfil"><option value="colaborador">Colaborador</option><option value="gestor">Gestor</option><option value="admin">Administrador</option></select></div>
+    <div class="campo-modal"><label>Setor</label><select name="setor_id" class="selSetor"><option value="">Nenhum</option></select></div>
+    <div class="campo-modal"><label>Cargo</label><select name="cargo_id" class="selCargo"><option value="">Nenhum</option></select></div>
+    <p class="erro" id="erroEditarUsuario"></p>
+    <div class="botoes-modal"><button type="button" class="sec" id="cancelarEdicao">Cancelar</button><button type="submit">Salvar alterações</button></div>
+  </form>
+</dialog>
+<style>
+.modal-usuario{width:min(520px,calc(100% - 32px));border:0;border-radius:14px;padding:24px;box-shadow:0 18px 60px #071b3540}
+.modal-usuario::backdrop{background:#071b3580}
+.campo-modal{display:grid;gap:6px;margin:12px 0}
+.campo-modal input,.campo-modal select{width:100%;box-sizing:border-box;padding:10px;border:1px solid #d8e0ea;border-radius:7px}
+.botoes-modal{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+.acoes-usuario{display:flex;flex-wrap:wrap;gap:6px}
+button.perigo{background:#a52828;color:white;border:0;border-radius:6px;padding:8px 12px;cursor:pointer}
+</style>
+</main><script src="app.js"></script><script src="admin.js"></script><script>document.getElementById("cancelarEdicao")?.addEventListener("click",()=>document.getElementById("editarUsuario").close());</script></body></html>
