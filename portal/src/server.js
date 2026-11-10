@@ -303,17 +303,33 @@ r.delete("/api/admin/usuarios/:id", exigir("admin.usuarios"), wrap(async (req, r
 
 r.get("/api/admin/ferramentas", exigir("admin.ferramentas"), wrap(async (_req, res) => {
   await garantirColunaImagemFerramentas();
-  res.json({ ferramentas: await q("SELECT * FROM ferramentas ORDER BY nome"), regras: await q("SELECT * FROM ferramenta_acessos") });
+  res.json({ ferramentas: await q("SELECT * FROM ferramentas ORDER BY categoria,nome"), regras: await q("SELECT * FROM ferramenta_acessos") });
 }));
 r.post("/api/admin/ferramentas", exigir("admin.ferramentas"), wrap(async (req, res) => {
   await garantirColunaImagemFerramentas();
-  const { nome, descricao = null, url, categoria = "ferramentas", regras = [] } = req.body || {};
-  if (!nome || !url || !/^(https:\/\/|\/)/.test(url)) return res.status(400).json({ erro: "Informe nome e um link https:// ou /" });
-  const out = await q("INSERT INTO ferramentas (nome, descricao, url, categoria) VALUES (?,?,?,?)", [nome, descricao, url, categoria]);
+  const { nome, descricao = null, url, imagem_url = null, categoria = "ferramentas", regras = [] } = req.body || {};
+  if (!nome || String(nome).trim().length > 160 || !url || String(url).length > 500 || !/^(https:\/\/|\/)/.test(url))
+    return res.status(400).json({ erro: "Informe nome e um link https:// ou /" });
+  if (!["documentos","comunicados","treinamentos","ferramentas"].includes(categoria))
+    return res.status(400).json({ erro: "Categoria inválida." });
+  if (imagem_url != null && !/^\/colaborador\/api\/site\/midias\/\d+\/arquivo$/.test(imagem_url))
+    return res.status(400).json({ erro: "Imagem inválida. Envie uma imagem pelo formulário." });
+  const out = await q("INSERT INTO ferramentas (nome, descricao, url, imagem_url, categoria) VALUES (?,?,?,?,?)",
+    [String(nome).trim(), String(descricao || "").trim().slice(0,255) || null, url, imagem_url, categoria]);
   for (const g of regras)
     await q("INSERT INTO ferramenta_acessos (ferramenta_id, setor_id, cargo_id, perfil) VALUES (?,?,?,?)",
       [out.insertId, g.setor_id || null, g.cargo_id || null, PERFIS.includes(g.perfil) ? g.perfil : null]);
-  await auditar(req.usuario.id, "criou_ferramenta", nome, req.ip);
+  await auditar(req.usuario.id, "criou_ferramenta", String(out.insertId) + ": " + nome, req.ip);
+  res.status(201).json({ ok: true, id: out.insertId });
+}));
+r.delete("/api/admin/ferramentas/:id", exigir("admin.ferramentas"), wrap(async (req, res) => {
+  await garantirColunaImagemFerramentas();
+  const id = Number(req.params.id);
+  if (!Number.isSafeInteger(id) || id < 1) return res.status(400).json({ erro: "Identificador inválido." });
+  const [item] = await q("SELECT id,nome FROM ferramentas WHERE id=?", [id]);
+  if (!item) return res.status(404).json({ erro: "Ferramenta ou documento não encontrado." });
+  await q("DELETE FROM ferramentas WHERE id=?", [id]);
+  await auditar(req.usuario.id, "excluiu_ferramenta", String(id) + ": " + item.nome, req.ip);
   res.json({ ok: true });
 }));
 
