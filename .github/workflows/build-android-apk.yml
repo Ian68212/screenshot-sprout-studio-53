@@ -71,9 +71,30 @@ jobs:
               image.resize((size, size), Image.Resampling.LANCZOS).save(out / "ic_launcher_round.png")
           PY
 
+      - name: Install exact user-provided logo asset
+        run: |
+          set -euo pipefail
+          SOURCE="android-app/app/src/main/assets/Logo Vertical Rodrinoxpro Soluções Inovação Resultados Colorida 2  PNG.png"
+          TARGET="android-app/app/src/main/assets/rod-logo-vertical.png"
+          test -s "$SOURCE"
+          cp "$SOURCE" "$TARGET"
+          echo "Original PNG SHA256:"
+          sha256sum "$SOURCE" "$TARGET"
+          cmp "$SOURCE" "$TARGET"
+
       - name: Build debug APK for direct installation
         working-directory: android-app
         run: gradle --no-daemon assembleDebug
+
+      - name: Verify packaged logo and APK signature
+        run: |
+          set -euo pipefail
+          APK="android-app/app/build/outputs/apk/debug/app-debug.apk"
+          SOURCE="android-app/app/src/main/assets/Logo Vertical Rodrinoxpro Soluções Inovação Resultados Colorida 2  PNG.png"
+          unzip -p "$APK" assets/rod-logo-vertical.png > /tmp/rod-logo-from-apk.png
+          cmp "$SOURCE" /tmp/rod-logo-from-apk.png
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose "$APK"
+          echo "Logo PNG original confirmado dentro do APK."
 
       - name: Rename APK
         run: |
