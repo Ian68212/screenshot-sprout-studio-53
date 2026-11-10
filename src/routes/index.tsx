@@ -31,6 +31,7 @@ function Home() {
     return { ...s, image: mediaUrl(saved.imagem_id, s.image), eyebrow: String(saved.eyebrow ?? s.eyebrow), title: String(cms.data?.conteudos?.find((x) => x.chave === `home.hero.slide-${n + 1}`)?.titulo ?? s.title), text: String(saved.texto ?? s.text) };
   });
   const intro = cms.content("home.intro");
+  const introTitle = cms.data?.conteudos?.find((x) => x.chave === "home.intro")?.titulo;
   const liveServices = cms.items("servico");
   const visibleServices = liveServices.length ? liveServices.map((s) => ({ slug:s.slug, title:s.titulo, image:mediaUrl(s.imagem_id, services.find((item) => item.slug === s.slug)?.image ?? images.componentes) })) : services;
   const [i, setI] = useState(0);
@@ -79,7 +80,7 @@ function Home() {
       <section className="py-24 md:py-32">
         <div className="container-site grid items-center gap-14 lg:grid-cols-2">
           <Reveal>
-            <SectionTitle eyebrow="Quem somos" title={String(intro.heading ?? "Seu próximo projeto merece um parceiro à altura.")} text={String(intro.texto ?? "Na Rodrinox Pro, acreditamos que grandes resultados começam com soluções bem planejadas. Conectamos necessidades industriais a caminhos eficientes, com atenção aos detalhes, tecnologia e relacionamento próximo.")} />
+            <SectionTitle eyebrow="Quem somos" title={String(introTitle ?? "Seu próximo projeto merece um parceiro à altura.")} text={String(intro.texto ?? "Na Rodrinox Pro, acreditamos que grandes resultados começam com soluções bem planejadas. Conectamos necessidades industriais a caminhos eficientes, com atenção aos detalhes, tecnologia e relacionamento próximo.")} />
             <div className="mt-10 grid gap-6 sm:grid-cols-3">
               {values.map((v, n) => (
                 <div key={v.title} className="border-t-2 border-accent pt-4">
