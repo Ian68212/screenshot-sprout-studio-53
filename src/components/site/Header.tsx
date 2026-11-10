@@ -53,8 +53,8 @@ export function Header() {
           scrolled && "shadow-card"
         )}
       >
-        <div className="container-site flex h-20 items-center justify-between gap-6">
-          <Link to="/" aria-label="Rodrinox Pro — início" className="shrink-0">
+        <div className="site-header-inner container-site flex h-20 items-center gap-6">
+          <Link to="/" aria-label="Rodrinox Pro — início" className="site-header-brand shrink-0">
             <img
               src={logo}
               alt="Rodrinox Pro"
@@ -66,7 +66,7 @@ export function Header() {
 
           {/* MENU DESKTOP */}
           <nav
-            className="hidden items-center gap-7 lg:flex"
+            className="site-header-nav items-center"
             aria-label="Menu principal"
           >
             {nav.map((n) =>
@@ -74,7 +74,7 @@ export function Header() {
                 <a
                   key={n.to}
                   href={n.to}
-                  className="relative py-2 text-sm font-medium text-primary/80 transition-colors hover:text-primary"
+                  className="site-header-link relative py-2 text-sm font-medium text-primary/80 transition-colors hover:text-primary"
                 >
                   {n.label}
                 </a>
@@ -83,7 +83,7 @@ export function Header() {
                   key={n.to}
                   to={n.to}
                   activeOptions={{ exact: n.to === "/" }}
-                  className="relative py-2 text-sm font-medium text-primary/80 transition-colors hover:text-primary after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-accent after:transition-all hover:after:w-full data-[status=active]:text-primary data-[status=active]:after:w-full"
+                  className="site-header-link relative py-2 text-sm font-medium text-primary/80 transition-colors hover:text-primary after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-accent after:transition-all hover:after:w-full data-[status=active]:text-primary data-[status=active]:after:w-full"
                 >
                   {n.label}
                 </Link>
@@ -93,13 +93,13 @@ export function Header() {
 
           <Link
             to="/orcamento"
-            className={cn(btn.base, btn.accent, "hidden lg:inline-flex")}
+            className={cn("site-header-cta", btn.base, btn.accent)}
           >
             Solicitar orçamento
           </Link>
 
           <button
-            className="text-primary lg:hidden"
+            className="site-header-toggle text-primary"
             aria-label={open ? "Fechar menu" : "Abrir menu"}
             aria-expanded={open}
             onClick={() => setOpen(!open)}
@@ -111,7 +111,7 @@ export function Header() {
         {/* MENU MOBILE */}
         {open && (
           <nav
-            className="border-t bg-card lg:hidden"
+            className="site-header-mobile-nav border-t bg-card"
             aria-label="Menu móvel"
           >
             <div className="container-site flex flex-col py-4">
@@ -140,7 +140,7 @@ export function Header() {
               <Link
                 to="/orcamento"
                 onClick={() => setOpen(false)}
-                className={cn(btn.base, btn.accent, "mt-4")}
+                className={cn("site-header-mobile-cta", btn.base, btn.accent, "mt-4")}
               >
                 Solicitar orçamento
               </Link>
