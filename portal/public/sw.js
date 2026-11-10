@@ -1,4 +1,4 @@
-const CACHE_NAME = "rodrinox-app-shell-v5-browser-layout";
+const CACHE_NAME = "rodrinox-app-shell-v6-favicon";
 const SHELL = [
   "/colaborador/",
   "/colaborador/index.html",
@@ -9,7 +9,8 @@ const SHELL = [
   "/colaborador/mobile-install.js",
   "/colaborador/manifest.webmanifest",
   "/colaborador/assets/login-original.jpeg",
-  "/colaborador/assets/app-icon-original.jpeg"
+  "/colaborador/assets/app-icon-original.jpeg",
+  "/favicon-rodrinox.png?v=20261110"
 ];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(SHELL)).then(() => self.skipWaiting()));
