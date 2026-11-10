@@ -17,12 +17,15 @@
 <form id="fc"><label>Novo cargo</label><input name="nome" required><button class="sec" style="margin-top:.5rem">Adicionar cargo</button></form></div>
 <p id="lista" style="color:#5d6b7e"></p></section>
 <section class="card"><h2>Nova ferramenta / documento</h2><form id="ff" class="row">
-<div><label>Nome</label><input name="nome" required></div><div><label>Link</label><input name="url" placeholder="https://..." required></div>
-<div><label>Descrição</label><input name="descricao"></div>
-<div><label>Categoria</label><select name="categoria"><option>ferramentas</option><option>documentos</option><option>comunicados</option><option>treinamentos</option></select></div>
+<div><label>Nome</label><input name="nome" maxlength="160" required></div><div><label>Link</label><input name="url" placeholder="https://..." required></div>
+<div><label>Descrição</label><input name="descricao" maxlength="255"></div>
+<div><label>Categoria</label><select name="categoria"><option value="ferramentas">Ferramentas</option><option value="documentos">Documentos</option><option value="comunicados">Comunicados</option><option value="treinamentos">Treinamentos</option></select></div>
+<div><label>Foto (JPG, PNG ou WebP)</label><input name="imagem" type="file" accept="image/jpeg,image/png,image/webp"><small>Máximo de 5 MB. A imagem aparecerá no cartão do colaborador.</small></div>
+<div><label>Prévia da foto</label><img id="previewFerramenta" class="preview-ferramenta" alt="Prévia da imagem" hidden></div>
 <div><label>Liberar para setor</label><select name="setor_id" class="selSetor"></select></div><div><label>Liberar para cargo</label><select name="cargo_id" class="selCargo"></select></div>
 <div><label>Liberar para perfil</label><select name="perfil"><option value="">Todos</option><option>colaborador</option><option>gestor</option></select></div>
-<div><button>Salvar</button></div></form><p class="erro" id="ef"></p></section>
+<div><button type="submit">Salvar ferramenta</button></div></form><p class="erro" id="ef"></p></section>
+<section class="card"><h2>Ferramentas e documentos cadastrados</h2><div class="tabela-responsiva"><table><thead><tr><th>Foto</th><th>Nome</th><th>Categoria</th><th>Descrição</th><th></th></tr></thead><tbody id="listaFerramentas"></tbody></table></div></section>
 </div>
 <section class="card"><h2>Registro de acessos</h2><table><thead><tr><th>Quando</th><th>Usuário</th><th>Ação</th><th>Detalhe</th></tr></thead><tbody id="ta"></tbody></table></section>
 <dialog id="editarUsuario" class="modal-usuario">
@@ -35,4 +38,4 @@
 <div class="campo-modal"><label>Cargo</label><select name="cargo_id" class="selCargo"><option value="">Nenhum</option></select></div>
 <p class="erro" id="erroEditarUsuario"></p>
 <div class="botoes-modal"><button type="button" class="sec" id="cancelarEdicao">Cancelar</button><button type="submit">Salvar alterações</button></div>
-</form></dialog></main><script src="/colaborador/app.js"></script><script src="/colaborador/admin.js?v=20261110-usuarios-v2"></script></body></html>
+</form></dialog></main><script src="/colaborador/app.js"></script><script src="/colaborador/admin.js?v=20261110-ferramentas-v3"></script></body></html>
