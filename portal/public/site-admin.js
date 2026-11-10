@@ -172,7 +172,7 @@ for(let n=1;n<=3;n++)$("#hero"+n+"-image").addEventListener("change",e=>atualiza
 $("#intro-image").addEventListener("change",e=>atualizarIntroPreview(e.target.value));
 const introUploadInput=$("#intro-image-upload"),introUploadButton=$("#intro-image-upload-button"),introUploadStatus=$("#intro-upload-status");
 function statusUploadIntro(message,error=false){introUploadStatus.textContent=message;introUploadStatus.classList.toggle("error",error);}
-introUploadInput.addEventListener("change",()=>{const file=introUploadInput.files?.[0];if(!file){statusUploadIntro("Nenhum arquivo selecionado.");return;}if(!["image/jpeg","image/png","image/webp"].includes(file.type)){statusUploadIntro("Formato inválido. Use JPG, PNG ou WebP.",true);return;}if(file.size>5*1024*1024){statusUploadIntro("A imagem deve ter no máximo 5 MB.",true);return;}const preview=$("#intro-preview");if(preview.dataset.localPreview)URL.revokeObjectURL(preview.dataset.localPreview);const local=URL.createObjectURL(file);preview.dataset.localPreview=local;preview.src=local;preview.alt="Prévia local: "+file.name;preview.hidden=false;statusUploadIntro("Prévia carregada. Clique em Enviar e selecionar fotografia.");});
+introUploadInput.addEventListener("change",()=>{const file=introUploadInput.files?.[0];if(!file){statusUploadIntro("Nenhum arquivo selecionado.");return;}if(!["image/jpeg","image/png","image/webp"].includes(file.type)){statusUploadIntro("Formato inválido. Use JPG, PNG ou WebP.",true);return;}if(file.size>5*1024*1024){statusUploadIntro("A imagem deve ter no máximo 5 MB.",true);return;}const preview=$("#intro-preview"),reader=new FileReader();reader.onload=()=>{preview.src=String(reader.result);preview.alt="Prévia local: "+file.name;preview.hidden=false;statusUploadIntro("Prévia carregada. Clique em Enviar e selecionar fotografia.");};reader.onerror=()=>statusUploadIntro("Não foi possível gerar a prévia deste arquivo.",true);reader.readAsDataURL(file);});
 async function enviarFotoQuemSomos(){
  const file=introUploadInput.files?.[0];if(!file){statusUploadIntro("Selecione uma fotografia antes de enviar.",true);return;}
  if(!["image/jpeg","image/png","image/webp"].includes(file.type)){statusUploadIntro("Formato inválido. Use JPG, PNG ou WebP.",true);return;}
@@ -187,7 +187,6 @@ async function enviarFotoQuemSomos(){
   const select=$("#intro-image"),id=String(data.id),preview=$("#intro-preview");
   if(!Array.from(select.options).some(option=>option.value===id))select.add(new Option((data.nome_original||file.name)+" (#"+id+")",id));
   select.value=id;preview.src="/colaborador/api/site/midias/"+id+"/arquivo";preview.alt=data.nome_original||file.name;preview.hidden=false;
-  if(preview.dataset.localPreview){URL.revokeObjectURL(preview.dataset.localPreview);delete preview.dataset.localPreview;}
   introUploadInput.value="";
   try{await carregarMidias();select.value=id;atualizarIntroPreview(id);}catch(refreshError){console.warn("Imagem enviada; não foi possível atualizar a lista completa da biblioteca:",refreshError);}
   statusUploadIntro("Fotografia enviada e selecionada! Agora clique em “Salvar página inicial” para publicar no site.");
