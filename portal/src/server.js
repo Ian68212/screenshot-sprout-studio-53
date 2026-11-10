@@ -87,6 +87,16 @@ app.use(cookieParser());
 
 const r = express.Router();
 const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
+let ferramentaImagemSchema;
+async function garantirColunaImagemFerramentas() {
+  if (!ferramentaImagemSchema) {
+    ferramentaImagemSchema = (async () => {
+      const [colunas] = await q("SHOW COLUMNS FROM ferramentas LIKE 'imagem_url'");
+      if (!colunas.length) await q("ALTER TABLE ferramentas ADD COLUMN imagem_url VARCHAR(500) NULL AFTER url");
+    })().catch((error) => { ferramentaImagemSchema = null; throw error; });
+  }
+  await ferramentaImagemSchema;
+}
 // Arquivos públicos do portal não dependem do MySQL nem de sessão.
 if (publicDir) {
   console.info("Portal: arquivos públicos servidos de", publicDir);
@@ -292,9 +302,11 @@ r.delete("/api/admin/usuarios/:id", exigir("admin.usuarios"), wrap(async (req, r
 }));
 
 r.get("/api/admin/ferramentas", exigir("admin.ferramentas"), wrap(async (_req, res) => {
+  await garantirColunaImagemFerramentas();
   res.json({ ferramentas: await q("SELECT * FROM ferramentas ORDER BY nome"), regras: await q("SELECT * FROM ferramenta_acessos") });
 }));
 r.post("/api/admin/ferramentas", exigir("admin.ferramentas"), wrap(async (req, res) => {
+  await garantirColunaImagemFerramentas();
   const { nome, descricao = null, url, categoria = "ferramentas", regras = [] } = req.body || {};
   if (!nome || !url || !/^(https:\/\/|\/)/.test(url)) return res.status(400).json({ erro: "Informe nome e um link https:// ou /" });
   const out = await q("INSERT INTO ferramentas (nome, descricao, url, categoria) VALUES (?,?,?,?)", [nome, descricao, url, categoria]);
@@ -311,7 +323,7 @@ r.get("/api/admin/auditoria", exigir("admin.auditoria"), wrap(async (_req, res) 
 }));
 
 r.use((err, _req, res, _next) => {
-  if (err?.code === "LIMIT_FILE_SIZE") return res.status(413).json({ erro: "O currículo deve ter no máximo 5 MB." });
+  if (err?.code === "LIMIT_FILE_SIZE") return res.status(413).json({ erro: "O arquivo enviado deve ter no máximo 5 MB." });
   if (err?.message?.includes("currículo")) return res.status(400).json({ erro: err.message });
   if (err?.code === "ER_DUP_ENTRY") return res.status(409).json({ erro: "Registro já existe" });
   console.error(err);
