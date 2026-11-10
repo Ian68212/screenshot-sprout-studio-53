@@ -6,6 +6,7 @@ import multer from "multer";
 import { fileTypeFromBuffer } from "file-type";
 import { q, auditar } from "./db.js";
 import { exigir } from "./auth.js";
+import { pode, podeVerFerramenta } from "./permissions.js";
 
 // Todas as rotas do portal e do site usam a mesma pasta persistente.
 import { SITE_MEDIA_DIR } from "./media-storage.js";
@@ -72,10 +73,27 @@ mediaRouter.post("/", exigir("site.editar"), upload.single("imagem"), async (req
   }
 });
 
-mediaRouter.get("/:id/arquivo", exigir("site.editar"), async (req,res,next) => {
+mediaRouter.get("/:id/arquivo", exigir("painel"), async (req,res,next) => {
   try {
     const id = valido(req.params.id);
     if (!id) return res.status(400).json({ erro:"ID inválido" });
+    // Editores podem visualizar a biblioteca; colaboradores somente imagens de ferramentas autorizadas.
+    if (!pode(req.usuario, "site.editar")) {
+      const recursos = await q(
+        "SELECT id FROM ferramentas WHERE ativo=1 AND imagem_url=?",
+        ["/colaborador/api/site/midias/" + id + "/arquivo"]
+      );
+      if (!recursos.length) return res.status(403).json({ erro: "Acesso negado" });
+      const regras = await q(
+        "SELECT ferramenta_id,setor_id,cargo_id,perfil FROM ferramenta_acessos WHERE ferramenta_id IN (" +
+          recursos.map(() => "?").join(",") + ")",
+        recursos.map((recurso) => recurso.id)
+      );
+      const autorizado = recursos.some((recurso) =>
+        podeVerFerramenta(req.usuario, regras.filter((regra) => regra.ferramenta_id === recurso.id))
+      );
+      if (!autorizado) return res.status(403).json({ erro: "Acesso negado" });
+    }
     const [m] = await q("SELECT caminho,mime,nome_original FROM site_midias WHERE id=?",[id]);
     if (!m || !/^[a-f0-9-]{36}\.(jpg|png|webp)$/.test(m.caminho))
       return res.status(404).json({ erro:"Imagem não encontrada" });
