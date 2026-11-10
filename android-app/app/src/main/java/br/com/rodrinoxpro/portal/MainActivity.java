@@ -281,11 +281,13 @@ public class MainActivity extends Activity {
                 }
                 body[data-view="app"] .brand-lockup .brand-mark,
                 body[data-view="app"] .brand-lockup .brand-copy { display:none !important; }
+                body[data-view="app"] .brand-lockup img,
                 body[data-view="app"] .brand-lockup .brand-full-logo {
-                  display:block !important; visibility:visible !important; width:auto !important;
-                  max-width:100% !important; height:100% !important;
-                  max-height:100% !important; aspect-ratio:auto !important;
-                  object-fit:contain !important; object-position:center !important;
+                  display:block !important; visibility:visible !important;
+                  flex:0 1 auto !important; width:100% !important; height:100% !important;
+                  min-width:0 !important; min-height:0 !important; max-width:100% !important;
+                  max-height:100% !important; aspect-ratio:480 / 398 !important;
+                  object-fit:contain !important; object-position:center center !important;
                   image-rendering:auto !important; -webkit-transform:translateZ(0);
                   filter:drop-shadow(0 5px 14px rgba(0,0,0,.2));
                 }
