@@ -125,3 +125,15 @@ body{font-family:Inter,"Segoe UI",Arial,Helvetica,sans-serif;-webkit-font-smooth
  .access-icon{height:clamp(27px,3.8vh,38px)}
  .access-icon svg{width:clamp(27px,2.6vw,35px);height:clamp(27px,2.6vw,35px)}
 }
+
+/* Diretório corporativo por setor */
+#items.contacts-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:16px;align-items:start;margin-top:16px}
+.contact-group{background:linear-gradient(145deg,#203e5d,#0e2b49);border:1px solid #3a5976;border-radius:15px;overflow:hidden}
+.contact-group h3{margin:0;padding:15px 18px;border-bottom:1px solid #3b5a76;font-size:17px;color:#fff}
+.contact-people{padding:5px 15px}
+.contact-person{display:flex;flex-direction:column;gap:5px;padding:13px 3px;border-bottom:1px solid #35516b;min-width:0}
+.contact-person:last-child{border-bottom:0}
+.contact-person strong{font-size:14px}
+.contact-person a{font-size:13px;color:#a8d8ff;overflow-wrap:anywhere}
+.contact-person a:hover{text-decoration:underline}
+@media(min-width:1101px){#details{height:100%;overflow-y:auto;padding-bottom:40px}}
