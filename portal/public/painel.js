@@ -1,38 +1,73 @@
-const CATS = { documentos: "Documentos", comunicados: "Comunicados", treinamentos: "Treinamentos", ferramentas: "Ferramentas" };
-(async () => {
-  const eu = await api("eu");
-  ola.textContent = `Olá, ${eu.nome.split(" ")[0]}`;
-  info.textContent = [eu.setor, eu.cargo, eu.perfil].filter(Boolean).join(" · ");
-  if (eu.perfil === "admin" || eu.perfil === "gestor") lnkAdmin.hidden = false;
-  if (eu.perfil === "admin") lnkSiteAdmin.hidden = false;
-
-  // Central de Aplicativos: Android tenta abrir o app instalado; se não houver,
-  // o Chrome usa o endereço da Play Store como fallback. No iOS usamos a App Store
-  // até que a Intelbras publique/valide um esquema oficial de abertura direta.
-  const androidLink = document.getElementById("abrirIsicAndroid");
-  const iosLink = document.getElementById("abrirIsicIOS");
-  const statusIsic = document.getElementById("statusIsic");
-  const agente = navigator.userAgent || "";
-  const android = /Android/i.test(agente);
-  const ios = /iPhone|iPad|iPod/i.test(agente) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-  if (android) {
-    androidLink.href = "intent://#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=com.intelbras.isiclite;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.intelbras.isiclite;end";
-    androidLink.removeAttribute("target");
-    androidLink.textContent = "Abrir aplicativo";
-    iosLink.hidden = true;
-    statusIsic.textContent = "Android: tentaremos abrir o iSIC Lite. Se não estiver instalado, abriremos a Google Play.";
-  } else if (ios) {
-    androidLink.hidden = true;
-    iosLink.textContent = "Abrir / instalar iSIC Lite";
-    statusIsic.textContent = "iPhone: abre a página oficial do iSIC Lite na App Store.";
+const CATS = { documentos:"Documentos", comunicados:"Comunicados", treinamentos:"Treinamentos", ferramentas:"Ferramentas" };
+const byId = id => document.getElementById(id);
+const categorias = {};
+function recursoCard(i) {
+ const href = String(i.url || "").trim();
+ const safeUrl = /^https?:\/\//i.test(href) ? href : "#";
+ const image = i.imagem_url ? '<img class="imagem-recurso" src="'+esc(i.imagem_url)+'" alt="">' : '<div class="imagem-recurso sem-imagem"><span>Rodrinox Pro</span></div>';
+ return '<a class="card card-recurso" href="'+esc(safeUrl)+'" '+(safeUrl==="#"?'aria-disabled="true"':'target="_blank" rel="noopener noreferrer"')+'>'+image+'<div class="conteudo-recurso"><h3>'+esc(i.nome)+'</h3><p>'+esc(i.descricao||"")+'</p><span class="abrir-recurso">'+(safeUrl==="#"?"Link indisponível":"Abrir recurso ↗")+'</span></div></a>';
+}
+function listaRecente(items,cat) {
+ if (!items.length) return '<p class="empty-state">Nenhum item disponível ainda.</p>';
+ return items.slice(0,3).map(i=>'<button type="button" class="recent-row" data-view="'+cat+'"><span>▤</span><strong>'+esc(i.nome)+'</strong><span>→</span></button>').join("");
+}
+function mostrar(view) {
+ const inicio=view==="inicio";
+ byId("homeSections").hidden=!inicio;
+ byId("categoryView").hidden=inicio||view==="aplicativos";
+ byId("appsView").hidden=view!=="aplicativos";
+ byId("inicio").hidden=!inicio;
+ document.querySelectorAll(".dash-nav-link").forEach(a=>a.classList.toggle("active",a.dataset.view===view));
+ if(!inicio&&view!=="aplicativos"){
+  byId("categoryTitle").textContent=CATS[view]||({contatos:"Contatos",suporte:"Suporte / TI"}[view]||"Recursos");
+  if(CATS[view]){
+   const items=categorias[view]||[];
+   byId("categoryContent").innerHTML=items.length?'<div class="grid">'+items.map(recursoCard).join("")+'</div>':'<p class="empty-state">Nenhum item disponível ainda.</p>';
+  } else if(view==="contatos"){
+   byId("categoryContent").innerHTML='<div class="dashboard-panel panel-content"><p>Para encontrar contatos internos, consulte a administração da empresa.</p></div>';
   } else {
-    statusIsic.textContent = "Acesse pelo celular: Android ou iPhone. No computador, escolha a loja correspondente ao seu aparelho.";
+   byId("categoryContent").innerHTML='<div class="dashboard-panel panel-content"><p>Para suporte técnico, entre em contato com a administração da Rodrinox Pro.</p></div>';
   }
-  const itens = await api("ferramentas");
-  cats.innerHTML = Object.entries(CATS).map(([k, t]) => {
-    const l = itens.filter((i) => i.categoria === k);
-    return `<section><h2>${t}</h2>${l.length ? `<div class="grid">${l.map((i) =>
-      `<a class="card card-recurso" href="${esc(i.url)}" target="_blank" rel="noopener">${i.imagem_url ? `<img class="imagem-recurso" src="${esc(i.imagem_url)}" alt="">` : `<div class="imagem-recurso sem-imagem"><span>Rodrinox Pro</span></div>`}<div class="conteudo-recurso"><h3>${esc(i.nome)}</h3><p>${esc(i.descricao || "")}</p><span class="abrir-recurso">Abrir recurso ↗</span></div></a>`).join("")}</div>`
-      : `<p style="color:#5d6b7e">Nenhum item disponível ainda.</p>`}</section>`;
-  }).join("");
+ }
+ if(window.innerWidth<=850)byId("sidebar").classList.remove("open");
+ window.scrollTo({top:0,behavior:"smooth"});
+}
+document.addEventListener("click",e=>{
+ const target=e.target.closest("[data-view]");
+ if(!target)return;
+ e.preventDefault();
+ mostrar(target.dataset.view);
+});
+byId("toggleSidebar").addEventListener("click",()=>byId("sidebar").classList.toggle("open"));
+(async()=>{
+ try {
+  const eu=await api("eu");
+  const nome=String(eu.nome||"Colaborador");
+  byId("primeiroNome").textContent=nome.split(" ")[0];
+  byId("userTop").textContent=nome;
+  byId("info").textContent=[eu.setor,eu.cargo,eu.perfil].filter(Boolean).join(" · ");
+  if(eu.perfil==="admin"||eu.perfil==="gestor")byId("lnkAdmin").hidden=false;
+  if(eu.perfil==="admin")byId("lnkSiteAdmin").hidden=false;
+  const itens=await api("ferramentas");
+  for(const cat of Object.keys(CATS))categorias[cat]=Array.isArray(itens)?itens.filter(i=>i.categoria===cat):[];
+  byId("recentComunicados").innerHTML=listaRecente(categorias.comunicados,"comunicados");
+  byId("featuredTreinamentos").innerHTML=listaRecente(categorias.treinamentos,"treinamentos");
+ }catch(err){
+  byId("recentComunicados").textContent="Não foi possível carregar os recursos.";
+  byId("featuredTreinamentos").textContent="Tente atualizar a página.";
+  console.error("Falha ao carregar painel:",err);
+ }
+ const androidLink=byId("abrirIsicAndroid"),iosLink=byId("abrirIsicIOS"),status=byId("statusIsic");
+ const ua=navigator.userAgent||"";
+ if(/Android/i.test(ua)){
+  androidLink.href="intent://#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=com.intelbras.isiclite;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.intelbras.isiclite;end";
+  androidLink.textContent="Abrir aplicativo";
+  iosLink.hidden=true;
+  status.textContent="Android: tenta abrir o aplicativo instalado.";
+ }else if(/iPhone|iPad|iPod/i.test(ua)){
+  androidLink.hidden=true;
+  status.textContent="iPhone: acesso à página oficial na App Store.";
+ }else status.textContent="No celular, escolha o sistema correspondente.";
+ const hash=location.hash.replace("#","");
+ if(hash==="aplicativos"||CATS[hash])mostrar(hash);
 })();
