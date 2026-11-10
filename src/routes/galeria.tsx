@@ -17,7 +17,7 @@ function Galeria() {
   const cms = usePublicSite();
   const p = cms.content("galeria.pagina", {});
   const saved = cms.items("galeria");
-  const gallery = saved.length ? saved.map(x=>({src:mediaUrl(x.imagem_id,images.componentes),alt:x.descricao||x.titulo})) : defaults;
+  const gallery = saved.length ? saved.map(x=>({src:mediaUrl(x.imagem_id,defaults.find(d=>d.alt===x.descricao)?.src ?? images.componentes),alt:x.descricao||x.titulo})) : defaults;
   const [open,setOpen] = useState<number|null>(null);
   return <>
     <PageHero eyebrow={String(p.hero_chamada??"Galeria")} title={String(p.hero_titulo??"Nosso trabalho em imagens.")} image={mediaUrl(p.hero_imagem_id,images.componentes)} />
