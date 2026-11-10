@@ -157,6 +157,7 @@ r.post("/api/logout", wrap(async (req, res) => {
 r.get("/api/eu", exigir("painel"), (req, res) => res.json(req.usuario));
 
 r.get("/api/ferramentas", exigir("painel"), wrap(async (req, res) => {
+  await garantirColunaImagemFerramentas();
   const ferramentas = await q("SELECT id, nome, descricao, url, imagem_url, categoria FROM ferramentas WHERE ativo = 1 ORDER BY nome");
   const regras = await q("SELECT * FROM ferramenta_acessos");
   res.json(ferramentas.filter((f) => podeVerFerramenta(req.usuario, regras.filter((x) => x.ferramenta_id === f.id))));
