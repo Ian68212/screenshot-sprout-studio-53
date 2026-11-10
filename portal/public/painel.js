@@ -5,6 +5,28 @@ const CATS = { documentos: "Documentos", comunicados: "Comunicados", treinamento
   info.textContent = [eu.setor, eu.cargo, eu.perfil].filter(Boolean).join(" · ");
   if (eu.perfil === "admin" || eu.perfil === "gestor") lnkAdmin.hidden = false;
   if (eu.perfil === "admin") lnkSiteAdmin.hidden = false;
+
+  // Central de Aplicativos: Android tenta abrir o app instalado; se não houver,
+  // o Chrome usa o endereço da Play Store como fallback. No iOS usamos a App Store
+  // até que a Intelbras publique/valide um esquema oficial de abertura direta.
+  const androidLink = document.getElementById("abrirIsicAndroid");
+  const iosLink = document.getElementById("abrirIsicIOS");
+  const statusIsic = document.getElementById("statusIsic");
+  const agente = navigator.userAgent || "";
+  const android = /Android/i.test(agente);
+  const ios = /iPhone|iPad|iPod/i.test(agente) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  if (android) {
+    androidLink.href = "intent://#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=com.intelbras.isiclite;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.intelbras.isiclite;end";
+    androidLink.textContent = "Abrir aplicativo";
+    iosLink.hidden = true;
+    statusIsic.textContent = "Android: tentaremos abrir o iSIC Lite. Se não estiver instalado, abriremos a Google Play.";
+  } else if (ios) {
+    androidLink.hidden = true;
+    iosLink.textContent = "Abrir / instalar iSIC Lite";
+    statusIsic.textContent = "iPhone: abre a página oficial do iSIC Lite na App Store.";
+  } else {
+    statusIsic.textContent = "Acesse pelo celular: Android ou iPhone. No computador, escolha a loja correspondente ao seu aparelho.";
+  }
   const itens = await api("ferramentas");
   cats.innerHTML = Object.entries(CATS).map(([k, t]) => {
     const l = itens.filter((i) => i.categoria === k);
