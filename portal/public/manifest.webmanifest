@@ -13,6 +13,6 @@
   "theme_color": "#071d38",
   "categories": ["business", "productivity"],
   "icons": [
-    {"src": "/colaborador/assets/app-icon-original.jpeg", "sizes": "1254x1254", "type": "image/jpeg", "purpose": "any"}
+    {"src": "/favicon-rodrinox.png?v=20261110", "sizes": "128x128", "type": "image/png", "purpose": "any"}
   ]
 }
