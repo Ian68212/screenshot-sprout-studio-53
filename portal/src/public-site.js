@@ -50,15 +50,12 @@ publicSiteRouter.get("/midias/:id", async (req, res, next) => {
           OR EXISTS (
             SELECT 1 FROM site_conteudos c
              WHERE c.status='publicado' AND (
-               c.corpo LIKE ? OR c.corpo LIKE ? OR
-               c.corpo LIKE ? OR c.corpo LIKE ?
+               c.corpo LIKE ?
              )
           )
         )
         LIMIT 1`,
-      [id,
-       '%"imagem_id":' + id + ',%', '%"imagem_id":' + id + '}%',
-       '%"logo_imagem_id":' + id + ',%', '%"logo_imagem_id":' + id + '}%'],
+      [id, '%imagem_id":' + id + '%'],
     );
     if (!media || !IMAGE_NAME.test(media.caminho)) return res.status(404).json({ erro: "Imagem pública não encontrada" });
     const buffer = await readFile(path.join(SITE_MEDIA_DIR, media.caminho));
