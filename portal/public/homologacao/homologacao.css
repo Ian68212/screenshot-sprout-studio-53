@@ -72,3 +72,12 @@ button:focus-visible,a:focus-visible{outline:2px solid #ff912f;outline-offset:2p
 .feature-icon,.access-icon{display:inline-flex;align-items:center;justify-content:center;line-height:1}
 .feature-icon{font-size:50px}.access-icon{font-size:34px}
 .brand-logo{filter:brightness(0) invert(1)}
+
+/* Miniaturas vinculadas ao cadastro real de cursos no administrador. */
+.training-item{display:flex;align-items:center;gap:14px;min-height:65px;padding:6px 4px}
+.resource-thumb{display:block;width:112px;height:66px;object-fit:cover;flex:0 0 112px;border-radius:8px;background:#102c4b}
+.resource-info{min-width:0;display:flex;flex-direction:column;gap:6px}
+.resource-info strong{font-size:13px;line-height:1.25}
+.resource-info a{color:#b5dcff;font-size:12px;font-weight:700}
+.resource-info span{color:#b9c9db;font-size:11px}
+@media(max-width:600px){.resource-thumb{width:88px;height:58px;flex-basis:88px}}
