@@ -79,11 +79,19 @@ mediaRouter.get("/:id/arquivo", exigir("painel"), async (req,res,next) => {
     if (!id) return res.status(400).json({ erro:"ID inválido" });
     // Editores podem visualizar a biblioteca; colaboradores somente imagens de ferramentas autorizadas.
     if (!pode(req.usuario, "site.editar")) {
-      const recursos = await q(
-        "SELECT id FROM ferramentas WHERE ativo=1 AND imagem_url=?",
-        ["/colaborador/api/site/midias/" + id + "/arquivo"]
+      // Aceita URL interna absoluta, relativa ou com parâmetros, mas compara o caminho exato.
+      const candidatos = await q(
+        "SELECT id, imagem_url FROM ferramentas WHERE ativo=1 AND imagem_url LIKE ?",
+        ["%/api/site/midias/" + id + "/arquivo%"]
       );
-      if (!recursos.length) return res.status(403).json({ erro: "Acesso negado" });
+      const caminhoEsperado = "/colaborador/api/site/midias/" + id + "/arquivo";
+      const recursos = candidatos.filter((recurso) => {
+        try {
+          const url = new URL(recurso.imagem_url, "https://rodrinoxpro.com.br");
+          return url.pathname === caminhoEsperado && url.origin === "https://rodrinoxpro.com.br";
+        } catch { return false; }
+      });
+      if (!recursos.length) return res.status(403).json({ erro: "Acesso negado", codigo: "MIDIA_SEM_RECURSO" });
       const regras = await q(
         "SELECT ferramenta_id,setor_id,cargo_id,perfil FROM ferramenta_acessos WHERE ferramenta_id IN (" +
           recursos.map(() => "?").join(",") + ")",
@@ -92,7 +100,7 @@ mediaRouter.get("/:id/arquivo", exigir("painel"), async (req,res,next) => {
       const autorizado = recursos.some((recurso) =>
         podeVerFerramenta(req.usuario, regras.filter((regra) => regra.ferramenta_id === recurso.id))
       );
-      if (!autorizado) return res.status(403).json({ erro: "Acesso negado" });
+      if (!autorizado) return res.status(403).json({ erro: "Acesso negado", codigo: "MIDIA_SEM_PERMISSAO" });
     }
     const [m] = await q("SELECT caminho,mime,nome_original FROM site_midias WHERE id=?",[id]);
     if (!m || !/^[a-f0-9-]{36}\.(jpg|png|webp)$/.test(m.caminho))
