@@ -307,7 +307,6 @@ r.get("/api/admin/ferramentas", exigir("admin.ferramentas"), wrap(async (_req, r
   res.json({ ferramentas: await q("SELECT * FROM ferramentas ORDER BY categoria,nome"), regras: await q("SELECT * FROM ferramenta_acessos") });
 }));
 r.post("/api/admin/ferramentas", exigir("admin.ferramentas"), wrap(async (req, res) => {
-  await garantirColunaImagemFerramentas();
   const { nome, descricao = null, url, imagem_url = null, categoria = "ferramentas", regras = [] } = req.body || {};
   if (!nome || String(nome).trim().length > 160 || !url || String(url).length > 500 || !/^(https:\/\/|\/)/.test(url))
     return res.status(400).json({ erro: "Informe nome e um link https:// ou /" });
@@ -317,9 +316,11 @@ r.post("/api/admin/ferramentas", exigir("admin.ferramentas"), wrap(async (req, r
     return res.status(400).json({ erro: "Imagem inválida. Envie uma imagem pelo formulário." });
 
   let conexao;
-  let etapa = "conectar ao banco";
+  let etapa = "verificar estrutura da tabela ferramentas";
   const referencia = crypto.randomUUID().slice(0,8);
   try {
+    await garantirColunaImagemFerramentas();
+    etapa = "conectar ao banco";
     conexao = await pool.getConnection();
     await conexao.beginTransaction();
 
