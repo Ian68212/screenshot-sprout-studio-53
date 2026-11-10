@@ -12,7 +12,7 @@ export const Route = createFileRoute("/contato")({
   component: Contato,
 });
 
-function ContactInfo() {
+export function ContactInfo() {
   const cms = usePublicSite();
   const p = cms.content("contato.dados", {});
   const email = String(p.email ?? company.email);
