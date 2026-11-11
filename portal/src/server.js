@@ -115,7 +115,7 @@ r.use(["/oficial", "/painel/oficial"], wrap(async (req, res, next) => {
 if (publicDir) {
   const employeeSource = path.join(publicDir, "homologacao");
   const adminSource = path.join(publicDir, "painel", "homologacao");
-  r.use("/oficial", express.static(employeeSource, { index: false, fallthrough: true }));
+  r.use("/oficial", express.static(employeeSource, { index: false, fallthrough: true, setHeaders(res) { res.setHeader("Cache-Control", "no-store, max-age=0"); } }));
   r.get(["/oficial", "/oficial/"], (_req, res) => {
     const html = fs.readFileSync(path.join(employeeSource, "index.html"), "utf8")
       .replaceAll("AMBIENTE DE HOMOLOGAÇÃO", "PORTAL OFICIAL")
@@ -123,7 +123,7 @@ if (publicDir) {
       .replaceAll("/colaborador/painel.html", "/colaborador/oficial/");
     res.type("html").send(html);
   });
-  r.use("/painel/oficial", express.static(adminSource, { index: false, fallthrough: true }));
+  r.use("/painel/oficial", express.static(adminSource, { index: false, fallthrough: true, setHeaders(res) { res.setHeader("Cache-Control", "no-store, max-age=0"); } }));
   r.get(["/painel/oficial", "/painel/oficial/"], (_req, res) => {
     const html = fs.readFileSync(path.join(adminSource, "index.html"), "utf8")
       .replaceAll("PAINEL ADMINISTRATIVO · HOMOLOGAÇÃO", "PAINEL ADMINISTRATIVO · OFICIAL")
