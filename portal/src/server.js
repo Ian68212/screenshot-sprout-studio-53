@@ -1,4 +1,5 @@
 import { tasksRouter } from "./tasks-official.js";
+import { accessProfilesRouter } from "./access-profiles.js";
 import atendimentoRodrinoxRouter from "./atendimento-rodrinox.js";
 import whatsappMetaRouter from "./whatsapp-meta.js";
 import "dotenv/config";
@@ -267,6 +268,7 @@ r.get("/api/atendimento/consultar/:recurso", exigir("painel"), wrap(async (req, 
 
 // Permissões de navegação: sessões reais e alterações exclusivas do administrador.
 r.use("/api/menu", menuPermissoesRouter);
+r.use("/api/access-profiles", accessProfilesRouter);
 r.use("/api/tasks-official", tasksRouter);
 r.use("/api/atendimento/rodrinox", atendimentoRodrinoxRouter);
 r.use("/api/whatsapp-meta", whatsappMetaRouter);
