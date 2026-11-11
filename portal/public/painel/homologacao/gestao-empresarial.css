@@ -1,0 +1,28 @@
+
+/* Gestão Empresarial — escopo isolado da homologação */
+#items.ge-area{display:block;max-width:1280px}
+.ge-wrap{color:#e9f1fa;font-family:Arial,Helvetica,sans-serif}
+.ge-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:24px}
+.ge-eyebrow{color:#8faecb;font-size:12px;text-transform:uppercase;letter-spacing:1.5px;font-weight:700}
+.ge-heading h3{font-size:28px;letter-spacing:-.5px;margin:7px 0 6px}
+.ge-heading p,.ge-subtle{color:#a7bfd4;font-size:14px;line-height:1.55;margin:0}
+.ge-status{border:1px solid #42607b;border-radius:30px;padding:9px 13px;font-size:12px;color:#c2d5e5;background:#19334e;white-space:nowrap}
+.ge-layout{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.ge-tile,.ge-panel{background:#112d49;border:1px solid #294964;border-radius:15px;padding:20px}
+.ge-tile{min-height:137px}
+.ge-tile .ge-icon{font-size:20px;color:#ff912f}
+.ge-tile h4{margin:12px 0 7px;font-size:15px}
+.ge-tile p{color:#9eb7ce;font-size:13px;line-height:1.45;margin:0}
+.ge-section{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(260px,1fr);gap:14px;margin-top:16px}
+.ge-panel h4{margin:0 0 14px;font-size:17px}
+.ge-placeholder{padding:25px 14px;border:1px dashed #496580;border-radius:11px;text-align:center;color:#b1c6d8;font-size:14px;line-height:1.65;background:#0b243e}
+.ge-placeholder strong{display:block;color:#e6f1fb;font-size:17px;margin-bottom:5px}
+.ge-steps{list-style:none;margin:0;padding:0;display:grid;gap:13px}
+.ge-steps li{display:flex;align-items:flex-start;gap:11px;color:#b9cede;font-size:13px;line-height:1.45}
+.ge-steps li span{background:#264866;color:#d5e8f7;width:24px;height:24px;border-radius:50%;flex:none;display:grid;place-items:center;font-weight:700}
+.ge-notice{margin-top:16px;border-left:3px solid #ff8a25;padding:11px 14px;background:#193550;border-radius:0 9px 9px 0;color:#bed0df;font-size:13px;line-height:1.55}
+.ge-restricted{max-width:620px;margin:24px 0;padding:25px;border:1px solid #3c5974;border-radius:15px;background:#132e49}
+.ge-restricted h3{margin:0 0 10px;font-size:22px}
+.ge-restricted p{color:#b5c9dc;line-height:1.6}
+@media(max-width:1150px){.ge-layout{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:740px){.ge-layout,.ge-section{grid-template-columns:1fr}.ge-heading h3{font-size:23px}.ge-tile{min-height:unset}}
