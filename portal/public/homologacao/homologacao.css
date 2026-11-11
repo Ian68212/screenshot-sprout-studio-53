@@ -145,3 +145,9 @@ body{font-family:Inter,"Segoe UI",Arial,Helvetica,sans-serif;-webkit-font-smooth
 #items .item .brand-meistertask{height:145px;width:100%;display:flex;align-items:center;justify-content:center;gap:9px;padding:14px 10px;background:#fff;color:#101010;overflow:hidden}
 #items .item .meistertask-mark{flex:none;display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:#1689f9;color:#fff;font-size:27px;font-weight:800;line-height:1}
 #items .item .meistertask-word{min-width:0;font-size:clamp(16px,1.6vw,22px);font-weight:750;letter-spacing:-.045em;white-space:nowrap}
+
+/* Identificação visual local para o aplicativo iSIC Lite: não depende de imagens externas. */
+#items .item .isic-app-visual{height:145px;width:100%;display:flex;align-items:center;justify-content:center;gap:12px;padding:18px;background:#fff;color:#183755;overflow:hidden}
+#items .item .isic-app-icon{flex:none;width:66px;height:66px;border-radius:16px;background:#167cbb;color:#fff;display:grid;place-items:center}
+#items .item .isic-app-icon svg{width:46px;height:46px;display:block}
+#items .item .isic-app-name{font-size:clamp(18px,1.6vw,23px);font-weight:750;letter-spacing:-.03em;white-space:nowrap}
