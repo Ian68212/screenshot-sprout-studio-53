@@ -85,3 +85,33 @@ tasksRouter.delete("/projects/:id",wrap(async(req,res)=>{
  await q("DELETE FROM rp_task_projects WHERE id=?",[req.params.id]);
  res.json({ok:true});
 }));
+
+/* Shared state for the approved full Tasks interface. Starts empty; never imports browser demos. */
+tasksRouter.get("/board",wrap(async(req,res)=>{
+ await q("CREATE TABLE IF NOT EXISTS rp_task_board (id INT PRIMARY KEY, revision BIGINT NOT NULL DEFAULT 0, state_json LONGTEXT NOT NULL, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+ await q("INSERT IGNORE INTO rp_task_board(id,revision,state_json) VALUES (1,0,'{\"projects\":[],\"tasks\":[],\"trash\":[]}')");
+ const [row]=await q("SELECT revision,state_json FROM rp_task_board WHERE id=1");
+ res.setHeader("Cache-Control","no-store");
+ res.json({revision:Number(row.revision),state:JSON.parse(row.state_json),user:{id:req.usuario.id,nome:req.usuario.nome,email:req.usuario.email,perfil:req.usuario.perfil}});
+}));
+tasksRouter.put("/board",wrap(async(req,res)=>{
+ const state=req.body?.state,revision=req.body?.revision;
+ if(!state||!Array.isArray(state.projects)||!Array.isArray(state.tasks)||!Array.isArray(state.trash)||!Number.isSafeInteger(revision))return res.status(400).json({erro:"Estado inválido"});
+ if(state.projects.length>1000||state.tasks.length>10000||state.trash.length>10000)return res.status(413).json({erro:"Limite excedido"});
+ const json=JSON.stringify(state);if(json.length>3000000)return res.status(413).json({erro:"Dados excedem 3 MB"});
+ if(!admin(req)){
+   const [old]=await q("SELECT state_json FROM rp_task_board WHERE id=1");
+   const before=JSON.parse(old.state_json);
+   if(JSON.stringify(before.projects)!==JSON.stringify(state.projects)||JSON.stringify(before.trash)!==JSON.stringify(state.trash))return res.status(403).json({erro:"Somente o administrador pode alterar projetos ou lixeira"});
+   const previous=new Map(before.tasks.map(t=>[String(t.id),t]));
+   if(previous.size!==state.tasks.length)return res.status(403).json({erro:"Somente o administrador pode criar ou excluir tarefas"});
+   for(const t of state.tasks){const oldTask=previous.get(String(t.id));if(!oldTask)return res.status(403).json({erro:"Tarefa não autorizada"});
+     if(Number(oldTask.ownerId)!==Number(req.usuario.id)) {
+       if(JSON.stringify(oldTask)!==JSON.stringify(t))return res.status(403).json({erro:"Somente o responsável pode alterar esta tarefa"});
+     }else if(t.projectId!==oldTask.projectId||t.id!==oldTask.id)return res.status(403).json({erro:"Identificador protegido"});
+   }
+ }
+ const result=await q("UPDATE rp_task_board SET state_json=?,revision=revision+1 WHERE id=1 AND revision=?",[json,revision]);
+ if(!result.affectedRows)return res.status(409).json({erro:"Outro usuário atualizou o quadro. Recarregue antes de salvar."});
+ res.json({revision:revision+1});
+}));
