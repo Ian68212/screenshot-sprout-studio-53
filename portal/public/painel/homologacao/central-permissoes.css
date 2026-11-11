@@ -26,3 +26,42 @@
  #adminWorkspace .mp-list{max-height:55dvh;min-height:220px}
  #adminWorkspace .mp-controls{grid-template-columns:1fr}
 }
+
+
+/* Perfis personalizados: identidade visual integrada ao painel administrativo */
+#adminWorkspace .mp-wrap:has(#ap-select){max-width:1180px;max-height:none;overflow:visible;gap:0}
+#adminWorkspace .mp-wrap:has(#ap-select) .mp-intro{margin:0 0 8px}
+#adminWorkspace .mp-wrap:has(#ap-select) .mp-intro h3{font-size:21px;font-weight:750;letter-spacing:-.35px}
+#adminWorkspace .mp-wrap:has(#ap-select) .mp-intro p{margin:4px 0 12px}
+#adminWorkspace .mp-wrap:has(#ap-select) .mp-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:12px 0}
+#adminWorkspace .mp-wrap:has(#ap-select) .mp-controls label{min-width:0;font-weight:600}
+#adminWorkspace .mp-wrap:has(#ap-select) input:not([type=checkbox]),
+#adminWorkspace .mp-wrap:has(#ap-select) select{box-sizing:border-box;width:100%;min-width:0;min-height:42px;padding:10px 13px;background:#173854;border:1px solid #426381;border-radius:9px;color:#eef6ff;font:inherit;outline:none;transition:border-color .18s,box-shadow .18s}
+#adminWorkspace .mp-wrap:has(#ap-select) input:focus-visible,
+#adminWorkspace .mp-wrap:has(#ap-select) select:focus-visible{border-color:#55a8e7;box-shadow:0 0 0 3px #55a8e72b}
+#adminWorkspace .mp-wrap:has(#ap-select) input::placeholder{color:#9eb8cf}
+#adminWorkspace .mp-wrap:has(#ap-select) button{min-height:42px;padding:10px 16px;border:1px solid #456986;border-radius:9px;background:#1c4465;color:#edf6ff;font:inherit;font-weight:650;cursor:pointer;transition:background .18s,border-color .18s}
+#adminWorkspace .mp-wrap:has(#ap-select) button:hover{background:#285a80;border-color:#75a4c6}
+#adminWorkspace .mp-wrap:has(#ap-select) #ap-new{background:#225d85;border-color:#397aa5}
+#adminWorkspace .mp-wrap:has(#ap-select) #ap-back{background:#14334e}
+#adminWorkspace .mp-wrap:has(#ap-select) #ap-save{background:#f58023;border-color:#f58023;color:#102338}
+#adminWorkspace .mp-wrap:has(#ap-select) #ap-save:hover{background:#ffa04e}
+#adminWorkspace .mp-wrap:has(#ap-select) #ap-assign{background:#225d85;border-color:#397aa5}
+#adminWorkspace .mp-wrap:has(#ap-select) #ap-active{appearance:none;width:40px;height:23px;border-radius:20px;background:#3b5871;border:1px solid #59748a;position:relative;cursor:pointer;margin:8px 0 4px}
+#adminWorkspace .mp-wrap:has(#ap-select) #ap-active:before{content:"";position:absolute;width:17px;height:17px;top:2px;left:2px;background:#f2f6fb;border-radius:50%;transition:transform .18s}
+#adminWorkspace .mp-wrap:has(#ap-select) #ap-active:checked{background:#168b70;border-color:#25b393}
+#adminWorkspace .mp-wrap:has(#ap-select) #ap-active:checked:before{transform:translateX(17px)}
+#adminWorkspace .mp-wrap:has(#ap-select) #ap-actions{flex:none;max-height:360px;min-height:200px;overflow:auto;border-radius:12px}
+#adminWorkspace .mp-wrap:has(#ap-select) #ap-actions .mp-item{min-height:48px;padding:11px 16px;cursor:pointer}
+#adminWorkspace .mp-wrap:has(#ap-select) #ap-actions .mp-item:hover{background:#1a3c5a}
+#adminWorkspace .mp-wrap:has(#ap-select) #ap-actions input[type=checkbox]{accent-color:#f58023;width:17px;height:17px;cursor:pointer}
+#adminWorkspace .mp-wrap:has(#ap-select) .mp-footer{margin:12px 0 24px;padding:0;min-height:44px}
+#adminWorkspace .mp-wrap:has(#ap-select) .mp-note{display:block;margin:16px 0 8px}
+#adminWorkspace .mp-wrap:has(#ap-select) #ap-assign-profile{width:100%}
+#adminWorkspace .mp-wrap:has(#ap-select) .mp-controls:last-of-type{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:720px){
+ #adminWorkspace .mp-wrap:has(#ap-select) .mp-controls,
+ #adminWorkspace .mp-wrap:has(#ap-select) .mp-controls:last-of-type{grid-template-columns:1fr}
+ #adminWorkspace .mp-wrap:has(#ap-select) #ap-actions{max-height:48dvh}
+ #adminWorkspace .mp-wrap:has(#ap-select) .mp-footer{flex-wrap:wrap}
+}
