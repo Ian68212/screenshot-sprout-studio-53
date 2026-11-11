@@ -3,7 +3,7 @@ import { q, auditar } from "./db.js";
 import { exigir } from "./auth.js";
 
 // Controle de VISIBILIDADE da navegação. Autorizações de APIs permanecem independentes.
-export const MENU_KEYS = Object.freeze(["documentos","pcp","tarefas","gestao-empresarial","almoxarifado","qualidade","rh","seguranca","comunicados","treinamentos","ferramentas","aplicativos","contatos","suporte","link.email","link.drive","link.cameras","link.bling","admin.visao","admin.permissoes","admin.organograma","admin.pessoas","admin.candidaturas","admin.site"]);
+export const MENU_KEYS = Object.freeze(["documentos","pcp","tarefas","gestao-empresarial","atendimento","almoxarifado","qualidade","rh","seguranca","comunicados","treinamentos","ferramentas","aplicativos","contatos","suporte","link.email","link.drive","link.cameras","link.bling","admin.visao","admin.permissoes","admin.organograma","admin.pessoas","admin.candidaturas","admin.site"]);
 const ADMIN_KEYS = new Set(["admin.visao","admin.permissoes","admin.organograma","admin.pessoas","admin.candidaturas","admin.site"]);
 const SCOPES = new Set(["perfil","setor","cargo","usuario"]);
 const router = Router();
