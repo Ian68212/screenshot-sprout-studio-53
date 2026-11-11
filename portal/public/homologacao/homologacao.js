@@ -1,6 +1,6 @@
 "use strict";
 const $=id=>document.getElementById(id), esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const names={documentos:"Documentos",comunicados:"Comunicados",treinamentos:"Treinamentos",ferramentas:"Ferramentas",pcp:"PCP",tarefas:"Gestão de Tarefas",almoxarifado:"Almoxarifado",qualidade:"Setor Teste de Qualidade",rh:"RH",seguranca:"Segurança do Trabalho",aplicativos:"Central de Aplicativos",contatos:"Contatos",suporte:"Suporte / TI"};
+const names={documentos:"Documentos",comunicados:"Comunicados",treinamentos:"Treinamentos",ferramentas:"Ferramentas",pcp:"PCP",tarefas:"Gestão de Tarefas","gestao-empresarial":"Gestão Empresarial",almoxarifado:"Almoxarifado",qualidade:"Setor Teste de Qualidade",rh:"RH",seguranca:"Segurança do Trabalho",aplicativos:"Central de Aplicativos",contatos:"Contatos",suporte:"Suporte / TI"};
 let data=[];
 const recursoUrl=x=>{try{const u=new URL(String(x.url||""));return u.protocol==="https:"?u.href:null;}catch{return null;}};
 const cardRecurso=x=>{const url=recursoUrl(x);return '<article class="item"><div class="placeholder">Rodrinox Pro</div><div class="body"><b>'+esc(x.nome)+'</b><p>'+esc(x.descricao||"")+':</p>'+(url?'<a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">Abrir recurso ↗</a>':'<span>Sem link disponível</span>')+'</div></article>';};
