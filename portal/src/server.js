@@ -201,6 +201,19 @@ r.post("/api/logout", wrap(async (req, res) => {
 }));
 
 r.get("/api/eu", exigir("painel"), (req, res) => res.json(req.usuario));
+
+// Estado da integração de atendimento: nunca expõe token, URL interna ou credenciais.
+// Disponível somente a usuários autenticados do portal.
+r.get("/api/atendimento/status", exigir("painel"), (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  res.json({
+    configurada: Boolean(process.env.DIGISAC_API_TOKEN && process.env.DIGISAC_API_BASE_URL),
+    ativa: false,
+    modo: "homologacao",
+    usuario: { id: req.usuario.id, perfil: req.usuario.perfil }
+  });
+});
+
 // Permissões de navegação: sessões reais e alterações exclusivas do administrador.
 r.use("/api/menu", menuPermissoesRouter);
 r.use("/api/tasks-official", tasksRouter);
