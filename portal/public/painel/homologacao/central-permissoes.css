@@ -65,3 +65,22 @@
  #adminWorkspace .mp-wrap:has(#ap-select) #ap-actions{max-height:48dvh}
  #adminWorkspace .mp-wrap:has(#ap-select) .mp-footer{flex-wrap:wrap}
 }
+
+
+/* Acesso a perfis personalizados na Central de Permissões */
+#adminWorkspace #mp-profiles{
+ appearance:none;display:inline-flex;align-items:center;justify-content:center;
+ width:auto;max-width:100%;min-height:42px;margin:10px 0 14px;padding:10px 17px;
+ border:1px solid #3f789e;border-radius:10px;background:#1c496b;color:#f0f7ff;
+ font:600 13px/1.35 inherit;font-family:inherit;font-size:13px;font-weight:700;
+ letter-spacing:.1px;text-align:center;cursor:pointer;
+ box-shadow:0 3px 12px rgba(0,0,0,.12);
+ transition:background .18s,border-color .18s,transform .18s;
+}
+#adminWorkspace #mp-profiles::before{
+ content:"";display:inline-block;width:9px;height:9px;flex:none;margin-right:10px;
+ border:2px solid #ff8b30;border-radius:3px;transform:rotate(45deg);
+}
+#adminWorkspace #mp-profiles:hover{background:#275e85;border-color:#74b5df;transform:translateY(-1px)}
+#adminWorkspace #mp-profiles:focus-visible{outline:3px solid #ff8b30;outline-offset:3px}
+@media(max-width:560px){#adminWorkspace #mp-profiles{width:100%;white-space:normal}}
