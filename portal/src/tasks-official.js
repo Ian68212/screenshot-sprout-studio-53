@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { q } from "./db.js";
 import { exigir } from "./auth.js";
+import { taskPolicy } from "./access-profiles.js";
 export const tasksRouter = Router();
 tasksRouter.use(exigir("painel"));
 let setupPromise;
@@ -92,7 +93,8 @@ tasksRouter.get("/board",wrap(async(req,res)=>{
  await q("INSERT IGNORE INTO rp_task_board(id,revision,state_json) VALUES (1,0,'{\"projects\":[],\"tasks\":[],\"trash\":[]}')");
  const [row]=await q("SELECT revision,state_json FROM rp_task_board WHERE id=1");
  res.setHeader("Cache-Control","no-store");
- res.json({revision:Number(row.revision),state:JSON.parse(row.state_json),user:{id:req.usuario.id,nome:req.usuario.nome,email:req.usuario.email,perfil:req.usuario.perfil}});
+ const policy=await taskPolicy(req.usuario);
+ res.json({revision:Number(row.revision),state:JSON.parse(row.state_json),permissions:policy,user:{id:req.usuario.id,nome:req.usuario.nome,email:req.usuario.email,perfil:req.usuario.perfil}});
 }));
 tasksRouter.put("/board",wrap(async(req,res)=>{
  const state=req.body?.state,revision=req.body?.revision;
@@ -102,20 +104,58 @@ tasksRouter.put("/board",wrap(async(req,res)=>{
  const [current]=await q("SELECT revision,state_json FROM rp_task_board WHERE id=1");
  if(!current||Number(current.revision)!==revision)return res.status(409).json({erro:"O quadro foi alterado. Atualize antes de salvar."});
  if(!admin(req)){
+   const policy=await taskPolicy(req.usuario);
+   const grants=policy.grants;
    const before=JSON.parse(current.state_json);
-   if(JSON.stringify(before.projects)!==JSON.stringify(state.projects)||JSON.stringify(before.trash)!==JSON.stringify(state.trash))return res.status(403).json({erro:"Somente administradores podem alterar projetos ou lixeira"});
+   const userId=Number(req.usuario.id);
+   const same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+   const allowed=(task)=>policy.scope==="all"||Number(task.ownerId)===userId||Number(task.createdById)===userId;
+   const has=(action)=>grants[action]===true;
+   const deny=(message)=>res.status(403).json({erro:message});
+   if(!same(before.trash,state.trash))return deny("Alterações na lixeira exigem administrador.");
+   const previousProjects=new Map(before.projects.map(p=>[String(p.id),p]));
+   const currentProjects=new Map(state.projects.map(p=>[String(p.id),p]));
+   if(currentProjects.size!==state.projects.length||previousProjects.size!==before.projects.length)return deny("Projetos duplicados.");
+   for(const p of state.projects){
+     const old=previousProjects.get(String(p.id));
+     if(!old&&!has("projects.create"))return deny("Sem permissão para criar projetos.");
+     if(old&&!same(old,p)&&!has("projects.edit"))return deny("Sem permissão para editar projetos.");
+   }
+   for(const p of before.projects)if(!currentProjects.has(String(p.id)))return deny("Exclusão de projetos restrita ao administrador.");
    const previous=new Map(before.tasks.map(t=>[String(t.id),t]));
-   if(previous.size!==state.tasks.length||new Set(state.tasks.map(t=>String(t.id))).size!==state.tasks.length)return res.status(403).json({erro:"Criação ou exclusão não autorizada"});
+   const currentTasks=new Map(state.tasks.map(t=>[String(t.id),t]));
+   if(currentTasks.size!==state.tasks.length||previous.size!==before.tasks.length)return deny("Identificadores de tarefas duplicados.");
    for(const t of state.tasks){
-     const oldTask=previous.get(String(t.id));
-     if(!oldTask)return res.status(403).json({erro:"Tarefa não autorizada"});
-     if(JSON.stringify(oldTask)===JSON.stringify(t))continue;
-     if(Number(oldTask.ownerId)!==Number(req.usuario.id))return res.status(403).json({erro:"Somente o responsável pode alterar esta tarefa"});
-     const protectedKeys=["id","projectId","title","manager","ownerId","ownerEmail","owner","createdBy"];
-     if(protectedKeys.some(key=>JSON.stringify(oldTask[key])!==JSON.stringify(t[key])))return res.status(403).json({erro:"Identificação ou delegação protegida"});
-     if(!["a_fazer","andamento","revisao","concluida"].includes(t.status))return res.status(400).json({erro:"Status inválido"});
+     const old=previous.get(String(t.id));
+     if(!old){
+       if(!has("tasks.create"))return deny("Sem permissão para criar tarefas.");
+       if(!currentProjects.has(String(t.projectId)))return deny("Projeto inválido.");
+       if(Number(t.ownerId)!==userId&&!has("tasks.assign"))return deny("Sem permissão para delegar.");
+       continue;
+     }
+     if(same(old,t))continue;
+     if(!allowed(old))return deny("Tarefa fora do seu alcance.");
+     if(!same(old.id,t.id)||!same(old.projectId,t.projectId)||!same(old.createdBy,t.createdBy)||!same(old.createdById,t.createdById))return deny("Identificação protegida.");
+     const changes=[
+       ["ownerId","tasks.assign"],["ownerEmail","tasks.assign"],["owner","tasks.assign"],["manager","tasks.assign"],
+       ["due","tasks.due"],["priority","tasks.priority"],["checklist","tasks.checklist"],
+       ["comments","tasks.comment"],["repeat","tasks.recurrence"],["status","tasks.status"]
+     ];
+     for(const [field,action] of changes)if(!same(old[field],t[field])&&!has(action))return deny("Sem permissão: "+action);
+     const protectedFields=new Set(["ownerId","ownerEmail","owner","manager","due","priority","checklist","comments","repeat","status","history","id","projectId","createdBy","createdById"]);
+     for(const field of new Set([...Object.keys(old),...Object.keys(t)])){
+       if(!same(old[field],t[field])&&!protectedFields.has(field))return deny("Alteração não autorizada: "+field);
+     }
+     if(!same(old.history,t.history)){
+       if(!changes.some(([field,action])=>!same(old[field],t[field])&&has(action)))return deny("Histórico sem alteração autorizada.");
+       if(!Array.isArray(t.history)||t.history.length<(old.history?.length||0)||!same(t.history.slice(0,old.history?.length||0),old.history||[]))return deny("Histórico anterior protegido.");
+     }
+   }
+   for(const t of before.tasks)if(!currentTasks.has(String(t.id))){
+     if(!has("tasks.delete")||!allowed(t))return deny("Sem permissão para excluir esta tarefa.");
    }
  }
+
  const result=await q("UPDATE rp_task_board SET state_json=?,revision=revision+1 WHERE id=1 AND revision=?",[json,revision]);
  if(!result.affectedRows)return res.status(409).json({erro:"Outro usuário atualizou o quadro. Recarregue antes de salvar."});
  res.json({revision:revision+1});
