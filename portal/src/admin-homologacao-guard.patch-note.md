@@ -1,0 +1,1 @@
+A proteção de rota deve ser aplicada antes do express.static no servidor principal. O middleware exige sessão ativa e perfil admin; perfil gestor e colaborador recebem 403.
