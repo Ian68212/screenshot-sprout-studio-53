@@ -102,6 +102,37 @@ async function garantirColunaImagemFerramentas() {
   }
   await ferramentaImagemSchema;
 }
+// Publicação oficial dos dois painéis, reutilizando os mesmos componentes validados.
+// URLs próprias; homologação continua intacta para testes futuros.
+r.use(["/oficial", "/painel/oficial"], wrap(async (req, res, next) => {
+  await new Promise((resolve, reject) => carregarUsuario(req, res, err => err ? reject(err) : resolve()));
+  res.setHeader("Cache-Control", "no-store");
+  if (!req.usuario) return res.redirect(302, BASE + "/");
+  if (req.baseUrl.endsWith("/painel/oficial") && req.usuario.perfil !== "admin")
+    return res.status(403).type("text/plain").send("Acesso restrito a administradores da Rodrinox Pro.");
+  next();
+}));
+if (publicDir) {
+  const employeeSource = path.join(publicDir, "homologacao");
+  const adminSource = path.join(publicDir, "painel", "homologacao");
+  r.use("/oficial", express.static(employeeSource, { index: false, fallthrough: true }));
+  r.get(["/oficial", "/oficial/"], (_req, res) => {
+    const html = fs.readFileSync(path.join(employeeSource, "index.html"), "utf8")
+      .replaceAll("AMBIENTE DE HOMOLOGAÇÃO", "PORTAL OFICIAL")
+      .replaceAll("Homologação | Rodrinox Pro", "Portal Oficial | Rodrinox Pro")
+      .replaceAll("/colaborador/painel.html", "/colaborador/oficial/");
+    res.type("html").send(html);
+  });
+  r.use("/painel/oficial", express.static(adminSource, { index: false, fallthrough: true }));
+  r.get(["/painel/oficial", "/painel/oficial/"], (_req, res) => {
+    const html = fs.readFileSync(path.join(adminSource, "index.html"), "utf8")
+      .replaceAll("PAINEL ADMINISTRATIVO · HOMOLOGAÇÃO", "PAINEL ADMINISTRATIVO · OFICIAL")
+      .replaceAll("AMBIENTE DE HOMOLOGAÇÃO", "AMBIENTE OFICIAL")
+      .replaceAll("/colaborador/painel.html", "/colaborador/oficial/");
+    res.type("html").send(html);
+  });
+}
+
 // A homologação administrativa é restrita exclusivamente ao perfil admin.
 // A checagem acontece ANTES do express.static para impedir acesso direto aos arquivos.
 r.use("/painel/homologacao", wrap(async (req, res, next) => {
