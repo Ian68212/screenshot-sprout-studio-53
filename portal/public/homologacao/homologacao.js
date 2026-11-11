@@ -83,7 +83,7 @@ async function rtRefreshBoard(){
  if(!response.ok){const problem=await response.json().catch(()=>({}));throw Error("HTTP "+response.status+(problem.erro?" — "+problem.erro:""));}
  const data=await response.json();if(!data.state||!Array.isArray(data.state.projects)||!Array.isArray(data.state.tasks))throw Error("Resposta inválida");
  if(rtRevision!==data.revision||!rtSharedReady){
- rtState={projects:data.state.projects,tasks:data.state.tasks};rtTrash=data.state.trash||[];
+ rtState={projects:data.state.projects,tasks:data.state.tasks};rtTrash=Array.isArray(data.state.trash)?data.state.trash:[];
  rtRevision=data.revision;rtCurrentUser=data.user;rtSharedReady=true;rtSyncError="";
  rtView=data.user.perfil==="admin"?"admin":"frank";
  rtProject=rtState.projects.some(p=>p.id===rtProject)?rtProject:0;rtDraw();
@@ -94,7 +94,7 @@ async function rtRefreshBoard(){
 const rtSave=()=>{
  if(!rtSharedReady||rtDirty){alert("Quadro não sincronizado. Aguarde a conexão antes de alterar.");return;}
  rtDirty=true;
- fetch("/colaborador/api/tasks-official/board",{method:"PUT",credentials:"same-origin",headers:{"Content-Type":"application/json","X-Portal":"1"},body:JSON.stringify({revision:rtRevision,state:{projects:rtState.projects,tasks:rtState.tasks,trash:rtTrash}})})
+ fetch("/colaborador/api/tasks-official/board",{method:"PUT",credentials:"same-origin",headers:{"Content-Type":"application/json","X-Portal":"1"},body:JSON.stringify({revision:rtRevision,state:{projects:rtState.projects,tasks:rtState.tasks,trash:Array.isArray(rtTrash)?rtTrash:[]}})})
  .then(async r=>{const data=await r.json();if(!r.ok)throw Error(data.erro||"Erro "+r.status);rtRevision=data.revision;})
  .catch(e=>{alert("Alteração não salva: "+e.message+". O quadro será recarregado.");rtRevision=null;})
  .finally(()=>{rtDirty=false;rtRefreshBoard();});
