@@ -75,6 +75,8 @@ function rtLog(task,event,details=""){(task.history??=[]).push({at:new Date().to
 function rtHistory(task){const history=task.history?.length?task.history:[{at:null,actor:"Demonstração",event:"Tarefa inicial do protótipo",details:"Eventos anteriores não foram registrados."}];return '<div class="rt-history-panel"><h4>Linha do tempo</h4>'+history.map(h=>'<div class="rt-history-event"><strong>'+esc(h.event)+'</strong><small>'+esc(h.actor)+' · '+(h.at?new Date(h.at).toLocaleString("pt-BR"):"Sem data")+'</small>'+(h.details?'<p>'+esc(h.details)+'</p>':"")+'</div>').join("")+'</div>';}
 let rtView="admin",rtProject=0,rtPriorityPickerId=null;
 const rtStatus={a_fazer:"A fazer",andamento:"Em andamento",revisao:"Em revisão",concluida:"Concluída"};
+let rtTaskPolicy={grants:{},scope:"own"};
+const rtCan=key=>rtCurrentUser?.perfil==="admin"||rtTaskPolicy.grants?.[key]===true;
 let rtRevision=null,rtCurrentUser=null,rtSyncing=false,rtDirty=false,rtSharedReady=false,rtSyncError="",rtBoardMode="all";
 async function rtRefreshBoard(){
  if(rtSyncing||rtDirty)return;
@@ -84,8 +86,8 @@ async function rtRefreshBoard(){
  const data=await response.json();if(!data.state||!Array.isArray(data.state.projects)||!Array.isArray(data.state.tasks))throw Error("Resposta inválida");
  if(rtRevision!==data.revision||!rtSharedReady){
  rtState={projects:data.state.projects,tasks:data.state.tasks};rtTrash=Array.isArray(data.state.trash)?data.state.trash:[];
- rtRevision=data.revision;rtCurrentUser=data.user;rtSharedReady=true;rtSyncError="";
- rtView=data.user.perfil==="admin"?"admin":"frank";
+ rtRevision=data.revision;rtCurrentUser=data.user;rtTaskPolicy=data.permissions||{grants:{},scope:"own"};rtSharedReady=true;rtSyncError="";
+ rtView=rtCan("tasks.priority")||rtCan("tasks.due")||rtCan("tasks.checklist")||rtCan("tasks.comment")||rtCan("tasks.assign")||rtCan("tasks.recurrence")?"admin":"frank";
  rtProject=rtState.projects.some(p=>p.id===rtProject)?rtProject:0;rtDraw();
  }
  }catch(e){console.error("[tarefas] sincronização",e);rtSharedReady=false;rtSyncError=e.message||"Falha desconhecida";rtDraw();}
@@ -172,8 +174,8 @@ document.addEventListener("click",e=>{
  if(b.classList.contains("rt-project-dates-edit")){const p=rtState.projects.find(x=>x.id===Number(b.dataset.project));if(p)rtProjectForm(p);return;}
  if(b.classList.contains("rt-project-history-btn")){const id=Number(b.dataset.project);rtProjectHistoryId=rtProjectHistoryId===id?null:id;rtDraw();return;}
  if(b.classList.contains("rt-progress-select")){rtProject=Number(b.dataset.project);rtProjectStatusFilter="todos";rtDraw();return;}
- if(b.id==="rt-new-project"){if(rtCurrentUser?.perfil!=="admin")return alert("Apenas administradores podem criar projetos.");rtProjectForm(null);return;}
- if(b.id==="rt-new-task"){if(rtCurrentUser?.perfil!=="admin")return alert("Apenas administradores podem criar tarefas.");if(!rtState.projects.length)return alert("Crie um projeto primeiro.");rtTaskForm(null);return;}
+ if(b.id==="rt-new-project"){if(!rtCan("projects.create"))return alert("Seu perfil não permite criar projetos.");rtProjectForm(null);return;}
+ if(b.id==="rt-new-task"){if(!rtCan("tasks.create"))return alert("Seu perfil não permite criar tarefas.");if(!rtState.projects.length)return alert("Crie um projeto primeiro.");rtTaskForm(null);return;}
  if(b.classList.contains("rt-delegate")){const t=rtState.tasks.find(x=>x.id===Number(b.dataset.id));if(t)rtTaskForm(t);return;}
 });
 
