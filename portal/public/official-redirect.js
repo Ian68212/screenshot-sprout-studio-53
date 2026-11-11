@@ -1,0 +1,1 @@
+fetch("/colaborador/api/eu",{credentials:"same-origin",cache:"no-store"}).then(r=>{if(!r.ok)throw Error("sessao");return r.json()}).then(u=>location.replace(u.perfil==="admin"?"/colaborador/painel/oficial/":"/colaborador/oficial/")).catch(()=>location.replace("/colaborador/"));
