@@ -1,5 +1,6 @@
 import { tasksRouter } from "./tasks-official.js";
 import atendimentoRodrinoxRouter from "./atendimento-rodrinox.js";
+import whatsappMetaRouter from "./whatsapp-meta.js";
 import "dotenv/config";
 import path from "node:path";
 import fs from "node:fs";
@@ -85,7 +86,7 @@ const upload = multer({
 });
 app.set("trust proxy", 1);
 app.use(helmet({ contentSecurityPolicy: { directives: { "script-src": ["'self'"] } } }));
-app.use(express.json({ limit: "100kb" }));
+app.use(express.json({ limit: "100kb", verify(req,_res,buf){ if(req.originalUrl?.includes("/api/whatsapp-meta/webhook")) req.rawBody=Buffer.from(buf); } }));
 app.use(cookieParser());
 
 const r = express.Router();
@@ -258,6 +259,7 @@ r.get("/api/atendimento/consultar/:recurso", exigir("painel"), wrap(async (req, 
 r.use("/api/menu", menuPermissoesRouter);
 r.use("/api/tasks-official", tasksRouter);
 r.use("/api/atendimento/rodrinox", atendimentoRodrinoxRouter);
+r.use("/api/whatsapp-meta", whatsappMetaRouter);
 
 // Diretório interno: apenas usuários ativos, e-mail corporativo e setor cadastrado.
 // Não expõe cargos, perfis, telefones, senhas ou dados administrativos.
