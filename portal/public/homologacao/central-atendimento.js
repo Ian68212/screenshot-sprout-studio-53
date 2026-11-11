@@ -1,0 +1,17 @@
+"use strict";
+(function(){
+const safe=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let selected="fila",status=null;
+const tabs=[["fila","Fila"],["meus","Meus chats"],["contatos","Contatos"]];
+function draw(){
+const root=document.getElementById("items");if(!root||document.getElementById("sectionTitle")?.textContent!=="Central de Atendimento")return;
+root.classList.add("ca-root");
+root.innerHTML='<div class="ca-head"><div><h3>Central de Atendimento</h3><div class="ca-sub">Atendimento corporativo · Rodrinox Pro</div></div><span class="ca-state" id="caConnection">Verificando conexão…</span></div>'+
+'<div class="ca-layout"><aside class="ca-left"><div class="ca-tabs">'+tabs.map(([id,label])=>'<button type="button" data-ca-tab="'+id+'" class="'+(selected===id?"active":"")+'">'+label+'</button>').join("")+'</div><input class="ca-search" placeholder="Pesquisar atendimento..." aria-label="Pesquisar atendimento" disabled><div class="ca-list"><div class="ca-empty"><b>Nenhuma conversa carregada</b><p>A lista será sincronizada com as filas da sua operação após a conexão da API.</p></div></div></aside><section class="ca-conversation"><header><strong>Selecione um atendimento</strong><span class="ca-meta">Mensagens, histórico, responsável e setor</span></header><div class="ca-messages"><div><div style="font-size:34px;margin-bottom:10px">▤</div>As mensagens do WhatsApp aparecerão aqui, sem sair do portal.</div></div><div class="ca-compose"><textarea disabled placeholder="A resposta será habilitada quando a API estiver conectada e o atendimento for selecionado." aria-label="Mensagem"></textarea><button disabled type="button">Enviar</button></div></section></div>'+
+'<div class="ca-banner"><b>Homologação segura:</b> nenhuma mensagem será enviada enquanto a conexão não estiver validada. O WhatsApp e as filas atuais continuam funcionando na plataforma de origem.</div>'+
+'<section class="ca-panel"><h4>Preparação da integração</h4><div class="ca-steps"><span class="ca-step ready">✓ Interface Rodrinox</span><span class="ca-step">Conexão API</span><span class="ca-step">Filas e permissões</span><span class="ca-step">Envio de mensagens</span></div><p class="ca-meta" id="caDetails">Aguardando verificação do servidor.</p></section>';
+root.querySelectorAll("[data-ca-tab]").forEach(b=>b.addEventListener("click",()=>{selected=b.dataset.caTab;draw()}));
+if(status){document.getElementById("caConnection").textContent=status.configurada?"Credenciais configuradas · aguardando validação":"Integração não configurada";document.getElementById("caDetails").textContent=status.configurada?"Credenciais encontradas no servidor. Os endpoints e permissões ainda precisam ser validados antes da ativação.":"Para conectar, configure as credenciais da API somente no servidor, sem colocá-las no navegador ou no repositório."}
+}
+window.renderCentralAtendimento=()=>{selected="fila";status=null;draw();fetch("/colaborador/api/atendimento/status",{credentials:"same-origin",cache:"no-store"}).then(async r=>{if(!r.ok)throw Error("Não foi possível verificar a integração");return r.json()}).then(s=>{status=s;draw()}).catch(()=>{status={configurada:false};draw()})};
+})();
