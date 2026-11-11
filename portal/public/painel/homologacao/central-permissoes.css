@@ -1,2 +1,28 @@
 .mp-wrap{max-width:1000px;color:#e8f2fb}.mp-intro h3{font-size:24px;margin:0 0 8px}.mp-intro p,.mp-note{color:#a9c1d7;font-size:14px;line-height:1.6}.mp-controls{display:grid;grid-template-columns:1fr 2fr;gap:14px;margin:22px 0}.mp-controls label{display:grid;gap:8px;color:#c4d6e6;font-size:13px}.mp-controls select,.mp-item select{background:#193957;border:1px solid #47627d;border-radius:8px;color:#fff;padding:11px;min-width:0}.mp-list{border:1px solid #34536e;border-radius:13px;overflow:hidden;background:#112c47}.mp-item,.mp-always{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 17px;border-bottom:1px solid #2d4862;font-size:14px}.mp-item:last-child{border:0}.mp-item select{width:220px}.mp-always{font-weight:700;color:#f4f7fc;background:#193c5c}.mp-always span{font-size:12px;font-weight:400;color:#9fc0dc}.mp-footer{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:18px}.mp-footer span{color:#c0d4e6;font-size:13px}.mp-footer button{background:#f58023;color:#061a2e;border:0;border-radius:9px;padding:12px 19px;font-weight:700}.mp-footer button:disabled{opacity:.5}.mp-note{margin-top:18px;border-left:3px solid #ff8727;padding-left:13px}@media(max-width:650px){.mp-controls{grid-template-columns:1fr}.mp-item select{width:150px}.mp-footer{flex-wrap:wrap}}
 .mp-lock{font-size:12px;color:#9db8d1;text-align:right}.mp-locked{opacity:.76}
+
+
+/* Central de Permissões: navegação interna sem precisar reduzir o zoom. */
+#adminWorkspace:has(.mp-wrap){min-width:0}
+#adminWorkspace .mp-wrap{width:100%;max-width:1100px;min-width:0;display:flex;flex-direction:column;max-height:calc(100dvh - 100px);overflow:hidden}
+#adminWorkspace .mp-intro{flex:0 0 auto}
+#adminWorkspace .mp-controls{flex:0 0 auto;margin:14px 0}
+#adminWorkspace .mp-list{flex:1 1 auto;min-height:160px;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#527595 #112c47}
+#adminWorkspace .mp-list::-webkit-scrollbar{width:10px}
+#adminWorkspace .mp-list::-webkit-scrollbar-thumb{background:#527595;border:2px solid #112c47;border-radius:10px}
+#adminWorkspace .mp-list::-webkit-scrollbar-track{background:#112c47}
+#adminWorkspace .mp-footer{flex:0 0 auto;margin-top:12px;padding:12px 0 3px}
+#adminWorkspace .mp-note{flex:0 0 auto;margin:10px 0 0;font-size:12px}
+#adminWorkspace .mp-item{min-height:59px}
+@media(max-height:700px){
+ #adminWorkspace .mp-wrap{max-height:calc(100dvh - 60px)}
+ #adminWorkspace .mp-intro p{display:none}
+ #adminWorkspace .mp-intro h3{font-size:20px}
+ #adminWorkspace .mp-controls{margin:9px 0}
+ #adminWorkspace .mp-note{display:none}
+}
+@media(max-width:740px){
+ #adminWorkspace .mp-wrap{max-height:none;overflow:visible}
+ #adminWorkspace .mp-list{max-height:55dvh;min-height:220px}
+ #adminWorkspace .mp-controls{grid-template-columns:1fr}
+}
