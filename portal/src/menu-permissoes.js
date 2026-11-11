@@ -1,0 +1,83 @@
+import { Router } from "express";
+import { q, auditar } from "./db.js";
+import { exigir } from "./auth.js";
+
+// Controle de VISIBILIDADE da navegação. Autorizações de APIs permanecem independentes.
+export const MENU_KEYS = Object.freeze(["documentos","pcp","tarefas","gestao-empresarial","almoxarifado","qualidade","rh","seguranca","comunicados","treinamentos","ferramentas","aplicativos","contatos","suporte"]);
+const SCOPES = new Set(["perfil","setor","cargo","usuario"]);
+const router = Router();
+let schemaPromise;
+function schema() {
+  if (!schemaPromise) schemaPromise = q(`CREATE TABLE IF NOT EXISTS menu_permissoes (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    escopo VARCHAR(20) NOT NULL,
+    alvo VARCHAR(64) NOT NULL,
+    botao VARCHAR(64) NOT NULL,
+    permitido TINYINT(1) NOT NULL,
+    atualizado_por BIGINT NULL,
+    atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_menu_escopo_alvo_botao (escopo, alvo, botao)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`).catch(e => { schemaPromise = null; throw e; });
+  return schemaPromise;
+}
+function target(u, scope) {
+  if (scope === "perfil") return String(u.perfil);
+  if (scope === "setor") return u.setor_id == null ? null : String(u.setor_id);
+  if (scope === "cargo") return u.cargo_id == null ? null : String(u.cargo_id);
+  return String(u.id);
+}
+function resolve(u, rows) {
+  const visible = Object.fromEntries(MENU_KEYS.map(k => [k, true]));
+  // Mais específico prevalece: perfil < setor < cargo < usuário.
+  for (const scope of ["perfil","setor","cargo","usuario"]) {
+    const alvo = target(u, scope);
+    if (alvo == null) continue;
+    for (const row of rows) if (row.escopo === scope && row.alvo === alvo && Object.hasOwn(visible,row.botao)) visible[row.botao] = !!row.permitido;
+  }
+  // Administradores sempre conservam acesso ao menu e à central de controle.
+  if (u.perfil === "admin") for (const key of MENU_KEYS) visible[key] = true;
+  return visible;
+}
+router.get("/minhas", exigir("painel"), async (req,res,next) => {
+  try { await schema(); const rows = await q("SELECT escopo,alvo,botao,permitido FROM menu_permissoes"); res.set("Cache-Control","no-store").json({ inicio:true, botoes:resolve(req.usuario,rows) }); }
+  catch(e) { next(e); }
+});
+router.get("/regras", exigir("admin.usuarios"), async (_req,res,next) => {
+  try { await schema(); res.set("Cache-Control","no-store").json({ botoes:MENU_KEYS, regras:await q("SELECT escopo,alvo,botao,permitido FROM menu_permissoes ORDER BY escopo,alvo,botao") }); }
+  catch(e) { next(e); }
+});
+router.put("/regras", exigir("admin.usuarios"), async (req,res,next) => {
+  try {
+    const { escopo, alvo, botoes } = req.body || {};
+    if (!SCOPES.has(escopo) || typeof alvo !== "string" || !/^[a-zA-Z0-9_-]{1,64}$/.test(alvo) || !botoes || typeof botoes !== "object" || Array.isArray(botoes))
+      return res.status(400).json({ erro:"Escopo, alvo ou regras inválidos." });
+    if (escopo === "perfil" && !["admin","gestor","colaborador"].includes(alvo))
+      return res.status(400).json({ erro:"Perfil inválido." });
+    if (escopo !== "perfil" && (!/^\d+$/.test(alvo) || Number(alvo) < 1))
+      return res.status(400).json({ erro:"Identificador inválido." });
+    if (escopo === "perfil" && alvo === "admin") return res.status(403).json({ erro:"O menu administrativo não pode ser bloqueado." });
+    const keys = Object.keys(botoes);
+    if (!keys.length || keys.some(k => !MENU_KEYS.includes(k) || (botoes[k] !== true && botoes[k] !== false && botoes[k] !== null)))
+      return res.status(400).json({ erro:"Envie somente botões válidos com true, false ou null (herdar)." });
+    if (escopo === "usuario") {
+      const [u] = await q("SELECT id,perfil FROM usuarios WHERE id=?", [Number(alvo)]);
+      if (!u) return res.status(404).json({ erro:"Colaborador não encontrado." });
+      if (u.perfil === "admin") return res.status(403).json({ erro:"Não é permitido restringir o menu de administradores." });
+    }
+    if (escopo === "setor" || escopo === "cargo") {
+      const table = escopo === "setor" ? "setores" : "cargos";
+      const [record] = await q(`SELECT id FROM ${table} WHERE id=?`, [Number(alvo)]);
+      if (!record) return res.status(404).json({ erro:"Setor ou cargo não encontrado." });
+    }
+    await schema();
+    for (const key of keys) {
+      if (botoes[key] === null) await q("DELETE FROM menu_permissoes WHERE escopo=? AND alvo=? AND botao=?", [escopo,alvo,key]);
+      else await q(`INSERT INTO menu_permissoes (escopo,alvo,botao,permitido,atualizado_por)
+        VALUES (?,?,?,?,?) ON DUPLICATE KEY UPDATE permitido=VALUES(permitido), atualizado_por=VALUES(atualizado_por)`,
+        [escopo,alvo,key,botoes[key]?1:0,req.usuario.id]);
+    }
+    await auditar(req.usuario.id,"atualizou_permissoes_menu",`${escopo}:${alvo} - ${keys.join(",")}`,req.ip);
+    res.json({ ok:true });
+  } catch(e) { next(e); }
+});
+export default router;

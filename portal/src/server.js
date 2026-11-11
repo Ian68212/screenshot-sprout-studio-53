@@ -14,6 +14,7 @@ import { PERFIS, podeVerFerramenta } from "./permissions.js";
 import { siteRouter } from "./site-cms.js";
 import { mediaRouter } from "./site-media.js";
 import { publicSiteRouter } from "./public-site.js";
+import menuPermissoesRouter from "./menu-permissoes.js";
 
 const BASE = process.env.BASE_PATH || "/colaborador";
 const dir = path.dirname(fileURLToPath(import.meta.url));
@@ -168,6 +169,8 @@ r.post("/api/logout", wrap(async (req, res) => {
 }));
 
 r.get("/api/eu", exigir("painel"), (req, res) => res.json(req.usuario));
+// Permissões de navegação: sessões reais e alterações exclusivas do administrador.
+r.use("/api/menu", menuPermissoesRouter);
 
 // Diretório interno: apenas usuários ativos, e-mail corporativo e setor cadastrado.
 // Não expõe cargos, perfis, telefones, senhas ou dados administrativos.
