@@ -139,9 +139,9 @@ body{font-family:Inter,"Segoe UI",Arial,Helvetica,sans-serif;-webkit-font-smooth
 @media(min-width:1101px){#details{height:100%;overflow-y:auto;padding-bottom:40px}}
 
 /* Exibe integralmente logos e imagens de ferramentas, sem cortes ou distorção. */
-#details .items .item img{display:block;width:100%;height:145px;object-fit:contain;object-position:center;background:#fff;padding:20px;max-width:100%}#details .items .item{min-width:0}#details .items .item .body{overflow-wrap:anywhere}
+#items .item img{display:block;width:100%;height:145px;object-fit:contain;object-position:center;background:#fff;padding:20px;max-width:100%}#items .item{min-width:0}#items .item .body{overflow-wrap:anywhere}
 
 /* Cartão MeisterTask: identificação completa sem depender da imagem cadastrada cortada. */
-#details .items .item .brand-meistertask{height:145px;width:100%;display:flex;align-items:center;justify-content:center;gap:9px;padding:14px 10px;background:#fff;color:#101010;overflow:hidden}
-#details .items .item .meistertask-mark{flex:none;display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:#1689f9;color:#fff;font-size:27px;font-weight:800;line-height:1}
-#details .items .item .meistertask-word{min-width:0;font-size:clamp(16px,1.6vw,22px);font-weight:750;letter-spacing:-.045em;white-space:nowrap}
+#items .item .brand-meistertask{height:145px;width:100%;display:flex;align-items:center;justify-content:center;gap:9px;padding:14px 10px;background:#fff;color:#101010;overflow:hidden}
+#items .item .meistertask-mark{flex:none;display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:#1689f9;color:#fff;font-size:27px;font-weight:800;line-height:1}
+#items .item .meistertask-word{min-width:0;font-size:clamp(16px,1.6vw,22px);font-weight:750;letter-spacing:-.045em;white-space:nowrap}
