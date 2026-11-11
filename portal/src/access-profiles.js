@@ -78,3 +78,11 @@ accessProfilesRouter.put("/users/:userId",wrap(async(req,res)=>{
  await auditar(req.usuario.id,"atribuiu_perfil_acesso",`usuario:${userId} perfil:${profileId}`,req.ip);
  res.json({ok:true});
 }));
+
+export async function taskPolicy(user) {
+ await schema();
+ if(user.perfil==="admin")return {scope:"all",grants:Object.fromEntries(TASK_ACTIONS.map(k=>[k,true])),custom:false};
+ const [row]=await q("SELECT p.scope,p.grants_json FROM rp_access_profile_users a JOIN rp_access_profiles p ON p.id=a.profile_id WHERE a.user_id=? AND p.active=1",[user.id]);
+ if(row)return {scope:row.scope,grants:JSON.parse(row.grants_json),custom:true};
+ return {scope:"own",grants:{"projects.view":true,"tasks.status":true,"tasks.comment":true,"tasks.history":true},custom:false};
+}
