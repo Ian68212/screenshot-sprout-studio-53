@@ -64,3 +64,24 @@ tasksRouter.post("/comments/:id",wrap(async(req,res)=>{
  const result=await q("INSERT INTO rp_task_comments(task_id,author_id,body) VALUES (?,?,?)",[req.params.id,req.usuario.id,body]);
  res.status(201).json({id:result.insertId});
 }));
+
+tasksRouter.delete("/items/:id",wrap(async(req,res)=>{
+ if(!admin(req))return res.status(403).json({erro:"Somente administradores podem excluir tarefas"});
+ if(!validId(req.params.id))return res.status(400).json({erro:"ID inválido"});
+ const rows=await q("SELECT id FROM rp_task_items WHERE id=?",[req.params.id]);
+ if(!rows.length)return res.status(404).json({erro:"Tarefa não encontrada"});
+ await q("DELETE FROM rp_task_comments WHERE task_id=?",[req.params.id]);
+ await q("DELETE FROM rp_task_items WHERE id=?",[req.params.id]);
+ res.json({ok:true});
+}));
+tasksRouter.delete("/projects/:id",wrap(async(req,res)=>{
+ if(!admin(req))return res.status(403).json({erro:"Somente administradores podem excluir projetos"});
+ if(!validId(req.params.id))return res.status(400).json({erro:"ID inválido"});
+ const rows=await q("SELECT id FROM rp_task_projects WHERE id=?",[req.params.id]);
+ if(!rows.length)return res.status(404).json({erro:"Projeto não encontrado"});
+ const items=await q("SELECT id FROM rp_task_items WHERE project_id=?",[req.params.id]);
+ for(const item of items)await q("DELETE FROM rp_task_comments WHERE task_id=?",[item.id]);
+ await q("DELETE FROM rp_task_items WHERE project_id=?",[req.params.id]);
+ await q("DELETE FROM rp_task_projects WHERE id=?",[req.params.id]);
+ res.json({ok:true});
+}));
