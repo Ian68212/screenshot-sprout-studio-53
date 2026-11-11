@@ -80,13 +80,40 @@ async function saveProfile(){
   document.getElementById("ap-status").textContent="Perfil salvo com sucesso.";
  }catch(e){$("ap-status").textContent=e.message}
 }
+function assignmentNotice(message,success){
+ let el=document.getElementById("ap-assignment-notice");
+ if(!el){
+  el=document.createElement("div");el.id="ap-assignment-notice";el.setAttribute("role","status");el.setAttribute("aria-live","polite");
+  Object.assign(el.style,{position:"fixed",right:"24px",bottom:"24px",zIndex:"9999",maxWidth:"440px",padding:"16px 20px",borderRadius:"12px",boxShadow:"0 10px 32px rgba(0,0,0,.3)",fontSize:"14px",fontWeight:"600",lineHeight:"1.5",color:"#fff"});
+  document.body.appendChild(el);
+ }
+ el.style.background=success?"#176e56":"#a32929";el.textContent=message;
+ el.hidden=false;
+ clearTimeout(assignmentNotice.timer);
+ assignmentNotice.timer=setTimeout(()=>{el.hidden=true},6500);
+}
 async function assignProfile(){
- const $=id=>document.getElementById(id),userId=$("ap-user").value,profileId=$("ap-assign-profile").value;
- if(!userId)return;
+ const $=id=>document.getElementById(id),user=$("ap-user"),profile=$("ap-assign-profile");
+ const userId=user.value,profileId=profile.value,userName=user.selectedOptions[0]?.textContent?.trim()||"colaborador";
+ const profileName=profile.selectedOptions[0]?.textContent?.trim()||"Sem perfil personalizado";
+ if(!userId){assignmentNotice("Selecione um colaborador.",false);return}
+ const btn=$("ap-assign");
+ btn.disabled=true;btn.textContent="Aplicando...";
+ $("ap-status").textContent="Salvando vínculo de "+userName+"...";
  try{
-  await profilesApi("/users/"+userId,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({profile_id:profileId||null})});
-  $("ap-status").textContent="Vínculo salvo.";
- }catch(e){$("ap-status").textContent=e.message}
+  await profilesApi("/users/"+encodeURIComponent(userId),{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({profile_id:profileId||null})});
+  const fresh=await profilesApi();
+  const assignment=(fresh.assignments||[]).find(a=>String(a.user_id)===String(userId));
+  const savedId=String(assignment?.profile_id||"");
+  if(savedId!==String(profileId||""))throw Error("Não foi possível confirmar o vínculo salvo. Atualize a página e confira.");
+  customAssignments=fresh.assignments||[];
+  const msg="Perfil \""+profileName+"\" vinculado a "+userName+" com sucesso. O colaborador pode atualizar a página (F5) para recarregar as configurações.";
+  $("ap-status").textContent=msg;
+  assignmentNotice("✓ "+msg,true);
+ }catch(e){
+  const msg="Não foi possível confirmar a aplicação para "+userName+": "+e.message;
+  $("ap-status").textContent=msg;assignmentNotice(msg,false);
+ }finally{btn.disabled=false;btn.textContent="Aplicar ao colaborador"}
 }
 
 window.abrirCentralPermissoes=async function(p,s){
