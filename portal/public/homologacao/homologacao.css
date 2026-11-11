@@ -166,3 +166,6 @@ body{font-family:Inter,"Segoe UI",Arial,Helvetica,sans-serif;-webkit-font-smooth
 
 /* Linha do tempo e encaminhamento de tarefas */
 .rt-history-panel{border-top:1px solid #cddce8;padding-top:12px;margin-top:8px;display:grid;gap:10px}.rt-history-panel h4{margin:0;font-size:13px}.rt-history-event{border-left:3px solid #2684bb;padding:3px 0 6px 11px;display:grid;gap:4px}.rt-history-event strong{font-size:12px}.rt-history-event small{color:#657d91}.rt-history-event p{font-size:12px;line-height:1.4;margin:0;overflow-wrap:anywhere}.rt-card .rt-handoff{background:#e7f6ee;color:#11643b;border-color:#a8d7be}
+
+/* Seleção de colaboradores do cadastro corporativo */
+.rt-person-picker{border:1px solid #b5d4e7;border-radius:10px;background:#edf6fc;padding:12px;display:grid;gap:10px}.rt-person-picker>strong{font-size:13px}.rt-person-picker label{display:grid;gap:6px;font-size:12px}.rt-person-picker select{width:100%;padding:10px;border:1px solid #9bbcd2;border-radius:8px;background:#fff;color:#183451}.rt-picker-actions{display:flex;gap:8px}.rt-picker-actions button{flex:1}.rt-picker-actions button:disabled{opacity:.5;cursor:not-allowed}
