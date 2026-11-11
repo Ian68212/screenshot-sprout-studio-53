@@ -100,6 +100,16 @@ async function garantirColunaImagemFerramentas() {
   }
   await ferramentaImagemSchema;
 }
+// A homologação administrativa é restrita exclusivamente ao perfil admin.
+// A checagem acontece ANTES do express.static para impedir acesso direto aos arquivos.
+r.use("/painel/homologacao", wrap(async (req, res, next) => {
+  await new Promise((resolve, reject) => carregarUsuario(req, res, (err) => err ? reject(err) : resolve()));
+  res.setHeader("Cache-Control", "no-store");
+  if (!req.usuario) return res.redirect(302, BASE + "/");
+  if (req.usuario.perfil !== "admin") return res.status(403).type("text/plain").send("Acesso restrito a administradores da Rodrinox Pro.");
+  next();
+}));
+
 // Arquivos públicos do portal não dependem do MySQL nem de sessão.
 if (publicDir) {
   console.info("Portal: arquivos públicos servidos de", publicDir);
