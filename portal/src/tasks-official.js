@@ -99,16 +99,21 @@ tasksRouter.put("/board",wrap(async(req,res)=>{
  if(!state||!Array.isArray(state.projects)||!Array.isArray(state.tasks)||!Array.isArray(state.trash)||!Number.isSafeInteger(revision))return res.status(400).json({erro:"Estado inválido"});
  if(state.projects.length>1000||state.tasks.length>10000||state.trash.length>10000)return res.status(413).json({erro:"Limite excedido"});
  const json=JSON.stringify(state);if(json.length>3000000)return res.status(413).json({erro:"Dados excedem 3 MB"});
+ const [current]=await q("SELECT revision,state_json FROM rp_task_board WHERE id=1");
+ if(!current||Number(current.revision)!==revision)return res.status(409).json({erro:"O quadro foi alterado. Atualize antes de salvar."});
  if(!admin(req)){
-   const [old]=await q("SELECT state_json FROM rp_task_board WHERE id=1");
-   const before=JSON.parse(old.state_json);
-   if(JSON.stringify(before.projects)!==JSON.stringify(state.projects)||JSON.stringify(before.trash)!==JSON.stringify(state.trash))return res.status(403).json({erro:"Somente o administrador pode alterar projetos ou lixeira"});
+   const before=JSON.parse(current.state_json);
+   if(JSON.stringify(before.projects)!==JSON.stringify(state.projects)||JSON.stringify(before.trash)!==JSON.stringify(state.trash))return res.status(403).json({erro:"Somente administradores podem alterar projetos ou lixeira"});
    const previous=new Map(before.tasks.map(t=>[String(t.id),t]));
-   if(previous.size!==state.tasks.length)return res.status(403).json({erro:"Somente o administrador pode criar ou excluir tarefas"});
-   for(const t of state.tasks){const oldTask=previous.get(String(t.id));if(!oldTask)return res.status(403).json({erro:"Tarefa não autorizada"});
-     if(Number(oldTask.ownerId)!==Number(req.usuario.id)) {
-       if(JSON.stringify(oldTask)!==JSON.stringify(t))return res.status(403).json({erro:"Somente o responsável pode alterar esta tarefa"});
-     }else if(t.projectId!==oldTask.projectId||t.id!==oldTask.id)return res.status(403).json({erro:"Identificador protegido"});
+   if(previous.size!==state.tasks.length||new Set(state.tasks.map(t=>String(t.id))).size!==state.tasks.length)return res.status(403).json({erro:"Criação ou exclusão não autorizada"});
+   for(const t of state.tasks){
+     const oldTask=previous.get(String(t.id));
+     if(!oldTask)return res.status(403).json({erro:"Tarefa não autorizada"});
+     if(JSON.stringify(oldTask)===JSON.stringify(t))continue;
+     if(Number(oldTask.ownerId)!==Number(req.usuario.id))return res.status(403).json({erro:"Somente o responsável pode alterar esta tarefa"});
+     const protectedKeys=["id","projectId","title","manager","ownerId","ownerEmail","owner","createdBy"];
+     if(protectedKeys.some(key=>JSON.stringify(oldTask[key])!==JSON.stringify(t[key])))return res.status(403).json({erro:"Identificação ou delegação protegida"});
+     if(!["a_fazer","andamento","revisao","concluida"].includes(t.status))return res.status(400).json({erro:"Status inválido"});
    }
  }
  const result=await q("UPDATE rp_task_board SET state_json=?,revision=revision+1 WHERE id=1 AND revision=?",[json,revision]);
