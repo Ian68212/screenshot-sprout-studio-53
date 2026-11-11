@@ -8,6 +8,7 @@ async function setup(){
  if(!setupPromise)setupPromise=(async()=>{
  await q(`CREATE TABLE IF NOT EXISTS rp_task_projects (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, name VARCHAR(160) NOT NULL, created_by INT NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, INDEX(created_by)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
  await q(`CREATE TABLE IF NOT EXISTS rp_task_items (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, project_id BIGINT UNSIGNED NOT NULL, title VARCHAR(220) NOT NULL, description TEXT NULL, owner_id INT NULL, priority ENUM('baixa','normal','alta','urgente') NOT NULL DEFAULT 'normal', status ENUM('a_fazer','andamento','revisao','concluida') NOT NULL DEFAULT 'a_fazer', due_date DATE NULL, created_by INT NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, INDEX(project_id), INDEX(owner_id), FOREIGN KEY(project_id) REFERENCES rp_task_projects(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+ await q(`CREATE TABLE IF NOT EXISTS rp_task_comments (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, task_id BIGINT UNSIGNED NOT NULL, author_id INT NOT NULL, body TEXT NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, INDEX(task_id), FOREIGN KEY(task_id) REFERENCES rp_task_items(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
  })().catch(e=>{setupPromise=null;throw e});
  return setupPromise;
 }
@@ -44,4 +45,22 @@ tasksRouter.patch("/items/:id",wrap(async(req,res)=>{
  if(!admin(req)&&Number(t.owner_id)!==Number(req.usuario.id))return res.status(403).json({erro:"Sem acesso"});
  const status=req.body?.status;if(!["a_fazer","andamento","revisao","concluida"].includes(status))return res.status(400).json({erro:"Status inválido"});
  await q("UPDATE rp_task_items SET status=? WHERE id=?",[status,t.id]);res.json({ok:true});
+}));
+
+tasksRouter.get("/comments/:id",wrap(async(req,res)=>{
+ if(!validId(req.params.id))return res.status(400).json({erro:"ID inválido"});
+ const [task]=await q("SELECT owner_id,created_by FROM rp_task_items WHERE id=?",[req.params.id]);
+ if(!task)return res.status(404).json({erro:"Tarefa não encontrada"});
+ if(!admin(req)&&Number(task.owner_id)!==Number(req.usuario.id)&&Number(task.created_by)!==Number(req.usuario.id))return res.status(403).json({erro:"Sem acesso"});
+ res.json(await q("SELECT c.id,c.body,c.created_at,u.nome author_name FROM rp_task_comments c JOIN usuarios u ON u.id=c.author_id WHERE c.task_id=? ORDER BY c.id ASC",[req.params.id]));
+}));
+tasksRouter.post("/comments/:id",wrap(async(req,res)=>{
+ if(!validId(req.params.id))return res.status(400).json({erro:"ID inválido"});
+ const [task]=await q("SELECT owner_id,created_by FROM rp_task_items WHERE id=?",[req.params.id]);
+ if(!task)return res.status(404).json({erro:"Tarefa não encontrada"});
+ if(!admin(req)&&Number(task.owner_id)!==Number(req.usuario.id)&&Number(task.created_by)!==Number(req.usuario.id))return res.status(403).json({erro:"Sem acesso"});
+ const body=String(req.body?.body||"").trim();
+ if(!body||body.length>4000)return res.status(400).json({erro:"Comentário deve ter entre 1 e 4000 caracteres"});
+ const result=await q("INSERT INTO rp_task_comments(task_id,author_id,body) VALUES (?,?,?)",[req.params.id,req.usuario.id,body]);
+ res.status(201).json({id:result.insertId});
 }));
