@@ -223,7 +223,7 @@ r.get("/api/atendimento/consultar/:recurso", exigir("painel"), wrap(async (req, 
   if (req.usuario.perfil !== "admin") return res.status(403).json({erro:"Acesso não autorizado para consultar a DigiSac."});
   const endpoint = digiPaths[req.params.recurso];
   if (!endpoint) return res.status(404).json({erro:"Consulta não disponível."});
-  const base = (process.env.DIGISAC_API_BASE_URL || "").replace(/\\/+$/, "");
+  const base = (process.env.DIGISAC_API_BASE_URL || "").replace(/\/+$/, "");
   const token = process.env.DIGISAC_API_TOKEN;
   if (!base || !token) return res.status(503).json({erro:"Credenciais DigiSac não configuradas."});
   let url;
