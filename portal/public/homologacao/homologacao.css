@@ -163,3 +163,6 @@ body{font-family:Inter,"Segoe UI",Arial,Helvetica,sans-serif;-webkit-font-smooth
 
 /* Anexos demonstrativos nos cartões de tarefas */
 .rt-attachments{border-top:1px solid #d7e3ed;margin-top:6px;padding-top:12px;display:grid;gap:8px}.rt-attachments>strong{font-size:12px}.rt-upload-label{display:block;text-align:center;border:1px dashed #6c9cc2;border-radius:9px;background:#eff7fc;color:#145e8e;padding:10px;cursor:pointer;font-size:12px}.rt-upload-label input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}.rt-attachment-row{display:flex;align-items:center;gap:5px;flex-wrap:wrap;background:#f2f6fa;border-radius:7px;padding:6px}.rt-attachment-row span{font-size:11px;flex:1;min-width:90px;overflow-wrap:anywhere}.rt-card .rt-attachment-row button{padding:5px 7px;font-size:11px}.rt-attachments>small{line-height:1.4}
+
+/* Linha do tempo e encaminhamento de tarefas */
+.rt-history-panel{border-top:1px solid #cddce8;padding-top:12px;margin-top:8px;display:grid;gap:10px}.rt-history-panel h4{margin:0;font-size:13px}.rt-history-event{border-left:3px solid #2684bb;padding:3px 0 6px 11px;display:grid;gap:4px}.rt-history-event strong{font-size:12px}.rt-history-event small{color:#657d91}.rt-history-event p{font-size:12px;line-height:1.4;margin:0;overflow-wrap:anywhere}.rt-card .rt-handoff{background:#e7f6ee;color:#11643b;border-color:#a8d7be}
