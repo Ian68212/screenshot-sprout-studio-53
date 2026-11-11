@@ -22,3 +22,6 @@ window.aplicarPermissoesMenu=async function(){
     console.warn("Menu: não foi possível carregar permissões",e);
   }
 };
+
+// Ao voltar do painel do colaborador, recarrega as permissoes salvas no servidor.
+window.addEventListener("focus",()=>{if(typeof window.aplicarPermissoesMenu==="function")window.aplicarPermissoesMenu()});

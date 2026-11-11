@@ -13,7 +13,9 @@ window.aplicarPermissoesMenu=async function(){
   }catch(e){
     // Falha fechada: só Início até a consulta ser restabelecida.
     buttons.forEach(b=>{b.hidden=b.dataset.tab!=="inicio"});
-    quick.forEach(b=>b.hidden=true);
     console.warn("Menu: não foi possível carregar permissões",e);
   }
 };
+
+// Revalida as permissoes quando o colaborador retorna a esta aba.
+window.addEventListener("focus",()=>{if(typeof window.aplicarPermissoesMenu==="function")window.aplicarPermissoesMenu()});
