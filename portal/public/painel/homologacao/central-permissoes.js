@@ -1,6 +1,6 @@
 "use strict";
 (()=>{
-const labels={documentos:"Documentos",pcp:"PCP",tarefas:"Gestão de Tarefas","gestao-empresarial":"Gestão Empresarial",almoxarifado:"Almoxarifado",qualidade:"Qualidade",rh:"RH",seguranca:"Segurança do Trabalho",comunicados:"Comunicados",treinamentos:"Treinamentos",ferramentas:"Ferramentas",aplicativos:"Aplicativos",contatos:"Contatos",suporte:"Suporte / TI","link.email":"Link rápido: E-mail Corporativo","link.drive":"Link rápido: Google Drive","link.cameras":"Link rápido: Câmeras (iSIC)","link.bling":"Link rápido: Bling (ERP)","admin.visao":"Administração","admin.permissoes":"Permissões de Acesso","admin.organograma":"Organograma","admin.pessoas":"Colaboradores","admin.candidaturas":"Recrutamento","admin.site":"Gerenciador do Site"};
+const labels={documentos:"Documentos",pcp:"PCP",tarefas:"Gestão de Tarefas","gestao-empresarial":"Gestão Empresarial",atendimento:"Central de Atendimento",almoxarifado:"Almoxarifado",qualidade:"Qualidade",rh:"RH",seguranca:"Segurança do Trabalho",comunicados:"Comunicados",treinamentos:"Treinamentos",ferramentas:"Ferramentas",aplicativos:"Aplicativos",contatos:"Contatos",suporte:"Suporte / TI","link.email":"Link rápido: E-mail Corporativo","link.drive":"Link rápido: Google Drive","link.cameras":"Link rápido: Câmeras (iSIC)","link.bling":"Link rápido: Bling (ERP)","admin.visao":"Administração","admin.permissoes":"Permissões de Acesso","admin.organograma":"Organograma","admin.pessoas":"Colaboradores","admin.candidaturas":"Recrutamento","admin.site":"Gerenciador do Site"};
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 let state={regras:[],botoes:Object.keys(labels)},people=[],structure={setores:[],cargos:[]};
 const api=async(path,options={})=>{const r=await fetch("/colaborador/api/menu/"+path,{credentials:"same-origin",cache:"no-store",...options});if(!r.ok)throw Error((await r.json().catch(()=>({}))).erro||"Falha "+r.status);return r.json()};
@@ -26,7 +26,7 @@ function paint(){
  }).join("");
 }
 async function save(){
- const scope=document.getElementById("mp-scope").value,alvo=document.getElementById("mp-target").value,status=document.getElementById("mp-status");
+ const escopo=document.getElementById("mp-scope").value,alvo=document.getElementById("mp-target").value,status=document.getElementById("mp-status");
  if(!alvo){status.textContent="Selecione um destino válido.";return}
  const botoes={};document.querySelectorAll("[data-menu-key]").forEach(el=>botoes[el.dataset.menuKey]=el.value==="herdar"?null:el.value==="sim");
  status.textContent="Salvando...";
