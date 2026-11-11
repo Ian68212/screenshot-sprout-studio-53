@@ -7,7 +7,7 @@ const api=async(path,options={})=>{const r=await fetch("/colaborador/api/menu/"+
 function options(list,id,name){return list.map(x=>'<option value="'+esc(x[id])+'">'+esc(x[name])+'</option>').join("")}
 function targets(){
  const scope=document.getElementById("mp-scope").value,el=document.getElementById("mp-target");
- const sets={perfil:[{id:"colaborador",nome:"Colaborador"},{id:"gestor",nome:"Gestor"}],setor:structure.setores,cargo:structure.cargos,usuario:people};
+ const sets={perfil:[{id:"colaborador",nome:"Colaborador"},{id:"gestor",nome:"Gestor"},{id:"admin",nome:"Administrador"}],setor:structure.setores,cargo:structure.cargos,usuario:people};
  el.innerHTML=options(sets[scope]||[],"id","nome");
  paint();
 }
