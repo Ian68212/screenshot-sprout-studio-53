@@ -77,16 +77,17 @@ let rtView="admin",rtProject=0,rtPriorityPickerId=null;
 const rtStatus={a_fazer:"A fazer",andamento:"Em andamento",revisao:"Em revisão",concluida:"Concluída"};
 let rtTaskPolicy={grants:{},scope:"own"};
 const rtCan=key=>rtCurrentUser?.perfil==="admin"||rtTaskPolicy.grants?.[key]===true;
-let rtRevision=null,rtCurrentUser=null,rtSyncing=false,rtDirty=false,rtSharedReady=false,rtSyncError="",rtBoardMode="all";
+let rtRevision=null,rtCurrentUser=null,rtSyncing=false,rtDirty=false,rtSharedReady=false,rtSyncError="",rtBoardMode="all",rtPermissionStamp="";
 async function rtRefreshBoard(){
  if(rtSyncing||rtDirty)return;
  rtSyncing=true;
  try{const response=await fetch("/colaborador/api/tasks-official/board",{credentials:"same-origin",cache:"no-store"});
  if(!response.ok){const problem=await response.json().catch(()=>({}));throw Error("HTTP "+response.status+(problem.erro?" — "+problem.erro:""));}
  const data=await response.json();if(!data.state||!Array.isArray(data.state.projects)||!Array.isArray(data.state.tasks))throw Error("Resposta inválida");
- if(rtRevision!==data.revision||!rtSharedReady){
+ const policyStamp=JSON.stringify(data.permissions||{});
+ if(rtRevision!==data.revision||!rtSharedReady||policyStamp!==rtPermissionStamp){
  rtState={projects:data.state.projects,tasks:data.state.tasks};rtTrash=Array.isArray(data.state.trash)?data.state.trash:[];
- rtRevision=data.revision;rtCurrentUser=data.user;rtTaskPolicy=data.permissions||{grants:{},scope:"own"};rtSharedReady=true;rtSyncError="";
+ rtRevision=data.revision;rtCurrentUser=data.user;rtTaskPolicy=data.permissions||{grants:{},scope:"own"};rtPermissionStamp=policyStamp;rtSharedReady=true;rtSyncError="";
  rtView=rtCan("tasks.priority")||rtCan("tasks.due")||rtCan("tasks.checklist")||rtCan("tasks.comment")||rtCan("tasks.assign")||rtCan("tasks.recurrence")?"admin":"frank";
  rtProject=rtState.projects.some(p=>p.id===rtProject)?rtProject:0;rtDraw();
  }
