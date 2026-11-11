@@ -5,8 +5,9 @@ const erro = document.getElementById("erro");
 const submit = document.getElementById("submit");
 const toggle = document.getElementById("toggle-password");
 
-api("eu").then(() => {
-  location.href = "/colaborador/painel.html";
+const destino = (usuario) => usuario?.perfil === "admin" ? "/colaborador/painel/oficial/" : "/colaborador/oficial/";
+api("eu").then((usuario) => {
+  location.replace(destino(usuario));
 }).catch(() => {});
 
 toggle?.addEventListener("click", () => {
@@ -33,7 +34,8 @@ form.addEventListener("submit", async (event) => {
       method: "POST",
       body: { email: emailInput.value.trim(), senha: senhaInput.value }
     });
-    location.href = "/colaborador/painel.html";
+    const usuario = await api("eu");
+    location.replace(destino(usuario));
   } catch (error) {
     erro.textContent = error.message || "Não foi possível entrar. Confira suas credenciais.";
   } finally {
