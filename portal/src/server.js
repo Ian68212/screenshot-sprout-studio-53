@@ -173,7 +173,17 @@ r.use("/api/public/site", publicSiteRouter);
 
 // Proteção CSRF: toda escrita exige cabeçalho próprio (não enviável por formulários de outros sites)
 r.use((req, res, next) => {
-  if (req.method !== "GET" && req.method !== "OPTIONS" && req.get("X-Portal") !== "1") return res.status(403).json({ erro: "Requisição inválida" });
+  if (req.method !== "GET" && req.method !== "OPTIONS" && req.get("X-Portal") !== "1") {
+    // Compatibilidade com clientes oficiais: alguns proxies removem cabeçalhos personalizados.
+    // Permitir somente PUT JSON da API de tarefas vindo da MESMA origem HTTPS e com sessão validada pela rota.
+    const origin = req.get("Origin");
+    const host = req.get("Host");
+    const sameOriginTasks = req.method === "PUT"
+      && req.path === "/api/tasks-official/board"
+      && !!host && origin === "https://" + host
+      && req.is("application/json");
+    if (!sameOriginTasks) return res.status(403).json({ erro: "Requisição inválida" });
+  }
   next();
 });
 
