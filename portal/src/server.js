@@ -1,4 +1,5 @@
 import { tasksRouter } from "./tasks-official.js";
+import atendimentoRodrinoxRouter from "./atendimento-rodrinox.js";
 import "dotenv/config";
 import path from "node:path";
 import fs from "node:fs";
@@ -256,6 +257,7 @@ r.get("/api/atendimento/consultar/:recurso", exigir("painel"), wrap(async (req, 
 // Permissões de navegação: sessões reais e alterações exclusivas do administrador.
 r.use("/api/menu", menuPermissoesRouter);
 r.use("/api/tasks-official", tasksRouter);
+r.use("/api/atendimento/rodrinox", atendimentoRodrinoxRouter);
 
 // Diretório interno: apenas usuários ativos, e-mail corporativo e setor cadastrado.
 // Não expõe cargos, perfis, telefones, senhas ou dados administrativos.
