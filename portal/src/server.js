@@ -214,6 +214,45 @@ r.get("/api/atendimento/status", exigir("painel"), (req, res) => {
   });
 });
 
+// Proxy de leitura DigiSac. Token fica exclusivamente no servidor.
+// Nesta fase, apenas admin pode consultar dados de clientes: usuários comuns não herdam
+// acesso irrestrito às filas pelo simples fato de possuir sessão do portal.
+const digiPaths = Object.freeze({contacts:"contacts",tickets:"tickets",messages:"messages",departments:"departments"});
+r.get("/api/atendimento/consultar/:recurso", exigir("painel"), wrap(async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  if (req.usuario.perfil !== "admin") return res.status(403).json({erro:"Acesso não autorizado para consultar a DigiSac."});
+  const endpoint = digiPaths[req.params.recurso];
+  if (!endpoint) return res.status(404).json({erro:"Consulta não disponível."});
+  const base = (process.env.DIGISAC_API_BASE_URL || "").replace(/\\/+$/, "");
+  const token = process.env.DIGISAC_API_TOKEN;
+  if (!base || !token) return res.status(503).json({erro:"Credenciais DigiSac não configuradas."});
+  let url;
+  try {
+    url = new URL(base + "/" + endpoint);
+    if (url.protocol !== "https:" || url.hostname !== "rodrinoxpro.digisac.app" || !url.pathname.startsWith("/api/v1/")) throw Error("Destino inválido");
+  } catch { return res.status(503).json({erro:"URL da API DigiSac inválida."}); }
+  url.searchParams.set("perPage", "20");
+  if (req.params.recurso === "messages") {
+    const contactId = String(req.query.contactId || "");
+    if (!/^[a-zA-Z0-9-]{1,80}$/.test(contactId)) return res.status(400).json({erro:"Selecione um contato válido."});
+    url.searchParams.set("where[contactId]", contactId);
+  }
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 9000);
+  try {
+    const upstream = await fetch(url, {headers:{Authorization:"Bearer " + token, Accept:"application/json"},signal:controller.signal,redirect:"error"});
+    if (!upstream.ok) return res.status(502).json({erro:"DigiSac recusou a consulta.",codigo:upstream.status});
+    const raw = await upstream.text();
+    if (raw.length > 500000) return res.status(502).json({erro:"Resposta da DigiSac excedeu o limite."});
+    let payload;
+    try { payload = JSON.parse(raw); } catch { return res.status(502).json({erro:"DigiSac retornou resposta inválida."}); }
+    res.json(payload);
+  } catch (err) {
+    console.warn("Consulta DigiSac falhou:", err.name === "AbortError" ? "timeout" : "erro de comunicação");
+    res.status(502).json({erro:"Não foi possível comunicar com a DigiSac."});
+  } finally { clearTimeout(timeout); }
+}));
+
 // Permissões de navegação: sessões reais e alterações exclusivas do administrador.
 r.use("/api/menu", menuPermissoesRouter);
 r.use("/api/tasks-official", tasksRouter);
