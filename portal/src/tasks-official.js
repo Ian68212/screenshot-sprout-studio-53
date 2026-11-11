@@ -109,7 +109,12 @@ tasksRouter.put("/board",wrap(async(req,res)=>{
    const before=JSON.parse(current.state_json);
    const userId=Number(req.usuario.id);
    const same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
-   const allowed=(task)=>policy.scope==="all"||Number(task.ownerId)===userId||Number(task.createdById)===userId;
+   const allowed=(task)=>{
+     if(policy.scope==="all")return true;
+     if(Number(task.ownerId)===userId||Number(task.createdById)===userId)return true;
+     if(policy.scope==="sector")return false; // Sem identificador de setor no quadro legado: negar por padrão.
+     return false;
+   };
    const has=(action)=>grants[action]===true;
    const deny=(message)=>res.status(403).json({erro:message});
    if(!same(before.trash,state.trash))return deny("Alterações na lixeira exigem administrador.");
