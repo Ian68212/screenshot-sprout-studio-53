@@ -50,4 +50,37 @@ function iconMarkup(name){return '<svg viewBox="0 0 24 24" aria-hidden="true" fo
 document.querySelectorAll(".features button").forEach((b,i)=>{const name=["documentos","comunicados","treinamentos","ferramentas"][i];const el=b.querySelector("i");if(el){el.classList.add("feature-icon");el.innerHTML=iconMarkup(name);}});
 document.querySelectorAll(".access > a,.access > button").forEach((b,i)=>{const name=["email","drive","bling","camera","contatos","suporte"][i];const small=b.querySelector("small");if(small){const span=document.createElement("span");span.className="access-icon";span.innerHTML=iconMarkup(name);b.replaceChildren(span,small);}});
 
-function renderTarefas(){return '<section class="tasks-shell"><div class="tasks-heading"><div><span class="tasks-eyebrow">RODRINOX PRO · GESTÃO OPERACIONAL</span><h2>Gestão de Tarefas</h2><p>Projetos, responsáveis e prazos em um único ambiente.</p></div><span class="tasks-connection">Integração pendente</span></div><div class="tasks-stats"><div><small>Projetos</small><strong>—</strong></div><div><small>Minhas tarefas</small><strong>—</strong></div><div><small>Em andamento</small><strong>—</strong></div><div><small>Vencimentos</small><strong>—</strong></div></div><div class="tasks-tabs"><span>Quadro Kanban</span><span>Minhas tarefas</span><span>Projetos</span><span>Visão administrativa</span></div><div class="tasks-board">'+["A fazer","Em andamento","Em revisão","Concluídas"].map(label=>'<div class="tasks-column"><h3>'+label+'</h3><p>Conecte sua conta MeisterTask para visualizar tarefas autorizadas.</p></div>').join("")+'</div><p class="tasks-note">A integração com a API do MeisterTask ainda requer autorização OAuth individual e configuração segura no servidor. Nenhuma tarefa fictícia é exibida.</p></section>';}
+
+/* Rodrinox Tasks: protótipo interativo de homologação, com dados locais deste navegador.
+   NÃO representa persistência multiusuário nem substitui a API protegida do servidor. */
+const rtStoreKey="rodrinox-tasks-demo-v1";
+const rtSeed={projects:[{id:1,name:"PCP — Projeto piloto"}],tasks:[
+{id:1,projectId:1,title:"Conferir materiais da OP-1024",owner:"Frank",status:"a_fazer",due:"",manager:"Administrador",note:""},
+{id:2,projectId:1,title:"Atualizar relatório de produção",owner:"Frank",status:"andamento",due:"",manager:"Administrador",note:""},
+{id:3,projectId:1,title:"Validar documentação técnica",owner:"Administrador",status:"revisao",due:"",manager:"Administrador",note:""}]};
+let rtState;
+try{const stored=JSON.parse(localStorage.getItem(rtStoreKey)||"null");rtState=stored&&Array.isArray(stored.projects)&&Array.isArray(stored.tasks)?stored:structuredClone(rtSeed);}catch{rtState=structuredClone(rtSeed);}
+let rtView="admin",rtProject=0;
+const rtStatus={a_fazer:"A fazer",andamento:"Em andamento",revisao:"Em revisão",concluida:"Concluída"};
+const rtSave=()=>{try{localStorage.setItem(rtStoreKey,JSON.stringify(rtState));}catch{}};
+function rtDraw(){const root=document.querySelector("#items .tasks-shell");if(root)root.outerHTML=renderTarefas();}
+function renderTarefas(){
+ const visible=rtState.tasks.filter(t=>(!rtProject||t.projectId===rtProject)&&(rtView!=="frank"||t.owner==="Frank"));
+ const total=visible.length,done=visible.filter(t=>t.status==="concluida").length;
+ return '<section class="tasks-shell"><div class="tasks-heading"><div><span class="tasks-eyebrow">RODRINOX TASKS · HOMOLOGAÇÃO</span><h2>Gestão de Tarefas</h2><p>Delegue, acompanhe e receba as tarefas concluídas.</p></div><span class="tasks-connection">Modo demonstração · dados locais</span></div>'+
+ '<div class="tasks-toolbar"><label>Visualizar como <select id="rt-view"><option value="admin"'+(rtView==="admin"?" selected":"")+'>Administrador</option><option value="frank"'+(rtView==="frank"?" selected":"")+'>Frank (simulação)</option></select></label><label>Projeto <select id="rt-project"><option value="0">Todos os projetos</option>'+rtState.projects.map(p=>'<option value="'+p.id+'"'+(rtProject===p.id?" selected":"")+'>'+esc(p.name)+'</option>').join("")+'</select></label><button type="button" id="rt-new-project">+ Novo projeto</button><button type="button" id="rt-new-task">+ Nova tarefa</button></div>'+
+ '<div class="tasks-stats"><div><small>Tarefas visíveis</small><strong>'+total+'</strong></div><div><small>Pendentes</small><strong>'+visible.filter(t=>t.status!=="concluida").length+'</strong></div><div><small>Em andamento</small><strong>'+visible.filter(t=>t.status==="andamento").length+'</strong></div><div><small>Concluídas</small><strong>'+done+'</strong></div></div>'+
+ '<div class="tasks-board">'+Object.entries(rtStatus).map(([key,label])=>'<div class="tasks-column"><h3>'+label+' <small>'+visible.filter(t=>t.status===key).length+'</small></h3>'+visible.filter(t=>t.status===key).map(t=>'<article class="rt-card"><strong>'+esc(t.title)+'</strong><small>'+esc(rtState.projects.find(p=>p.id===t.projectId)?.name||"Projeto")+'</small><small>Responsável: '+esc(t.owner)+'</small>'+(t.due?'<small>Prazo: '+esc(t.due)+'</small>':'')+(t.note?'<small>'+esc(t.note)+'</small>':'')+'<label>Status <select class="rt-status" data-id="'+t.id+'">'+Object.entries(rtStatus).map(([v,n])=>'<option value="'+v+'"'+(v===t.status?" selected":"")+'>'+n+'</option>').join("")+'</select></label>'+(rtView==="admin"?'<button type="button" class="rt-delegate" data-id="'+t.id+'">Delegar / editar</button>':'')+'</article>').join("")+(visible.some(t=>t.status===key)?"":'<p class="rt-empty">Nenhuma tarefa</p>')+'</div>').join("")+'</div>'+
+ '<p class="tasks-note">Demonstração no navegador: alterações não são compartilhadas entre colaboradores. A versão definitiva usará o banco de dados, autenticação e permissões do Portal Rodrinox.</p></section>';
+}
+document.addEventListener("change",e=>{
+ if(e.target.id==="rt-view"){rtView=e.target.value;rtDraw();}
+ if(e.target.id==="rt-project"){rtProject=Number(e.target.value);rtDraw();}
+ if(e.target.classList.contains("rt-status")){const t=rtState.tasks.find(t=>t.id===Number(e.target.dataset.id));if(t){t.status=e.target.value;rtSave();rtDraw();}}
+});
+document.addEventListener("click",e=>{
+ const b=e.target.closest("button");if(!b)return;
+ if(b.id==="rt-new-project"){if(rtView!=="admin")return alert("Apenas o administrador cria projetos nesta demonstração.");const name=prompt("Nome do novo projeto:");if(!name?.trim())return;rtState.projects.push({id:Date.now(),name:name.trim().slice(0,160)});rtSave();rtDraw();}
+ if(b.id==="rt-new-task"){if(rtView!=="admin")return alert("Apenas o administrador cria tarefas nesta demonstração.");if(!rtState.projects.length)return alert("Crie um projeto primeiro.");const title=prompt("Descrição da tarefa:");if(!title?.trim())return;const projectId=rtProject||rtState.projects[0].id;const owner=prompt("Delegar para (ex.: Frank):","Frank");if(owner===null)return;rtState.tasks.push({id:Date.now(),projectId,title:title.trim().slice(0,220),owner:owner.trim()||"Administrador",status:"a_fazer",due:"",manager:"Administrador",note:""});rtSave();rtDraw();}
+ if(b.classList.contains("rt-delegate")){const t=rtState.tasks.find(x=>x.id===Number(b.dataset.id));if(!t)return;const owner=prompt("Responsável pela tarefa:",t.owner);if(owner===null)return;const due=prompt("Prazo (AAAA-MM-DD, opcional):",t.due||"");if(due===null)return;if(due&&!/^\\d{4}-\\d{2}-\\d{2}$/.test(due))return alert("Use AAAA-MM-DD.");t.owner=owner.trim()||"Administrador";t.due=due;rtSave();rtDraw();}
+});
