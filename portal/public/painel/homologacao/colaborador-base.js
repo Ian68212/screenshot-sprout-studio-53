@@ -94,7 +94,7 @@ async function rtRefreshBoard(){
 const rtSave=()=>{
  if(!rtSharedReady||rtDirty){alert("Quadro não sincronizado. Aguarde a conexão antes de alterar.");return;}
  rtDirty=true;
- fetch("/colaborador/api/tasks-official/board",{method:"PUT",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({revision:rtRevision,state:{projects:rtState.projects,tasks:rtState.tasks,trash:rtTrash}})})
+ fetch("/colaborador/api/tasks-official/board",{method:"PUT",credentials:"same-origin",headers:{"Content-Type":"application/json","X-Portal":"1"},body:JSON.stringify({revision:rtRevision,state:{projects:rtState.projects,tasks:rtState.tasks,trash:rtTrash}})})
  .then(async r=>{const data=await r.json();if(!r.ok)throw Error(data.erro||"Erro "+r.status);rtRevision=data.revision;})
  .catch(e=>{alert("Alteração não salva: "+e.message+". O quadro será recarregado.");rtRevision=null;})
  .finally(()=>{rtDirty=false;rtRefreshBoard();});
