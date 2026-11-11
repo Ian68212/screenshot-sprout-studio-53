@@ -41,15 +41,16 @@ async function openRecord(id){
   }catch(e){target.textContent=e.message}
 }
 
-const tabs=[["fila","Fila"],["meus","Meus chats"],["contatos","Contatos"]];
+const tabs=[["fila","Fila"],["meus","Meus chats"],["contatos","Contatos"],["meta","WhatsApp próprio"]];
 function draw(){
+if(selected==="meta"){window.renderMetaCentral?.();return}
 const root=document.getElementById("items");if(!root||!["Central de Atendimento","atendimento"].includes(document.getElementById("sectionTitle")?.textContent))return;
 root.classList.add("ca-root");
 root.innerHTML='<div class="ca-head"><div><h3>Central de Atendimento</h3><div class="ca-sub">Atendimento corporativo · Rodrinox Pro</div></div><span class="ca-state" id="caConnection">Verificando conexão…</span></div>'+
 '<div class="ca-layout"><aside class="ca-left"><div class="ca-tabs">'+tabs.map(([id,label])=>'<button type="button" data-ca-tab="'+id+'" class="'+(selected===id?"active":"")+'">'+label+'</button>').join("")+'</div><input class="ca-search" placeholder="Pesquisar atendimento..." aria-label="Pesquisar atendimento" disabled><div class="ca-list">'+(loading?'<div class="ca-empty">Consultando DigiSac...</div>':error?'<div class="ca-empty">'+safe(error)+'</div>':records.length?records.map(r=>'<button type="button" class="ca-record" data-ca-id="'+safe(r.id)+'"><b>'+safe(nameOf(r))+'</b><small>'+safe(r.protocol?"Protocolo "+r.protocol:r.department?.name||r.number||"Atendimento") +'</small></button>').join(""):'<div class="ca-empty">Nenhum registro retornado.</div>')+'</div></aside><section class="ca-conversation"><header><strong>'+safe(active?nameOf(active):"Selecione um atendimento")+'</strong><span class="ca-meta">Mensagens, histórico, responsável e setor</span><div id="caAssignTools" class="ca-assign"></div></header><div class="ca-messages"><div id="caMessageBody"><div style="font-size:34px;margin-bottom:10px">▤</div>Selecione um contato ou chamado para consultar as mensagens.</div></div><div class="ca-compose"><textarea disabled placeholder="A resposta será habilitada quando a API estiver conectada e o atendimento for selecionado." aria-label="Mensagem"></textarea><button disabled type="button">Enviar</button></div></section></div>'+
 '<div class="ca-banner"><b>Homologação segura:</b> nenhuma mensagem será enviada enquanto a conexão não estiver validada. O WhatsApp e as filas atuais continuam funcionando na plataforma de origem.</div>'+
 '<section class="ca-panel"><h4>Preparação da integração</h4><div class="ca-steps"><span class="ca-step ready">✓ Interface Rodrinox</span><span class="ca-step">Conexão API</span><span class="ca-step">Filas e permissões</span><span class="ca-step">Envio de mensagens</span></div><p class="ca-meta" id="caDetails">Aguardando verificação do servidor.</p></section>';
-root.querySelectorAll("[data-ca-tab]").forEach(b=>b.addEventListener("click",()=>{selected=b.dataset.caTab;load()}));
+root.querySelectorAll("[data-ca-tab]").forEach(b=>b.addEventListener("click",()=>{selected=b.dataset.caTab;if(selected==="meta")draw();else load()}));
 root.querySelectorAll("[data-ca-id]").forEach(b=>b.addEventListener("click",()=>openRecord(b.dataset.caId)));
 if(status){document.getElementById("caConnection").textContent=status.configurada?"Conexão API · consulta de leitura disponível":"Integração não configurada";document.getElementById("caDetails").textContent=status.configurada?"Consulta de leitura habilitada para administrador. Envio e transferência de chamados permanecem bloqueados.":"Para conectar, configure as credenciais da API somente no servidor, sem colocá-las no navegador ou no repositório."}
 }
