@@ -60,6 +60,7 @@ const rtSeed={projects:[{id:1,name:"PCP — Projeto piloto"}],tasks:[
 {id:2,projectId:1,title:"Atualizar relatório de produção",owner:"Frank",status:"andamento",due:"",manager:"Administrador",note:""},
 {id:3,projectId:1,title:"Validar documentação técnica",owner:"Administrador",status:"revisao",due:"",manager:"Administrador",note:""}]};
 let rtState={projects:[],tasks:[]};
+let rtTrash=[];
 const rtAttachmentStore="rodrinox-tasks-demo-attachments-v1";
 let rtAttachments={};try{rtAttachments=JSON.parse(sessionStorage.getItem(rtAttachmentStore)||"{}")||{};}catch{}
 const rtSaveAttachments=()=>{try{sessionStorage.setItem(rtAttachmentStore,JSON.stringify(rtAttachments));}catch{}};
