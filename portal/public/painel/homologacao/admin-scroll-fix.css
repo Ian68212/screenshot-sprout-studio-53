@@ -1,0 +1,21 @@
+/* Correção exclusiva do painel administrativo: a página e o menu não devem cortar conteúdo. */
+@media (min-width:781px){
+  html,body{height:auto!important;min-height:100%!important;overflow-x:hidden!important;overflow-y:auto!important}
+  .shell{height:auto!important;min-height:100dvh!important;overflow:visible!important;align-items:stretch}
+  .side{position:sticky!important;top:0!important;align-self:flex-start!important;height:100dvh!important;max-height:100dvh!important;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior-y:contain;scrollbar-width:thin;scrollbar-color:#6585a4 #071b34}
+  .side nav{flex:0 0 auto}
+  .side .quick,.side .adminlinks{flex:0 0 auto}
+  .work{height:auto!important;min-height:100dvh!important;overflow:visible!important}
+  main{height:auto!important;min-height:100dvh!important;overflow:visible!important;padding-bottom:36px!important}
+  #adminWorkspace{height:auto!important;max-height:none!important;overflow:visible!important}
+  #adminWorkspace .mp-wrap{height:auto!important;max-height:none!important;overflow:visible!important}
+  #adminWorkspace .mp-list{height:auto!important;min-height:240px!important;max-height:min(56dvh,560px)!important;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior:contain}
+  #adminWorkspace .mp-footer{position:relative;z-index:1}
+}
+@media (max-width:780px){
+  html,body{overflow-x:hidden!important;overflow-y:auto!important;height:auto!important}
+  .shell,.work,main{height:auto!important;min-height:100dvh!important;overflow:visible!important}
+  .side{height:100dvh!important;max-height:100dvh!important;overflow-y:auto!important;overflow-x:hidden!important}
+  #adminWorkspace .mp-wrap{max-height:none!important;overflow:visible!important}
+  #adminWorkspace .mp-list{max-height:55dvh!important;min-height:220px!important;overflow-y:auto!important}
+}
