@@ -39,7 +39,7 @@ async function save(){
 const taskLabels={"projects.view":"Visualizar projetos","projects.create":"Criar projetos","projects.edit":"Editar projetos","tasks.create":"Criar tarefas","tasks.assign":"Delegar tarefas","tasks.due":"Alterar prazos","tasks.priority":"Alterar prioridade","tasks.checklist":"Editar checklist","tasks.comment":"Adicionar comentários","tasks.recurrence":"Configurar recorrência","tasks.delete":"Excluir tarefas","tasks.history":"Visualizar histórico","tasks.status":"Alterar status","tasks.all":"Visualizar todas as tarefas"};
 let customProfiles=[],customAssignments=[];
 async function profilesApi(path="",options={}){
- const r=await fetch("/colaborador/api/access-profiles"+path,{credentials:"same-origin",cache:"no-store",...options});
+ const r=await fetch("/colaborador/api/access-profiles"+path,{credentials:"same-origin",cache:"no-store",...options,headers:{"X-Portal":"1",...(options.headers||{})}});
  const data=await r.json().catch(()=>({}));
  if(!r.ok)throw Error(data.erro||"Falha "+r.status);
  return data;
