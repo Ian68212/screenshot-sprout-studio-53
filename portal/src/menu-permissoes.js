@@ -3,7 +3,8 @@ import { q, auditar } from "./db.js";
 import { exigir } from "./auth.js";
 
 // Controle de VISIBILIDADE da navegação. Autorizações de APIs permanecem independentes.
-export const MENU_KEYS = Object.freeze(["documentos","pcp","tarefas","gestao-empresarial","almoxarifado","qualidade","rh","seguranca","comunicados","treinamentos","ferramentas","aplicativos","contatos","suporte"]);
+export const MENU_KEYS = Object.freeze(["documentos","pcp","tarefas","gestao-empresarial","almoxarifado","qualidade","rh","seguranca","comunicados","treinamentos","ferramentas","aplicativos","contatos","suporte","link.email","link.drive","link.cameras","link.bling","admin.visao","admin.permissoes","admin.organograma","admin.pessoas","admin.candidaturas","admin.site"]);
+const ADMIN_KEYS = new Set(["admin.visao","admin.permissoes","admin.organograma","admin.pessoas","admin.candidaturas","admin.site"]);
 const SCOPES = new Set(["perfil","setor","cargo","usuario"]);
 const router = Router();
 let schemaPromise;
@@ -27,15 +28,15 @@ function target(u, scope) {
   return String(u.id);
 }
 function resolve(u, rows) {
-  const visible = Object.fromEntries(MENU_KEYS.map(k => [k, true]));
+  const visible = Object.fromEntries(MENU_KEYS.map(k => [k, !ADMIN_KEYS.has(k) || u.perfil === "admin"]));
   // Mais específico prevalece: perfil < setor < cargo < usuário.
   for (const scope of ["perfil","setor","cargo","usuario"]) {
     const alvo = target(u, scope);
     if (alvo == null) continue;
-    for (const row of rows) if (row.escopo === scope && row.alvo === alvo && Object.hasOwn(visible,row.botao)) visible[row.botao] = !!row.permitido;
+    for (const row of rows) if (row.escopo === scope && row.alvo === alvo && Object.hasOwn(visible,row.botao) && (!ADMIN_KEYS.has(row.botao) || u.perfil === "admin")) visible[row.botao] = !!row.permitido;
   }
   // Administradores sempre conservam acesso ao menu e à central de controle.
-  if (u.perfil === "admin") for (const key of MENU_KEYS) visible[key] = true;
+  if (u.perfil === "admin") visible["admin.permissoes"] = true;
   return visible;
 }
 router.get("/minhas", exigir("painel"), async (req,res,next) => {
@@ -55,20 +56,27 @@ router.put("/regras", exigir("admin.usuarios"), async (req,res,next) => {
       return res.status(400).json({ erro:"Perfil inválido." });
     if (escopo !== "perfil" && (!/^\d+$/.test(alvo) || Number(alvo) < 1))
       return res.status(400).json({ erro:"Identificador inválido." });
-    if (escopo === "perfil" && alvo === "admin") return res.status(403).json({ erro:"O menu administrativo não pode ser bloqueado." });
+    
     const keys = Object.keys(botoes);
-    if (!keys.length || keys.some(k => !MENU_KEYS.includes(k) || (botoes[k] !== true && botoes[k] !== false && botoes[k] !== null)))
+    if (!keys.length || keys.some(k => !MENU_KEYS.includes(k) || k === "admin.permissoes" && botoes[k] === false || (botoes[k] !== true && botoes[k] !== false && botoes[k] !== null)))
       return res.status(400).json({ erro:"Envie somente botões válidos com true, false ou null (herdar)." });
     if (escopo === "usuario") {
       const [u] = await q("SELECT id,perfil FROM usuarios WHERE id=?", [Number(alvo)]);
       if (!u) return res.status(404).json({ erro:"Colaborador não encontrado." });
-      if (u.perfil === "admin") return res.status(403).json({ erro:"Não é permitido restringir o menu de administradores." });
+      
     }
     if (escopo === "setor" || escopo === "cargo") {
       const table = escopo === "setor" ? "setores" : "cargos";
       const [record] = await q(`SELECT id FROM ${table} WHERE id=?`, [Number(alvo)]);
       if (!record) return res.status(404).json({ erro:"Setor ou cargo não encontrado." });
     }
+    // Atribuições administrativas nunca podem ser concedidas por regras de menu.
+    if (keys.some(k => ADMIN_KEYS.has(k)) && escopo === "perfil" && alvo !== "admin") return res.status(403).json({ erro:"Itens administrativos são exclusivos do perfil admin." });
+    if (keys.some(k => ADMIN_KEYS.has(k)) && escopo === "usuario") {
+      const [alvoUsuario] = await q("SELECT perfil FROM usuarios WHERE id=?", [Number(alvo)]);
+      if (alvoUsuario?.perfil !== "admin") return res.status(403).json({ erro:"Itens administrativos só podem ser configurados para administradores." });
+    }
+    if (keys.some(k => ADMIN_KEYS.has(k)) && (escopo === "setor" || escopo === "cargo")) return res.status(403).json({ erro:"Itens administrativos devem ser configurados por administrador." });
     await schema();
     for (const key of keys) {
       if (botoes[key] === null) await q("DELETE FROM menu_permissoes WHERE escopo=? AND alvo=? AND botao=?", [escopo,alvo,key]);
