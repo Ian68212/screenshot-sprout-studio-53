@@ -14,6 +14,7 @@ import { PERFIS, podeVerFerramenta } from "./permissions.js";
 import { siteRouter } from "./site-cms.js";
 import { mediaRouter } from "./site-media.js";
 import { publicSiteRouter } from "./public-site.js";
+import { tarefasRouter } from "./tasks.js";
 
 const BASE = process.env.BASE_PATH || "/colaborador";
 const dir = path.dirname(fileURLToPath(import.meta.url));
@@ -135,6 +136,8 @@ r.use((req, res, next) => {
 // CMS administrativo e biblioteca privada de imagens (exigem sessão/permissão).
 r.use("/api/site", siteRouter);
 r.use("/api/site/midias", mediaRouter);
+// Rodrinox Tasks — requer migração SQL antes de ativar em ambiente de homologação.
+if (process.env.RODRINOX_TASKS_ENABLED === "1") r.use("/api/tarefas", tarefasRouter);
 
 const limiteLogin = rateLimit({ windowMs: 15 * 60000, limit: 20, standardHeaders: true, legacyHeaders: false });
 
