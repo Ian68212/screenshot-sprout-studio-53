@@ -1,3 +1,4 @@
+import { tasksRouter } from "./tasks-official.js";
 import "dotenv/config";
 import path from "node:path";
 import fs from "node:fs";
@@ -171,6 +172,7 @@ r.post("/api/logout", wrap(async (req, res) => {
 r.get("/api/eu", exigir("painel"), (req, res) => res.json(req.usuario));
 // Permissões de navegação: sessões reais e alterações exclusivas do administrador.
 r.use("/api/menu", menuPermissoesRouter);
+r.use("/api/tasks-official", tasksRouter);
 
 // Diretório interno: apenas usuários ativos, e-mail corporativo e setor cadastrado.
 // Não expõe cargos, perfis, telefones, senhas ou dados administrativos.
