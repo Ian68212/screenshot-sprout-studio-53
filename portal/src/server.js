@@ -161,6 +161,16 @@ r.get("/api/eu", exigir("painel"), (req, res) => res.json(req.usuario));
 
 // Diretório interno: apenas usuários ativos, e-mail corporativo e setor cadastrado.
 // Não expõe cargos, perfis, telefones, senhas ou dados administrativos.
+// Diretório de responsáveis para o protótipo de tarefas: IDs reais e usuários ativos.
+// Apenas campos necessários à delegação; requer sessão autenticada.
+r.get("/api/tarefas/responsaveis", exigir("painel"), wrap(async (_req, res) => {
+  const rows = await q(`SELECT u.id, u.nome, u.email, s.nome AS departamento
+    FROM usuarios u LEFT JOIN setores s ON s.id=u.setor_id
+    WHERE u.ativo=1 AND LOWER(u.email) LIKE '%@rodrinoxpro.com.br'
+    ORDER BY s.nome, u.nome`);
+  res.json(rows.map(({id,nome,email,departamento})=>({id,nome,email,departamento:departamento||"Sem departamento"})));
+}));
+
 r.get("/api/contatos", exigir("painel"), wrap(async (_req, res) => {
   const contatos = await q(`SELECT u.nome, u.email, s.nome AS departamento
     FROM usuarios u LEFT JOIN setores s ON s.id = u.setor_id
