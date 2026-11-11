@@ -13,7 +13,7 @@ async function setup(){
 }
 const wrap=f=>(req,res,next)=>Promise.resolve().then(()=>setup()).then(()=>f(req,res)).catch(next);
 const admin=req=>req.usuario.perfil==="admin";
-const validId=v=>/^\\d+$/.test(String(v))&&Number(v)>0;
+const validId=v=>/^\d+$/.test(String(v))&&Number(v)>0;
 tasksRouter.get("/projects",wrap(async(req,res)=>{
  const rows=admin(req)?await q("SELECT * FROM rp_task_projects ORDER BY id DESC"):await q("SELECT DISTINCT p.* FROM rp_task_projects p JOIN rp_task_items t ON t.project_id=p.id WHERE t.owner_id=? OR t.created_by=? ORDER BY p.id DESC",[req.usuario.id,req.usuario.id]);
  res.json(rows);
@@ -35,13 +35,13 @@ tasksRouter.post("/items",wrap(async(req,res)=>{
  const [p]=await q("SELECT id FROM rp_task_projects WHERE id=?",[project_id]);if(!p)return res.status(404).json({erro:"Projeto não encontrado"});
  if(owner_id!=null){const [u]=await q("SELECT id FROM usuarios WHERE id=? AND ativo=1",[owner_id]);if(!u)return res.status(400).json({erro:"Responsável inválido"});}
  const priority=["baixa","normal","alta","urgente"].includes(req.body?.priority)?req.body.priority:"normal";
- const due=req.body?.due_date||null;if(due&&!/^\\d{4}-\\d{2}-\\d{2}$/.test(due))return res.status(400).json({erro:"Prazo inválido"});
+ const due=req.body?.due_date||null;if(due&&!/^\d{4}-\d{2}-\d{2}$/.test(due))return res.status(400).json({erro:"Prazo inválido"});
  const out=await q("INSERT INTO rp_task_items(project_id,title,description,owner_id,priority,due_date,created_by) VALUES (?,?,?,?,?,?,?)",[project_id,title,description,owner_id??null,priority,due,req.usuario.id]);res.status(201).json({id:out.insertId});
 }));
 tasksRouter.patch("/items/:id",wrap(async(req,res)=>{
  if(!validId(req.params.id))return res.status(400).json({erro:"ID inválido"});
  const [t]=await q("SELECT * FROM rp_task_items WHERE id=?",[req.params.id]);if(!t)return res.status(404).json({erro:"Tarefa não encontrada"});
- if(!admin(req)&&t.owner_id!==req.usuario.id)return res.status(403).json({erro:"Sem acesso"});
+ if(!admin(req)&&Number(t.owner_id)!==Number(req.usuario.id))return res.status(403).json({erro:"Sem acesso"});
  const status=req.body?.status;if(!["a_fazer","andamento","revisao","concluida"].includes(status))return res.status(400).json({erro:"Status inválido"});
  await q("UPDATE rp_task_items SET status=? WHERE id=?",[status,t.id]);res.json({ok:true});
 }));
