@@ -119,6 +119,7 @@ tasksRouter.put("/board",wrap(async(req,res)=>{
    for(const p of state.projects){
      const old=previousProjects.get(String(p.id));
      if(!old&&!has("projects.create"))return deny("Sem permissão para criar projetos.");
+     if(!old&&Number(p.createdById)!==userId)return deny("Criador do projeto inválido.");
      if(old&&!same(old,p)&&!has("projects.edit"))return deny("Sem permissão para editar projetos.");
    }
    for(const p of before.projects)if(!currentProjects.has(String(p.id)))return deny("Exclusão de projetos restrita ao administrador.");
@@ -130,6 +131,7 @@ tasksRouter.put("/board",wrap(async(req,res)=>{
      if(!old){
        if(!has("tasks.create"))return deny("Sem permissão para criar tarefas.");
        if(!currentProjects.has(String(t.projectId)))return deny("Projeto inválido.");
+       if(Number(t.createdById)!==userId)return deny("Criador da tarefa inválido.");
        if(Number(t.ownerId)!==userId&&!has("tasks.assign"))return deny("Sem permissão para delegar.");
        continue;
      }
