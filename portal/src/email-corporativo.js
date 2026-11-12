@@ -1,102 +1,49 @@
 import { Router } from "express";
+import crypto from "node:crypto";
+import { ImapFlow } from "imapflow";
+import nodemailer from "nodemailer";
+import { simpleParser } from "mailparser";
+import multer from "multer";
 import { q, auditar } from "./db.js";
 import { exigir } from "./auth.js";
 
-// Fase 1: catálogo e concessões. Nenhuma credencial IMAP/SMTP é armazenada.
 const router=Router();
-// Exige origem legítima para mutações autenticadas por cookie.
-router.use((req,res,next)=>{
- if(!["POST","PUT","PATCH","DELETE"].includes(req.method))return next();
- const origin=req.get("Origin");
- const expected=`${req.protocol}://${req.get("host")}`;
- if(!origin||origin!==expected)return res.status(403).json({erro:"Origem da requisição não autorizada."});
- next();
-});
+const uploadEmail=multer({storage:multer.memoryStorage(),limits:{fileSize:10*1024*1024,files:5,fields:12}});
 const emailRx=/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i;
-let init;
-async function schema(){
-  if(!init)init=(async()=>{
-    await q(`CREATE TABLE IF NOT EXISTS email_caixas (
-      id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-      endereco VARCHAR(254) NOT NULL UNIQUE,
-      nome VARCHAR(120) NOT NULL,
-      tipo ENUM('individual','compartilhada') NOT NULL,
-      usuario_dono_id BIGINT NULL,
-      ativo TINYINT(1) NOT NULL DEFAULT 1,
-      criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
-    await q(`CREATE TABLE IF NOT EXISTS email_caixa_acessos (
-      caixa_id BIGINT UNSIGNED NOT NULL,
-      usuario_id BIGINT UNSIGNED NOT NULL,
-      pode_ler TINYINT(1) NOT NULL DEFAULT 1,
-      pode_enviar TINYINT(1) NOT NULL DEFAULT 0,
-      pode_excluir TINYINT(1) NOT NULL DEFAULT 0,
-      PRIMARY KEY(caixa_id,usuario_id),
-      FOREIGN KEY(caixa_id) REFERENCES email_caixas(id) ON DELETE CASCADE
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
-  })().catch(e=>{init=null;throw e});
-  return init;
-}
-router.get("/minhas",exigir("painel"),async(req,res,next)=>{
- try{
-  await schema();
-  // Vincula automaticamente a caixa individual ao e-mail já cadastrado no usuário autenticado.
-  // Não cria credenciais nem altera senhas: apenas registra o vínculo de propriedade no catálogo.
-  const usuarioId=Number(req.usuario.id);
-  const enderecoPessoal=String(req.usuario.email||"").trim().toLowerCase();
-  if(Number.isSafeInteger(usuarioId)&&usuarioId>0&&emailRx.test(enderecoPessoal)){
-    const [existente]=await q("SELECT id,tipo,usuario_dono_id FROM email_caixas WHERE endereco=? LIMIT 1",[enderecoPessoal]);
-    if(!existente){
-      const nomePessoal=(String(req.usuario.nome||"Meu e-mail").trim().slice(0,90)||"Meu e-mail")+" (Pessoal)";
-      await q("INSERT IGNORE INTO email_caixas(endereco,nome,tipo,usuario_dono_id) VALUES(?,?,'individual',?)",[enderecoPessoal,nomePessoal,usuarioId]);
-    }
-  }
-  const rows=await q(`SELECT c.id,c.endereco,c.nome,c.tipo,
-    IF(c.tipo='individual' AND c.usuario_dono_id=?,1,a.pode_ler) AS pode_ler,
-    IF(c.tipo='individual' AND c.usuario_dono_id=?,1,a.pode_enviar) AS pode_enviar,
-    IF(c.tipo='individual' AND c.usuario_dono_id=?,1,a.pode_excluir) AS pode_excluir
-    FROM email_caixas c LEFT JOIN email_caixa_acessos a ON a.caixa_id=c.id AND a.usuario_id=?
-    WHERE c.ativo=1 AND ((c.tipo='individual' AND c.usuario_dono_id=?) OR (c.tipo='compartilhada' AND a.pode_ler=1))
-    ORDER BY c.tipo,c.nome`,[req.usuario.id,req.usuario.id,req.usuario.id,req.usuario.id,req.usuario.id]);
-  res.set("Cache-Control","no-store").json({caixas:rows,conectado:false});
- }catch(e){next(e)}
-});
-router.get("/admin/caixas",exigir("admin.usuarios"),async(_req,res,next)=>{
- try{await schema();res.set("Cache-Control","no-store").json({caixas:await q("SELECT id,endereco,nome,tipo,usuario_dono_id,ativo FROM email_caixas ORDER BY tipo,nome")})}catch(e){next(e)}
-});
-router.post("/admin/caixas",exigir("admin.usuarios"),async(req,res,next)=>{
- try{
-  const endereco=String(req.body?.endereco||"").trim().toLowerCase(),nome=String(req.body?.nome||"").trim(),tipo=req.body?.tipo;
-  const dono=Number(req.body?.usuario_dono_id);
-  if(!emailRx.test(endereco)||endereco.length>254||!nome||nome.length>120||!["individual","compartilhada"].includes(tipo)||tipo==="individual"&&(!Number.isSafeInteger(dono)||dono<1))
-   return res.status(400).json({erro:"Dados da caixa inválidos."});
-  if(tipo==="individual"){const [u]=await q("SELECT id,email FROM usuarios WHERE id=? AND ativo=1",[dono]);if(!u||u.email.toLowerCase()!==endereco)return res.status(400).json({erro:"Caixa individual deve corresponder ao e-mail do colaborador."})}
-  await schema();
-  const result=await q("INSERT INTO email_caixas(endereco,nome,tipo,usuario_dono_id) VALUES(?,?,?,?)",[endereco,nome,tipo,tipo==="individual"?dono:null]);
-  await auditar(req.usuario.id,"email_caixa_criada",endereco,req.ip);
-  res.status(201).json({id:result.insertId});
- }catch(e){if(e.code==="ER_DUP_ENTRY")return res.status(409).json({erro:"Caixa já cadastrada."});next(e)}
-});
-router.get("/admin/caixas/:id/acessos",exigir("admin.usuarios"),async(req,res,next)=>{
- try{await schema();res.set("Cache-Control","no-store").json({acessos:await q("SELECT usuario_id,pode_ler,pode_enviar,pode_excluir FROM email_caixa_acessos WHERE caixa_id=?",[req.params.id])})}catch(e){next(e)}
-});
-router.put("/admin/caixas/:id/acessos/:usuarioId",exigir("admin.usuarios"),async(req,res,next)=>{
- try{
-  const caixa=Number(req.params.id),usuario=Number(req.params.usuarioId);
-  if(!Number.isSafeInteger(caixa)||caixa<1||!Number.isSafeInteger(usuario)||usuario<1)return res.status(400).json({erro:"Identificador inválido."});
-  const values=["pode_ler","pode_enviar","pode_excluir"];
-  if(values.some(k=>typeof req.body?.[k]!=="boolean")||req.body.pode_excluir&&!req.body.pode_ler||req.body.pode_enviar&&!req.body.pode_ler)
-    return res.status(400).json({erro:"Permissões inválidas."});
-  await schema();
-  const [c]=await q("SELECT id,tipo FROM email_caixas WHERE id=? AND ativo=1",[caixa]);
-  const [u]=await q("SELECT id FROM usuarios WHERE id=? AND ativo=1",[usuario]);
-  if(!c||!u)return res.status(404).json({erro:"Caixa ou usuário não encontrado."});
-  if(c.tipo!=="compartilhada")return res.status(403).json({erro:"A caixa individual é exclusiva do titular."});
-  await q(`INSERT INTO email_caixa_acessos(caixa_id,usuario_id,pode_ler,pode_enviar,pode_excluir)
-    VALUES(?,?,?,?,?) ON DUPLICATE KEY UPDATE pode_ler=VALUES(pode_ler),pode_enviar=VALUES(pode_enviar),pode_excluir=VALUES(pode_excluir)`,
-    [caixa,usuario,+req.body.pode_ler,+req.body.pode_enviar,+req.body.pode_excluir]);
-  await auditar(req.usuario.id,"email_permissao_alterada",`caixa:${caixa};usuario:${usuario}`,req.ip);
-  res.json({ok:true});
- }catch(e){next(e)}
-});
+const IMAP_HOST=process.env.EMAIL_IMAP_HOST||"imap.hostinger.com";
+const SMTP_HOST=process.env.EMAIL_SMTP_HOST||"smtp.hostinger.com";
+const IMAP_PORT=Number(process.env.EMAIL_IMAP_PORT||993);
+const SMTP_PORT=Number(process.env.EMAIL_SMTP_PORT||465);
+const timeout=Number(process.env.EMAIL_AUTH_TIMEOUT_MS||15000);
+let schemaReady;
+const notificationCache=new Map();
+function key(){const raw=process.env.EMAIL_CREDENTIALS_KEY||"";const b=Buffer.from(raw,"base64");if(b.length!==32)throw new Error("EMAIL_CREDENTIALS_KEY ausente ou inválida");return b}
+function encrypt(value){const iv=crypto.randomBytes(12),c=crypto.createCipheriv("aes-256-gcm",key(),iv);const data=Buffer.concat([c.update(value,"utf8"),c.final()]);return {data:data.toString("base64"),iv:iv.toString("base64"),tag:c.getAuthTag().toString("base64")}}
+function decrypt(row){const d=crypto.createDecipheriv("aes-256-gcm",key(),Buffer.from(row.cred_iv,"base64"));d.setAuthTag(Buffer.from(row.cred_tag,"base64"));return Buffer.concat([d.update(Buffer.from(row.cred_enc,"base64")),d.final()]).toString("utf8")}
+async function schema(){if(!schemaReady)schemaReady=(async()=>{
+ await q(`CREATE TABLE IF NOT EXISTS email_caixas (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,endereco VARCHAR(254) NOT NULL UNIQUE,nome VARCHAR(120) NOT NULL,tipo ENUM('individual','compartilhada') NOT NULL,usuario_dono_id BIGINT NULL,ativo TINYINT(1) NOT NULL DEFAULT 1,criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+ await q(`CREATE TABLE IF NOT EXISTS email_caixa_acessos (caixa_id BIGINT UNSIGNED NOT NULL,usuario_id BIGINT UNSIGNED NOT NULL,pode_ler TINYINT(1) NOT NULL DEFAULT 1,pode_enviar TINYINT(1) NOT NULL DEFAULT 0,pode_excluir TINYINT(1) NOT NULL DEFAULT 0,PRIMARY KEY(caixa_id,usuario_id),FOREIGN KEY(caixa_id) REFERENCES email_caixas(id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+ const cols=await q("SHOW COLUMNS FROM email_caixas");const names=new Set(cols.map(x=>x.Field));
+ for(const [name,definition] of [["cred_enc","TEXT NULL"],["cred_iv","VARCHAR(32) NULL"],["cred_tag","VARCHAR(32) NULL"]])if(!names.has(name))await q(`ALTER TABLE email_caixas ADD COLUMN ${name} ${definition}`);
+ })().catch(e=>{schemaReady=null;throw e});return schemaReady}
+async function caixaPermitida(req,id,send=false){await schema();const [c]=await q("SELECT * FROM email_caixas WHERE id=? AND ativo=1",[id]);if(!c)return null;let allowed=false,permissions={pode_ler:0,pode_enviar:0,pode_excluir:0};if(c.tipo==="individual"&&Number(c.usuario_dono_id)===Number(req.usuario.id)){allowed=true;permissions={pode_ler:1,pode_enviar:1,pode_excluir:1}}else if(c.tipo==="compartilhada"&&req.usuario.perfil==="admin"){allowed=true;permissions={pode_ler:1,pode_enviar:1,pode_excluir:1}}else if(c.tipo==="compartilhada"){const [a]=await q("SELECT pode_ler,pode_enviar,pode_excluir FROM email_caixa_acessos WHERE caixa_id=? AND usuario_id=?",[id,req.usuario.id]);permissions=a||permissions;allowed=!!a&&(send?!!a.pode_enviar:!!a.pode_ler)}if(!allowed)return null;if(!c.cred_enc)return {...c,...permissions,senha:null};return {...c,...permissions,senha:decrypt(c)}}
+function imap(c){return new ImapFlow({host:IMAP_HOST,port:IMAP_PORT,secure:true,auth:{user:c.endereco,pass:c.senha},logger:false,socketTimeout:timeout,greetingTimeout:timeout,connectionTimeout:timeout})}
+function smtp(c){return nodemailer.createTransport({host:SMTP_HOST,port:SMTP_PORT,secure:SMTP_PORT===465,auth:{user:c.endereco,pass:c.senha},connectionTimeout:timeout,greetingTimeout:timeout,socketTimeout:timeout})}
+router.use((req,res,next)=>{if(!["POST","PUT","PATCH","DELETE"].includes(req.method))return next();const origin=req.get("Origin"),expected=`${req.protocol}://${req.get("host")}`;if(!origin||origin!==expected)return res.status(403).json({erro:"Origem não autorizada."});next()});
+router.get("/minhas",exigir("painel"),async(req,res,next)=>{try{await schema();const id=Number(req.usuario.id),email=String(req.usuario.email||"").trim().toLowerCase();if(emailRx.test(email)){const [existing]=await q("SELECT id,tipo,usuario_dono_id FROM email_caixas WHERE endereco=?",[email]);if(!existing)await q("INSERT IGNORE INTO email_caixas(endereco,nome,tipo,usuario_dono_id) VALUES(?,?,'individual',?)",[email,(req.usuario.nome||"Meu e-mail").slice(0,90)+" (Pessoal)",id])}const rows=await q(`SELECT c.id,c.endereco,c.nome,c.tipo,IF(c.tipo='individual' AND c.usuario_dono_id=?,1,a.pode_ler) pode_ler,IF(c.tipo='individual' AND c.usuario_dono_id=?,1,a.pode_enviar) pode_enviar,IF(c.tipo='individual' AND c.usuario_dono_id=?,1,a.pode_excluir) pode_excluir,(c.cred_enc IS NOT NULL) conectado FROM email_caixas c LEFT JOIN email_caixa_acessos a ON a.caixa_id=c.id AND a.usuario_id=? WHERE c.ativo=1 AND ((c.tipo='individual' AND c.usuario_dono_id=?) OR (c.tipo='compartilhada' AND (a.pode_ler=1 OR ?='admin'))) ORDER BY c.tipo,c.nome`,[id,id,id,id,id,req.usuario.perfil||'']);res.set("Cache-Control","no-store").json({caixas:rows})}catch(e){next(e)}});
+router.get("/notificacoes",exigir("painel"),async(req,res,next)=>{try{const userId=Number(req.usuario.id),now=Date.now(),cached=notificationCache.get(userId);if(cached&&now-cached.at<60000)return res.set("Cache-Control","no-store").json(cached.data);await schema();const rows=await q(`SELECT c.id,c.endereco,c.cred_enc,c.cred_iv,c.cred_tag FROM email_caixas c LEFT JOIN email_caixa_acessos a ON a.caixa_id=c.id AND a.usuario_id=? WHERE c.ativo=1 AND c.cred_enc IS NOT NULL AND ((c.tipo='individual' AND c.usuario_dono_id=?) OR (c.tipo='compartilhada' AND (a.pode_ler=1 OR ?='admin')))`,[userId,userId,req.usuario.perfil||""]);let total=0;const contas=[];for(const row of rows){let client,lock;try{const c={...row,senha:decrypt(row)};client=imap(c);await client.connect();lock=await client.getMailboxLock("INBOX");const unseen=await client.search({seen:false},{uid:true});const count=Array.isArray(unseen)?unseen.length:0;total+=count;contas.push({endereco:row.endereco,naoLidas:count})}catch(error){contas.push({endereco:row.endereco,naoLidas:null,indisponivel:true})}finally{if(lock)lock.release();if(client)try{await client.logout()}catch{client.close()}}}const data={naoLidas:total,contas,verificadoEm:new Date().toISOString()};notificationCache.set(userId,{at:now,data});res.set("Cache-Control","no-store").json(data)}catch(e){next(e)}});
+router.post("/:id/conectar",exigir("painel"),async(req,res,next)=>{try{let c=await caixaPermitida(req,req.params.id);if(!c&&req.usuario.perfil==="admin"){await schema();const [box]=await q("SELECT * FROM email_caixas WHERE id=? AND ativo=1",[req.params.id]);if(box&&box.tipo==="compartilhada")c=box}if(!c)return res.status(404).json({erro:"Caixa não encontrada ou sem permissão."});if(c.tipo==="compartilhada"&&req.usuario.perfil!=="admin")return res.status(403).json({erro:"Somente administrador pode configurar uma caixa compartilhada."});const password=String(req.body?.senha||"");if(password.length<1||password.length>1024)return res.status(400).json({erro:"Informe a senha da caixa."});const test=new ImapFlow({host:IMAP_HOST,port:IMAP_PORT,secure:true,auth:{user:c.endereco,pass:password},logger:false,connectionTimeout:timeout,greetingTimeout:timeout,socketTimeout:timeout});try{await test.connect();await test.logout();const mailTransport=nodemailer.createTransport({host:SMTP_HOST,port:SMTP_PORT,secure:SMTP_PORT===465,auth:{user:c.endereco,pass:password},connectionTimeout:timeout,greetingTimeout:timeout,socketTimeout:timeout});await mailTransport.verify();mailTransport.close()}catch(e){try{test.close()}catch{}return res.status(400).json({erro:"Não foi possível validar IMAP e SMTP para esta caixa. Confira os servidores, portas e a senha no hPanel."})}const enc=encrypt(password);await q("UPDATE email_caixas SET cred_enc=?,cred_iv=?,cred_tag=? WHERE id=?",[enc.data,enc.iv,enc.tag,c.id]);await auditar(req.usuario.id,"email_caixa_conectada",c.endereco,req.ip);res.json({ok:true,conectado:true})}catch(e){next(e)}});
+router.get("/:id/pastas",exigir("painel"),async(req,res,next)=>{let client;try{const c=await caixaPermitida(req,req.params.id);if(!c)return res.status(404).json({erro:"Caixa não encontrada ou sem permissão."});if(!c.senha)return res.status(409).json({erro:"Caixa ainda não conectada."});client=imap(c);await client.connect();const boxes=await client.list();res.set("Cache-Control","no-store").json({pastas:boxes.map(b=>({path:b.path,name:b.name,specialUse:b.specialUse||null}))})}catch(e){next(e)}finally{if(client)try{await client.logout()}catch{client.close()}}});
+router.get("/:id/mensagens",exigir("painel"),async(req,res,next)=>{let client,lock;try{const c=await caixaPermitida(req,req.params.id);if(!c)return res.status(404).json({erro:"Caixa não encontrada ou sem permissão."});if(!c.senha)return res.status(409).json({erro:"Caixa ainda não conectada."});const folder=String(req.query.pasta||"INBOX").slice(0,200);client=imap(c);await client.connect();lock=await client.getMailboxLock(folder);const mb=client.mailbox,from=Math.max(1,Number(req.query.de||1)),to=Math.min(Number(mb.exists)||1,from+49);const messages=[];if(mb.exists){for await(const msg of client.fetch(`${Math.max(1,Number(mb.exists)-49)}:${mb.exists}`,{uid:true,envelope:true,flags:true,internalDate:true,size:true})){messages.push({uid:msg.uid,assunto:msg.envelope?.subject||"(Sem assunto)",de:msg.envelope?.from?.[0]?.name||msg.envelope?.from?.[0]?.address||"",email:msg.envelope?.from?.[0]?.address||"",para:msg.envelope?.to?.[0]?.address||"",data:msg.internalDate,naoLida:!msg.flags?.has("\\Seen"),favorita:msg.flags?.has("\\Flagged"),tamanho:msg.size})}}messages.sort((a,b)=>new Date(b.data)-new Date(a.data));res.set("Cache-Control","no-store").json({mensagens:messages,pasta,total:mb.exists||0})}catch(e){next(e)}finally{if(lock)lock.release();if(client)try{await client.logout()}catch{client.close()}}});
+router.get("/:id/mensagens/:uid",exigir("painel"),async(req,res,next)=>{let client,lock;try{const c=await caixaPermitida(req,req.params.id);if(!c)return res.status(404).json({erro:"Caixa não encontrada ou sem permissão."});if(!c.senha)return res.status(409).json({erro:"Caixa ainda não conectada."});const folder=String(req.query.pasta||"INBOX").slice(0,200);client=imap(c);await client.connect();lock=await client.getMailboxLock(folder);const item=await client.fetchOne(Number(req.params.uid),{source:true,envelope:true,uid:true},{uid:true});if(!item?.source)return res.status(404).json({erro:"Mensagem não encontrada."});const parsed=await simpleParser(item.source);await client.messageFlagsAdd(Number(req.params.uid),["\\Seen"],{uid:true});res.set("Cache-Control","no-store").json({mensagem:{uid:item.uid,assunto:parsed.subject||"",de:parsed.from?.text||"",para:parsed.to?.text||"",cc:parsed.cc?.text||"",data:parsed.date,texto:parsed.text||"",html:parsed.html||"",anexos:(parsed.attachments||[]).map(a=>({nome:a.filename,tipo:a.contentType,tamanho:a.size}))}})}catch(e){next(e)}finally{if(lock)lock.release();if(client)try{await client.logout()}catch{client.close()}}});
+router.patch("/:id/mensagens/:uid/flags",exigir("painel"),async(req,res,next)=>{let client,lock;try{const c=await caixaPermitida(req,req.params.id);if(!c)return res.status(403).json({erro:"Sem permissão para acessar esta caixa."});if(!c.senha)return res.status(409).json({erro:"Caixa ainda não conectada."});const uid=Number(req.params.uid);if(!Number.isSafeInteger(uid)||uid<1)return res.status(400).json({erro:"Mensagem inválida."});const folder=String(req.body?.pasta||"INBOX").slice(0,200);client=imap(c);await client.connect();lock=await client.getMailboxLock(folder);if(typeof req.body?.lida==="boolean"){if(req.body.lida)await client.messageFlagsAdd(uid,["\\Seen"],{uid:true});else await client.messageFlagsRemove(uid,["\\Seen"],{uid:true})}if(typeof req.body?.favorita==="boolean"){if(req.body.favorita)await client.messageFlagsAdd(uid,["\\Flagged"],{uid:true});else await client.messageFlagsRemove(uid,["\\Flagged"],{uid:true})}res.json({ok:true})}catch(e){next(e)}finally{if(lock)lock.release();if(client)try{await client.logout()}catch{client.close()}}});
+router.post("/:id/mensagens/:uid/excluir",exigir("painel"),async(req,res,next)=>{let client,lock;try{const c=await caixaPermitida(req,req.params.id);if(!c||!c.pode_excluir)return res.status(403).json({erro:"Você não tem permissão para excluir mensagens desta caixa."});if(!c.senha)return res.status(409).json({erro:"Caixa ainda não conectada."});const uid=Number(req.params.uid);if(!Number.isSafeInteger(uid)||uid<1)return res.status(400).json({erro:"Mensagem inválida."});const folder=String(req.body?.pasta||"INBOX").slice(0,200);client=imap(c);await client.connect();lock=await client.getMailboxLock(folder);const boxes=await client.list();const trash=boxes.find(b=>b.specialUse==="\\Trash")||boxes.find(b=>/trash|lixeira/i.test(b.name));if(!trash)return res.status(409).json({erro:"A pasta Lixeira não foi identificada nesta caixa."});await client.messageMove(uid,trash.path,{uid:true});await auditar(req.usuario.id,"email_mensagem_excluida",c.endereco+"; uid:"+uid,req.ip);res.json({ok:true})}catch(e){next(e)}finally{if(lock)lock.release();if(client)try{await client.logout()}catch{client.close()}}});
+router.get("/:id/mensagens/:uid/anexos/:index",exigir("painel"),async(req,res,next)=>{let client,lock;try{const c=await caixaPermitida(req,req.params.id);if(!c)return res.status(403).json({erro:"Sem permissão para acessar esta caixa."});if(!c.senha)return res.status(409).json({erro:"Caixa ainda não conectada."});const uid=Number(req.params.uid),index=Number(req.params.index);if(!Number.isSafeInteger(uid)||uid<1||!Number.isSafeInteger(index)||index<0||index>20)return res.status(400).json({erro:"Anexo inválido."});const folder=String(req.query.pasta||"INBOX").slice(0,200);client=imap(c);await client.connect();lock=await client.getMailboxLock(folder);const item=await client.fetchOne(uid,{source:true},{uid:true});if(!item?.source)return res.status(404).json({erro:"Mensagem não encontrada."});const parsed=await simpleParser(item.source),file=parsed.attachments?.[index];if(!file)return res.status(404).json({erro:"Anexo não encontrado."});res.set("Cache-Control","no-store");res.type(file.contentType||"application/octet-stream");res.attachment(String(file.filename||"anexo").replace(/[\\\\/\\r\\n]/g,"_"));res.send(file.content)}catch(e){next(e)}finally{if(lock)lock.release();if(client)try{await client.logout()}catch{client.close()}}});
+router.post("/:id/enviar",exigir("painel"),uploadEmail.array("anexos",5),async(req,res,next)=>{try{const c=await caixaPermitida(req,req.params.id,true);if(!c)return res.status(403).json({erro:"Sem permissão para enviar por esta caixa."});if(!c.senha)return res.status(409).json({erro:"Caixa ainda não conectada."});const to=String(req.body?.para||"").trim(),subject=String(req.body?.assunto||"").slice(0,998),textBody=String(req.body?.texto||"").slice(0,100000),htmlBody=String(req.body?.html||"").slice(0,300000);const validList=v=>String(v||"").split(/[;,]/).map(x=>x.trim()).filter(Boolean).every(x=>emailRx.test(x));if(!validList(to)||!to||!validList(req.body?.cc)||!validList(req.body?.cco)||!subject&&!textBody&&!htmlBody)return res.status(400).json({erro:"Informe destinatários válidos e o conteúdo da mensagem."});const files=(req.files||[]).map(x=>({filename:x.originalname.replace(/[\\\\/\\r\\n]/g,"_"),content:x.buffer,contentType:x.mimetype}));const transport=smtp(c);let sent;try{sent=await transport.sendMail({from:c.endereco,to,cc:req.body?.cc||undefined,bcc:req.body?.cco||undefined,subject,text:textBody,html:htmlBody||undefined,attachments:files})}finally{transport.close()}await auditar(req.usuario.id,"email_enviado",c.endereco+" -> "+to+"; anexos:"+files.length,req.ip);res.json({ok:true,messageId:sent.messageId})}catch(e){next(e)}});
+
+// Administração original das caixas e concessões, mantida nesta versão integrada.
+router.get("/admin/caixas",exigir("admin.usuarios"),async(_req,res,next)=>{try{await schema();res.set("Cache-Control","no-store").json({caixas:await q("SELECT id,endereco,nome,tipo,usuario_dono_id,ativo FROM email_caixas ORDER BY tipo,nome")})}catch(e){next(e)}});
+router.post("/admin/caixas",exigir("admin.usuarios"),async(req,res,next)=>{try{const endereco=String(req.body?.endereco||"").trim().toLowerCase(),nome=String(req.body?.nome||"").trim(),tipo=req.body?.tipo,dono=Number(req.body?.usuario_dono_id);if(!emailRx.test(endereco)||endereco.length>254||!nome||nome.length>120||!["individual","compartilhada"].includes(tipo)||tipo==="individual"&&(!Number.isSafeInteger(dono)||dono<1))return res.status(400).json({erro:"Dados da caixa inválidos."});if(tipo==="individual"){const [u]=await q("SELECT id,email FROM usuarios WHERE id=? AND ativo=1",[dono]);if(!u||u.email.toLowerCase()!==endereco)return res.status(400).json({erro:"Caixa individual deve corresponder ao e-mail do colaborador."})}await schema();const result=await q("INSERT INTO email_caixas(endereco,nome,tipo,usuario_dono_id) VALUES(?,?,?,?)",[endereco,nome,tipo,tipo==="individual"?dono:null]);await auditar(req.usuario.id,"email_caixa_criada",endereco,req.ip);res.status(201).json({id:result.insertId})}catch(e){if(e.code==="ER_DUP_ENTRY")return res.status(409).json({erro:"Caixa já cadastrada."});next(e)}});
+router.get("/admin/caixas/:id/acessos",exigir("admin.usuarios"),async(req,res,next)=>{try{await schema();res.set("Cache-Control","no-store").json({acessos:await q("SELECT usuario_id,pode_ler,pode_enviar,pode_excluir FROM email_caixa_acessos WHERE caixa_id=?",[req.params.id])})}catch(e){next(e)}});
+router.put("/admin/caixas/:id/acessos/:usuarioId",exigir("admin.usuarios"),async(req,res,next)=>{try{const caixa=Number(req.params.id),usuario=Number(req.params.usuarioId);if(!Number.isSafeInteger(caixa)||caixa<1||!Number.isSafeInteger(usuario)||usuario<1)return res.status(400).json({erro:"Identificador inválido."});if(["pode_ler","pode_enviar","pode_excluir"].some(k=>typeof req.body?.[k]!=="boolean")||req.body.pode_excluir&&!req.body.pode_ler||req.body.pode_enviar&&!req.body.pode_ler)return res.status(400).json({erro:"Permissões inválidas."});await schema();const [box]=await q("SELECT id,tipo FROM email_caixas WHERE id=? AND ativo=1",[caixa]);const [u]=await q("SELECT id FROM usuarios WHERE id=? AND ativo=1",[usuario]);if(!box||!u)return res.status(404).json({erro:"Caixa ou usuário não encontrado."});if(box.tipo!=="compartilhada")return res.status(403).json({erro:"A caixa individual é exclusiva do titular."});await q(`INSERT INTO email_caixa_acessos(caixa_id,usuario_id,pode_ler,pode_enviar,pode_excluir) VALUES(?,?,?,?,?) ON DUPLICATE KEY UPDATE pode_ler=VALUES(pode_ler),pode_enviar=VALUES(pode_enviar),pode_excluir=VALUES(pode_excluir)`,[caixa,usuario,+req.body.pode_ler,+req.body.pode_enviar,+req.body.pode_excluir]);await auditar(req.usuario.id,"email_permissao_alterada",`caixa:${caixa};usuario:${usuario}`,req.ip);res.json({ok:true})}catch(e){next(e)}});
 export default router;
