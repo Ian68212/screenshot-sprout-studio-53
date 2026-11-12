@@ -182,6 +182,12 @@ const enviar = (f, url, erroEl, montar = form) => f.addEventListener("submit", a
       erro.textContent = "";
       try {
         await api(`admin/usuarios/${id}`, { method: "PATCH", body: dados });
+        if(foto){
+          if(!["image/jpeg","image/png","image/webp"].includes(foto.type)||foto.size>3*1024*1024)throw Error("Escolha JPG, PNG ou WebP de até 3 MB.");
+          const fd=new FormData();fd.append("foto",foto);
+          const response=await fetch(`/colaborador/api/perfil/foto/${encodeURIComponent(id)}`,{method:"PUT",credentials:"same-origin",headers:{"X-Portal":"1"},body:fd});
+          const result=await response.json().catch(()=>({}));if(!response.ok)throw Error(result.erro||"Não foi possível salvar a foto.");
+        }
         if(dados.perfil!=="admin")await assignCustomAccessProfile(id,customProfileId);
         dialog.close();
         await carregar();
