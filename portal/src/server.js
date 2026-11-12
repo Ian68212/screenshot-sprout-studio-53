@@ -21,6 +21,7 @@ import { mediaRouter } from "./site-media.js";
 import { publicSiteRouter } from "./public-site.js";
 import menuPermissoesRouter from "./menu-permissoes.js";
 import emailCorporativoRouter from "./email-corporativo.js";
+import { profilePhotoRouter, ensureProfilePhotoSchema } from "./profile-photo.js";
 
 const BASE = process.env.BASE_PATH || "/colaborador";
 const dir = path.dirname(fileURLToPath(import.meta.url));
@@ -225,7 +226,8 @@ r.post("/api/logout", wrap(async (req, res) => {
   res.json({ ok: true });
 }));
 
-r.get("/api/eu", exigir("painel"), (req, res) => res.json(req.usuario));
+r.get("/api/eu", exigir("painel"), wrap(async (req, res) => { await ensureProfilePhotoSchema(); const [u]=await q("SELECT foto_url FROM usuarios WHERE id=?",[req.usuario.id]); res.json({...req.usuario,foto_url:u?.foto_url||null}); }));
+r.use("/api/perfil", profilePhotoRouter);
 r.use("/api/chat-interno", chatInternoRouter);
 
 // Estado da integração de atendimento: nunca expõe token, URL interna ou credenciais.
@@ -439,7 +441,8 @@ for (const tabela of ["setores", "cargos"]) {
 }
 
 r.get("/api/admin/usuarios", exigir("admin.usuarios"), wrap(async (_req, res) => {
-  res.json(await q(`SELECT u.id, u.nome, u.email, u.perfil, u.ativo, u.setor_id, u.cargo_id, s.nome setor, c.nome cargo
+  await ensureProfilePhotoSchema();
+  res.json(await q(`SELECT u.id, u.nome, u.email, u.foto_url, u.perfil, u.ativo, u.setor_id, u.cargo_id, s.nome setor, c.nome cargo
     FROM usuarios u LEFT JOIN setores s ON s.id=u.setor_id LEFT JOIN cargos c ON c.id=u.cargo_id ORDER BY u.nome`));
 }));
 
