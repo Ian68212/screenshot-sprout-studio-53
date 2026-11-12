@@ -1,4 +1,4 @@
-const CACHE_NAME = "rodrinox-app-shell-v7-network-first";
+const CACHE_NAME = "rodrinox-app-shell-v8-network-first";
 const SHELL = ["/colaborador/","/colaborador/index.html","/colaborador/portal.css","/colaborador/app.js","/colaborador/login.js","/colaborador/pwa.js","/colaborador/mobile-install.js","/colaborador/manifest.webmanifest","/colaborador/assets/login-original.jpeg","/colaborador/assets/app-icon-original.jpeg","/favicon-rodrinox.png?v=20261110"];
 self.addEventListener("install",event=>{event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()))});
 self.addEventListener("activate",event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith("rodrinox-app-shell-")&&key!==CACHE_NAME).map(key=>caches.delete(key)))).then(()=>self.clients.claim()))});
