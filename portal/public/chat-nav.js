@@ -31,8 +31,8 @@
  const frame=document.createElement("iframe");frame.title="Conversas privadas Rodrinox";frame.loading="lazy";
  panel.append(bar,frame);document.body.append(panel);
  let frameLoaded=false;
- function openChat(){panel.hidden=false;fab.setAttribute("aria-expanded","true");if(!frameLoaded){frame.src=URL;frameLoaded=true;}}
- function closeChat(){panel.hidden=true;fab.setAttribute("aria-expanded","false");check();}
+ function openChat(){panel.hidden=false;fab.setAttribute("aria-expanded","true");document.getElementById("rp-chat-toast")?.remove();if(!frameLoaded){frame.src=URL;frameLoaded=true;}}
+ function closeChat(){panel.hidden=true;fab.setAttribute("aria-expanded","false");if(frameLoaded){frame.src="about:blank";frameLoaded=false;}check();}
  fab.setAttribute("aria-expanded","false");
  fab.addEventListener("click",()=>panel.hidden?openChat():closeChat());
  minimize.addEventListener("click",closeChat);
@@ -56,7 +56,6 @@
   const h=document.createElement("strong");h.textContent="Nova mensagem no Chat Interno";
   const p=document.createElement("span");p.textContent=count===1?"Você tem 1 mensagem não lida.":"Você tem "+count+" mensagens não lidas.";
   t.append(h,p);t.addEventListener("click",()=>openChat());document.body.append(t);
-  setTimeout(()=>t.remove(),7500);
  }
  async function check(){
   if(checking)return;checking=true;
@@ -66,6 +65,7 @@
    const data=await r.json(),n=Math.max(0,Number(data.total)||0);
    document.querySelectorAll(".chat-nav-count").forEach(b=>{b.hidden=!n;b.textContent=n>99?"99+":String(n);b.style.cssText="display:"+(n?"inline-block":"none")+";background:#f28c3d;color:#10243b;border-radius:20px;padding:2px 6px;margin-left:5px;font-size:11px;font-weight:700"});
    fab.classList.toggle("rp-has-unread",n>0);fab.querySelector(".rp-chat-badge").textContent=n>99?"99+":String(n);
+   if(n===0)document.getElementById("rp-chat-toast")?.remove();
    fab.setAttribute("aria-label",n?"Chat interno: "+n+" mensagens não lidas":"Abrir Chat Interno Rodrinox");
    if(lastCount!==null&&n>lastCount){beep();toast(n);if(document.hidden&&"Notification" in window&&Notification.permission==="granted"){try{new Notification("Rodrinox Pro • Nova mensagem",{body:"Você recebeu uma mensagem no chat interno.",tag:"rp-chat-interno"});}catch{}}}
    lastCount=n;
