@@ -22,7 +22,7 @@ function drawPeople(){
   const b=el("button","person"+(p.id===selected?" active":""));
   b.type="button";b.append(el("span","avatar",initials(p.nome)));
   const body=el("span","person-body"),title=el("span","person-name");
-  title.append(el("span","",p.nome));
+  title.append(el("span","",p.nome),el("span","presence "+(Number(p.online)===1?"online":"offline"),Number(p.online)===1?"Online":"Offline"));
   if(Number(p.nao_lidas)>0)title.append(el("span","count",String(p.nao_lidas)));
   body.append(title,el("small","",p.ultima||p.setor||"Iniciar conversa"));
   b.append(body);b.addEventListener("click",()=>openChat(p.id));area.append(b);
@@ -38,8 +38,15 @@ async function refreshPeople(){
   new Notification("Rodrinox Pro • Chat interno",{body:"Você recebeu uma nova mensagem.",tag:"rodrinox-chat"});
  }
  previousUnread=total;
- drawPeople();
+ drawPeople();updatePeerPresence();
 }
+function updatePeerPresence(){
+ const p=people.find(x=>Number(x.id)===Number(selected));
+ const node=$("peerPresence");if(!node)return;
+ node.className="peer-presence "+(Number(p?.online)===1?"online":"offline");
+ node.textContent=Number(p?.online)===1?"● Online":"○ Offline";
+}
+async function heartbeat(){if(document.visibilityState!=="visible")return;try{await api("/presenca",{method:"POST",headers:{"X-Portal":"1"}})}catch(_){} }
 async function openChat(id){
  selected=id;lastSignature="";app.classList.add("chat-open");drawPeople();
  const p=people.find(x=>x.id===id);$("peer").textContent=p?.nome||"Colaborador";
@@ -81,7 +88,7 @@ $("search").addEventListener("input",drawPeople);
   if(!r.ok){location.href="/colaborador/";return;}me=await r.json();
   const back=document.querySelector(".back");
   if(back&&!document.documentElement.classList.contains("rp-embedded"))back.href=me.perfil==="admin"?"/colaborador/painel/oficial/":"/colaborador/oficial/";
-  await refreshPeople();
-  setInterval(async()=>{try{await refreshPeople();if(selected)await refreshMessages();$("state").textContent="";}catch(err){$("state").textContent="Sem conexão";}},5000);
+  await heartbeat();await refreshPeople();
+  setInterval(async()=>{try{await heartbeat();await refreshPeople();if(selected)await refreshMessages();$("state").textContent="";}catch(err){$("state").textContent="Sem conexão";}},5000);
  }catch(err){$("people").textContent="Não foi possível carregar: "+err.message;}
 })();
