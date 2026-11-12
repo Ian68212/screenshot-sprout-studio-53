@@ -7,7 +7,7 @@
 <section class="card"><h2>Cadastrar colaborador</h2><form id="fu" class="row">
 <div><label>Nome</label><input name="nome" required></div><div><label>E-mail</label><input name="email" type="email" required></div>
 <div><label>Autenticação</label><p style="font-size:.85rem;color:#5d6b7e">A senha é a mesma da caixa postal Hostinger do colaborador.</p></div>
-<div><label>Perfil</label><select name="perfil"><option>colaborador</option><option>gestor</option><option>admin</option></select></div>
+<div><label>Perfil</label><select name="perfil"><option>colaborador</option><option>gestor</option><option>admin</option></select></div><div><label>Perfil de acesso personalizado</label><select name="access_profile_id" class="selPerfilPersonalizado"><option value="">Nenhum</option></select></div>
 <div><label>Setor</label><select name="setor_id" class="selSetor"></select></div><div><label>Cargo</label><select name="cargo_id" class="selCargo"></select></div>
 <div><button>Cadastrar</button></div></form><p class="erro" id="eu"></p></section>
 <section class="card"><h2>Candidaturas recebidas</h2><p style="color:#5d6b7e">Currículos enviados pelo site institucional. Acesso restrito à administração.</p><div style="overflow-x:auto"><table><thead><tr><th>Data</th><th>Nome</th><th>Contato</th><th>Área</th><th>Cargo pretendido</th><th>Currículo</th><th>Status</th></tr></thead><tbody id="tc"></tbody></table></div></section>
@@ -34,8 +34,8 @@
 <div class="campo-modal"><label>Nome completo</label><input name="nome" maxlength="160" required></div>
 <div class="campo-modal"><label>E-mail</label><input name="email" type="email" maxlength="190" required></div>
 <div class="campo-modal"><label>Perfil de acesso</label><select name="perfil"><option value="colaborador">Colaborador</option><option value="gestor">Gestor</option><option value="admin">Administrador</option></select></div>
-<div class="campo-modal"><label>Setor</label><select name="setor_id" class="selSetor"><option value="">Nenhum</option></select></div>
+<div class="campo-modal"><label>Perfil de acesso personalizado</label><select name="access_profile_id" class="selPerfilPersonalizado"><option value="">Nenhum</option></select></div><div class="campo-modal"><label>Setor</label><select name="setor_id" class="selSetor"><option value="">Nenhum</option></select></div>
 <div class="campo-modal"><label>Cargo</label><select name="cargo_id" class="selCargo"><option value="">Nenhum</option></select></div>
 <p class="erro" id="erroEditarUsuario"></p>
 <div class="botoes-modal"><button type="button" class="sec" id="cancelarEdicao">Cancelar</button><button type="submit">Salvar alterações</button></div>
-</form></dialog></main><script src="/colaborador/app.js"></script><script src="/colaborador/admin.js?v=20261110-diagnostico-v6"></script></body></html>
+</form></dialog></main><script src="/colaborador/app.js"></script><script src="/colaborador/admin.js?v=access-profile-registration-20261111"></script></body></html>
