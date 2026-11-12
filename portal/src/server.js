@@ -254,6 +254,9 @@ r.get("/api/atendimento/consultar/:recurso", exigir("painel"), wrap(async (req, 
     const contactId = String(req.query.contactId || "");
     if (!/^[a-zA-Z0-9-]{1,80}$/.test(contactId)) return res.status(400).json({erro:"Selecione um contato válido."});
     url.searchParams.set("where[contactId]", contactId);
+    // A API DigiSac aceita consulta Sequelize: buscar as mensagens mais recentes,
+    // em vez de receber apenas a primeira página (mensagens antigas).
+    url.searchParams.set("query", JSON.stringify({where:{contactId},order:[["createdAt","DESC"]],perPage:100}));
   }
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 9000);
