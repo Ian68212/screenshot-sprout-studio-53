@@ -40,6 +40,17 @@ async function schema(){
 router.get("/minhas",exigir("painel"),async(req,res,next)=>{
  try{
   await schema();
+  // Vincula automaticamente a caixa individual ao e-mail já cadastrado no usuário autenticado.
+  // Não cria credenciais nem altera senhas: apenas registra o vínculo de propriedade no catálogo.
+  const usuarioId=Number(req.usuario.id);
+  const enderecoPessoal=String(req.usuario.email||"").trim().toLowerCase();
+  if(Number.isSafeInteger(usuarioId)&&usuarioId>0&&emailRx.test(enderecoPessoal)){
+    const [existente]=await q("SELECT id,tipo,usuario_dono_id FROM email_caixas WHERE endereco=? LIMIT 1",[enderecoPessoal]);
+    if(!existente){
+      const nomePessoal=(String(req.usuario.nome||"Meu e-mail").trim().slice(0,90)||"Meu e-mail")+" (Pessoal)";
+      await q("INSERT IGNORE INTO email_caixas(endereco,nome,tipo,usuario_dono_id) VALUES(?,?,'individual',?)",[enderecoPessoal,nomePessoal,usuarioId]);
+    }
+  }
   const rows=await q(`SELECT c.id,c.endereco,c.nome,c.tipo,
     IF(c.tipo='individual' AND c.usuario_dono_id=?,1,a.pode_ler) AS pode_ler,
     IF(c.tipo='individual' AND c.usuario_dono_id=?,1,a.pode_enviar) AS pode_enviar,
