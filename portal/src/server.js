@@ -1,4 +1,5 @@
 import { tasksRouter } from "./tasks-official.js";
+import chatInternoRouter from "./chat-interno.js";
 import { accessProfilesRouter } from "./access-profiles.js";
 import atendimentoRodrinoxRouter from "./atendimento-rodrinox.js";
 import whatsappMetaRouter from "./whatsapp-meta.js";
@@ -214,6 +215,7 @@ r.post("/api/logout", wrap(async (req, res) => {
 }));
 
 r.get("/api/eu", exigir("painel"), (req, res) => res.json(req.usuario));
+r.use("/api/chat-interno", chatInternoRouter);
 
 // Estado da integração de atendimento: nunca expõe token, URL interna ou credenciais.
 // Disponível somente a usuários autenticados do portal.
