@@ -157,7 +157,7 @@ if (publicDir) {
     setHeaders(res, filePath) {
       // O painel oficial carrega JS/CSS compartilhados por esta rota global.
       // Nunca permitir que navegador/CDN reutilize bundles antigos entre publicacoes.
-      if (/\\.(?:html?|js|mjs|css)$/i.test(filePath)) {
+      if (/\.(?:html?|js|mjs|css)$/i.test(filePath)) {
         res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0");
         res.setHeader("Pragma", "no-cache");
         res.setHeader("Expires", "0");
