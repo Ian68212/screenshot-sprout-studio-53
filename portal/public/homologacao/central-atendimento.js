@@ -3,7 +3,7 @@
 const safe=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 let selected="fila",status=null,records=[],active=null,loading=false,error="",team=null,assignments=[],currentUser=null,lastSync=null;
 const rows=p=>Array.isArray(p)?p:Array.isArray(p?.rows)?p.rows:Array.isArray(p?.data)?p.data:Array.isArray(p?.items)?p.items:Array.isArray(p?.results)?p.results:[];
-const nameOf=r=>r.name||r.internalName||r.contact?.name||r.data?.name||r.number||r.id||"Sem identificação";
+const nameOf=r=>r.contact?.name||r.contact?.internalName||r.contactName||r.contact?.number||r.customer?.name||r.name||r.internalName||r.number||(r.protocol?"Chamado #"+r.protocol:"Chamado "+String(r.id||"").slice(0,8));
 async function load(){loading=true;error="";draw();try{const kind=selected==="contatos"?"contacts":"tickets";const res=await fetch("/colaborador/api/atendimento/consultar/"+kind,{credentials:"same-origin",cache:"no-store"});const data=await res.json();if(!res.ok)throw Error(data.erro+(data.codigo?" (HTTP "+data.codigo+")":""));records=rows(data);if(selected==="meus")records=records.filter(r=>assignments.some(a=>String(a.contato_digisac)===String(r.contactId||r.contact?.id||r.id)&&Number(a.usuario_id)===Number(currentUser?.id)));active=null;}catch(e){records=[];error=e.message}finally{loading=false;lastSync=new Date();draw()}}
 const messageText=m=>{
   const candidates=[m.text,m.body,m.content?.text,m.content?.body,m.data?.text,m.data?.body,m.message?.text,m.message?.body];
