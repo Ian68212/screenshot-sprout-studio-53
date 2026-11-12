@@ -103,6 +103,18 @@ root.innerHTML='<div class="ca-head"><div><h3>Central de Atendimento</h3><div cl
 '<div class="ca-banner"><b>Integração DigiSac:</b> mensagens enviadas pela API existente. Transferência e encerramento dependem de suporte e autorização da API.</div>'+
 '<section class="ca-panel"><h4>Preparação da integração</h4><div class="ca-steps"><span class="ca-step ready">✓ Interface Rodrinox</span><span class="ca-step">Conexão API</span><span class="ca-step">Filas e permissões</span><span class="ca-step">Envio de mensagens</span></div><p class="ca-meta" id="caDetails">Aguardando verificação do servidor.</p></section>';
 document.querySelector(".ca-search")?.addEventListener("input",e=>{searchTerm=e.target.value.toLowerCase().trim();root.querySelectorAll(".ca-record").forEach(b=>{const r=records.find(x=>String(x.id)===b.dataset.caId);b.hidden=!!r&&!([nameOf(r),r.protocol,r.number,r.contact?.number,r.contactId].some(v=>String(v||"").toLowerCase().includes(searchTerm)))});});
+// Revalida explicitamente o estado dos controles apos cada renderizacao.
+// As acoes dependem do contato real do chamado, nao do mapeamento de e-mail.
+const actionTarget = selectedContactId();
+const canRunTicketActions = Boolean(active && selected !== "contatos" && selected !== "meta" && actionTarget);
+for (const id of ["caTransfer","caTags","caClose"]) {
+  const button = document.getElementById(id);
+  if (button) {
+    button.disabled = !canRunTicketActions;
+    button.setAttribute("aria-disabled", String(!canRunTicketActions));
+    button.title = canRunTicketActions ? "" : "Selecione um chamado aberto para habilitar esta acao.";
+  }
+}
 document.getElementById("caSend")?.addEventListener("click",sendMessage);
 document.getElementById("caTransfer")?.addEventListener("click",()=>openTransfer().catch(e=>alert(e.message)));
 document.getElementById("caTags")?.addEventListener("click",()=>openTags().catch(e=>alert(e.message)));
