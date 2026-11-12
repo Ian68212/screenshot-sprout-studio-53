@@ -11,3 +11,13 @@
 .ca-root .ca-list .ca-record small{font-size:11px!important;line-height:1.4!important;color:#b6d1e4!important;overflow-wrap:anywhere!important}
 .ca-root .ca-refresh{display:block;width:calc(100% - 24px);margin:0 12px 10px;padding:8px;border:1px solid #4b7696;border-radius:7px;background:#173e5e;color:#eaf4ff;cursor:pointer;font-size:12px}
 .ca-root .ca-refresh:hover{background:#245b80}
+
+
+/* Conversa estilo mensageiro, mantendo a identidade Rodrinox */
+.ca-messages #caMessageBody{display:flex;flex-direction:column;align-items:stretch;gap:9px}
+.ca-messages .ca-msg{max-width:min(78%,680px);width:fit-content;margin:0;padding:11px 14px;border:1px solid #315a78;border-radius:12px;background:#173b59;color:#eaf4ff;overflow-wrap:anywhere;text-align:left}
+.ca-messages .ca-msg-in{align-self:flex-start;border-bottom-left-radius:3px}
+.ca-messages .ca-msg-out{align-self:flex-end;border-color:#36785e;border-bottom-right-radius:3px;background:#22543f}
+.ca-messages .ca-msg small{display:block;color:#b6d0e1;font-size:11px}
+.ca-messages .ca-msg p{margin:5px 0 0;white-space:pre-wrap;line-height:1.45}
+@media(max-width:680px){.ca-messages .ca-msg{max-width:92%}}
