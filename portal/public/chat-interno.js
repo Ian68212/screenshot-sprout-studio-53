@@ -89,6 +89,6 @@ $("search").addEventListener("input",drawPeople);
   const back=document.querySelector(".back");
   if(back&&!document.documentElement.classList.contains("rp-embedded"))back.href=me.perfil==="admin"?"/colaborador/painel/oficial/":"/colaborador/oficial/";
   await heartbeat();await refreshPeople();
-  setInterval(async()=>{try{await heartbeat();await refreshPeople();if(selected)await refreshMessages();$("state").textContent="";}catch(err){$("state").textContent="Sem conexão";}},5000);
+  setInterval(async()=>{try{await heartbeat();await refreshPeople();if(selected)await refreshMessages();$("state").textContent="";}catch(err){$("state").textContent="Sem conexão";}},15000);
  }catch(err){$("people").textContent="Não foi possível carregar: "+err.message;}
 })();
