@@ -230,7 +230,7 @@ r.get("/api/atendimento/status", exigir("painel"), (req, res) => {
 // Proxy de leitura DigiSac. Token fica exclusivamente no servidor.
 // Nesta fase, apenas admin pode consultar dados de clientes: usuários comuns não herdam
 // acesso irrestrito às filas pelo simples fato de possuir sessão do portal.
-const digiPaths = Object.freeze({contacts:"contacts",tickets:"tickets",messages:"messages",departments:"departments"});
+const digiPaths = Object.freeze({contacts:"contacts",tickets:"tickets",messages:"messages",departments:"departments",users:"users"});
 r.get("/api/atendimento/consultar/:recurso", exigir("painel"), wrap(async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
   if (req.usuario.perfil !== "admin") return res.status(403).json({erro:"Acesso não autorizado para consultar a DigiSac."});
@@ -244,7 +244,7 @@ r.get("/api/atendimento/consultar/:recurso", exigir("painel"), wrap(async (req, 
     url = new URL(base + "/" + endpoint);
     if (url.protocol !== "https:" || url.hostname !== "rodrinoxpro.digisac.app" || !url.pathname.startsWith("/api/v1/")) throw Error("Destino inválido");
   } catch { return res.status(503).json({erro:"URL da API DigiSac inválida."}); }
-  url.searchParams.set("perPage", req.params.recurso === "tickets" ? "100" : "40");
+  url.searchParams.set("perPage", req.params.recurso === "tickets" ? "100" : "100");
   if (req.params.recurso === "tickets") {
     // A listagem geral mistura chamados encerrados com conversas ativas.
     // A API DigiSac documenta o filtro Sequelize por isOpen.
