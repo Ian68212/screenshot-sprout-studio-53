@@ -2,3 +2,12 @@
 .ca-record{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid #355b79;background:transparent;color:#e9f4ff;padding:13px 10px;cursor:pointer}.ca-record:hover,.ca-record:focus{background:#1c4c70}.ca-record b,.ca-record small{display:block;overflow-wrap:anywhere}.ca-record small{font-size:11px;color:#a6c8dd;margin-top:5px}.ca-msg{text-align:left;padding:11px 15px;margin:7px 0;background:#19415f;border-radius:9px;overflow-wrap:anywhere}.ca-msg small{color:#a9cadb}.ca-msg p{margin:6px 0}.ca-messages{display:block;overflow:auto;max-height:65vh;text-align:left}
 
 .ca-assign{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:9px}.ca-assign label{font-size:11px;color:#b9d3e8}.ca-assign select,.ca-assign button{border:1px solid #50728b;background:#173e5a;color:#fff;border-radius:6px;padding:7px;margin-left:4px;max-width:220px}.ca-assign button{cursor:pointer;background:#236185}
+
+/* Isolamento visual: estilos globais do painel não devem sobrescrever cartões da central. */
+.ca-root .ca-list{display:flex;flex-direction:column;gap:6px;max-height:62vh;overflow-y:auto;min-width:0}
+.ca-root .ca-list .ca-record{box-sizing:border-box!important;display:flex!important;flex-direction:column!important;align-items:stretch!important;justify-content:center!important;width:100%!important;min-height:58px!important;max-width:100%!important;padding:11px 12px!important;margin:0!important;text-align:left!important;border:1px solid #365b78!important;border-radius:9px!important;background:#153a58!important;color:#f0f7ff!important;line-height:1.35!important;white-space:normal!important;box-shadow:none!important;cursor:pointer!important}
+.ca-root .ca-list .ca-record:hover,.ca-root .ca-list .ca-record:focus{background:#235476!important;border-color:#6092b5!important}
+.ca-root .ca-list .ca-record b{font-size:12px!important;font-weight:600!important;line-height:1.45!important;overflow-wrap:anywhere!important;word-break:break-word!important;color:#fff!important}
+.ca-root .ca-list .ca-record small{font-size:11px!important;line-height:1.4!important;color:#b6d1e4!important;overflow-wrap:anywhere!important}
+.ca-root .ca-refresh{display:block;width:calc(100% - 24px);margin:0 12px 10px;padding:8px;border:1px solid #4b7696;border-radius:7px;background:#173e5e;color:#eaf4ff;cursor:pointer;font-size:12px}
+.ca-root .ca-refresh:hover{background:#245b80}
