@@ -21,3 +21,27 @@
 .ca-messages .ca-msg small{display:block;color:#b6d0e1;font-size:11px}
 .ca-messages .ca-msg p{margin:5px 0 0;white-space:pre-wrap;line-height:1.45}
 @media(max-width:680px){.ca-messages .ca-msg{max-width:92%}}
+
+/* Layout premium — somente Central de Atendimento */
+.ca-root .ca-layout{grid-template-columns:minmax(220px,25%) minmax(0,1fr) minmax(210px,21%);height:min(77vh,850px);min-height:560px;background:#f5f8fc;border-radius:16px;box-shadow:0 12px 32px #0002}
+.ca-root .ca-left{background:#fff;color:#17314c;border-right:1px solid #dae4ef;min-width:0;display:flex;flex-direction:column}
+.ca-root .ca-sidebar-title{padding:17px 15px 8px;display:flex;justify-content:space-between;align-items:center;color:#16304a}
+.ca-root .ca-sidebar-title strong{font-size:18px}.ca-root .ca-sidebar-title span{font-size:11px;color:#70849a}
+.ca-root .ca-tabs{border-bottom:1px solid #e0e8f0;padding:8px}.ca-root .ca-tabs button{color:#425f79;font-weight:600}.ca-root .ca-tabs button.active{background:#e7f0fb;color:#195d99}
+.ca-root .ca-refresh{background:#edf5fd;color:#1b537f;border-color:#c7d9eb}.ca-root .ca-search{background:#f7faff;color:#1b354d;border-color:#cbd9e6}
+.ca-root .ca-list{flex:1;max-height:none!important;padding:5px!important;overflow-y:auto}
+.ca-root .ca-list .ca-record{background:#fff!important;border:0!important;border-bottom:1px solid #e5ebf2!important;border-radius:5px!important;color:#16314a!important;padding:15px 12px!important}
+.ca-root .ca-list .ca-record:hover,.ca-root .ca-list .ca-record:focus{background:#e5f1ff!important}
+.ca-root .ca-list .ca-record b{color:#16314a!important}.ca-root .ca-list .ca-record small{color:#6a7f92!important}.ca-root .ca-empty{color:#607a92}
+.ca-root .ca-conversation{min-height:0;background:#f3f7fd}.ca-root .ca-conversation header{background:#fff;color:#15324e;border-bottom:1px solid #dbe5ef;padding:14px}.ca-root .ca-conversation header .ca-meta{color:#698199}
+.ca-root .ca-assign label{color:#4b647e}.ca-root .ca-assign select{background:#f7faff;color:#15324e;border-color:#cbd9e6}.ca-root .ca-assign button{background:#e7f2fc;color:#20577d;border-color:#bcd0e4}
+.ca-root .ca-messages{min-height:0;flex:1;max-height:none;background-color:#f3f7fc;background-image:radial-gradient(#dbe6f3 1px,transparent 1px);background-size:23px 23px;color:#536d83}
+.ca-root .ca-messages .ca-msg{background:#fff;color:#173149;border-color:#d8e3ee;box-shadow:0 1px 3px #0001}
+.ca-root .ca-messages .ca-msg-out{background:#daf7cc;color:#1b402a;border-color:#c2e8b5}.ca-root .ca-messages .ca-msg small{color:#5e788d}
+.ca-root .ca-compose{background:#fff;border-top:1px solid #dce6ef;padding:10px;align-items:center}.ca-root .ca-compose textarea{resize:none;min-height:45px;max-height:95px;background:#f8fbff;color:#18344e;border-color:#cbd9e7;border-radius:22px}.ca-root .ca-compose button{min-height:45px;background:#159363;font-weight:700}
+.ca-root .ca-contact{min-width:0;overflow-y:auto;background:#fff;color:#1a344d;border-left:1px solid #dbe5ef;padding:18px 14px;text-align:center}
+.ca-root .ca-contact h4{text-align:left;font-size:14px;margin:5px 0 13px}.ca-root .ca-contact strong{display:block;overflow-wrap:anywhere}.ca-root .ca-contact p{color:#61788e;font-size:12px;line-height:1.6}.ca-root .ca-contact hr{border:0;border-top:1px solid #e3ebf2;margin:20px 0}
+.ca-root .ca-avatar{display:grid;place-items:center;width:58px;height:58px;margin:5px auto 12px;border-radius:50%;background:#e0f5e9;color:#159363;font-size:27px}
+.ca-root .ca-contact button{display:block;width:100%;margin:9px 0;border:1px solid #c1d3e4;background:#f6f9fd;border-radius:8px;color:#21415f;padding:12px;font-weight:650;font-size:12px}.ca-root .ca-contact button:disabled{opacity:.62;cursor:not-allowed}
+@media(max-width:1280px){.ca-root .ca-layout{grid-template-columns:minmax(210px,28%) minmax(0,1fr)}.ca-root .ca-contact{display:none}}
+@media(max-width:760px){.ca-root .ca-layout{display:flex;flex-direction:column;height:auto;min-height:0}.ca-root .ca-left{max-height:250px;overflow:auto;border-right:0;border-bottom:1px solid #dbe5ef}.ca-root .ca-conversation{height:65vh;min-height:420px}.ca-root .ca-messages .ca-msg{max-width:92%}}
