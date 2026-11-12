@@ -1,7 +1,7 @@
 "use strict";
 const $=id=>document.getElementById(id);
 const app=document.querySelector(".app");
-if(new URLSearchParams(location.search).has("janela")){document.documentElement.classList.add("rp-embedded");const back=document.querySelector(".back");if(back){back.textContent="← Minimizar";back.href="#";back.addEventListener("click",e=>{e.preventDefault();parent.postMessage({type:"rodrinox-chat-minimize"},location.origin)})}}
+if(new URLSearchParams(location.search).has("janela")){document.documentElement.classList.add("rp-embedded");const back=document.querySelector(".back");if(back){back.textContent="← Minimizar";back.href="#";back.addEventListener("click",e=>{e.preventDefault();if(window.parent!==window){window.parent.postMessage({type:"rodrinox-chat-minimize"},location.origin)}else{location.assign(me?.perfil==="admin"?"/colaborador/painel/oficial/":"/colaborador/oficial/")}})}}
 let me=null,selected=null,people=[],lastSignature="",previousUnread=null;
 async function api(path,options={}){
  const r=await fetch("/colaborador/api/chat-interno"+path,{credentials:"same-origin",cache:"no-store",...options});
