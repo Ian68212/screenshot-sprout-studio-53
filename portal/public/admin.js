@@ -1,4 +1,16 @@
 const form = (f) => Object.fromEntries(new FormData(f));
+let customAccessProfiles=[], customAccessAssignments=[];
+async function loadCustomAccessProfiles(){
+ const result=await api("access-profiles");
+ customAccessProfiles=result.profiles||[];
+ customAccessAssignments=result.assignments||[];
+ const options='<option value="">Nenhum perfil personalizado</option>'+customAccessProfiles.filter(p=>p.active).map(p=>'<option value="'+Number(p.id)+'">'+esc(p.name)+'</option>').join("");
+ document.querySelectorAll(".selPerfilPersonalizado").forEach(el=>el.innerHTML=options);
+}
+async function assignCustomAccessProfile(userId,profileId){
+ await api("access-profiles/users/"+encodeURIComponent(userId),{method:"PUT",body:{profile_id:profileId?Number(profileId):null}});
+}
+
 const opts = (l, vazio) => `<option value="">${vazio}</option>` + l.map((x) => `<option value="${x.id}">${esc(x.nome)}</option>`).join("");
 
 async function carregar() {
@@ -33,6 +45,7 @@ const enviar = (f, url, erroEl, montar = form) => f.addEventListener("submit", a
   if (eu.perfil === "admin") {
     soAdmin.hidden = false;
     await carregar();
+    await loadCustomAccessProfiles();
     await candidaturas();
     tc.addEventListener("change", async (e) => {
       const s = e.target.closest("select[data-candidatura]");
@@ -42,7 +55,20 @@ const enviar = (f, url, erroEl, montar = form) => f.addEventListener("submit", a
         await auditoria();
       } catch (err) { alert(err.message); }
     });
-    enviar(fu, "admin/usuarios", document.getElementById("eu"));
+    fu.addEventListener("submit",async(e)=>{
+      e.preventDefault();const error=document.getElementById("eu");error.textContent="";
+      const data=form(fu),profileId=data.access_profile_id;delete data.access_profile_id;
+      try{
+        await api("admin/usuarios",{method:"POST",body:data});
+        if(profileId){
+          const users=await api("admin/usuarios");
+          const user=users.find(u=>u.email?.toLowerCase()===data.email?.trim().toLowerCase());
+          if(!user)throw Error("Colaborador cadastrado, mas não foi possível localizar seu ID para atribuir o perfil.");
+          await assignCustomAccessProfile(user.id,profileId);
+        }
+        fu.reset();await carregar();await loadCustomAccessProfiles();
+      }catch(err){error.textContent=err.message;}
+    });
     enviar(fs, "admin/setores"); enviar(fc, "admin/cargos");
     const preview = document.getElementById("previewFerramenta");
     ff.elements.imagem.addEventListener("change", () => {
@@ -119,6 +145,8 @@ const enviar = (f, url, erroEl, montar = form) => f.addEventListener("submit", a
           editarForm.elements.nome.value = u.nome || "";
           editarForm.elements.email.value = u.email || "";
           editarForm.elements.perfil.value = u.perfil || "colaborador";
+          await loadCustomAccessProfiles();
+          editarForm.elements.access_profile_id.value=String(customAccessAssignments.find(a=>String(a.user_id)===String(u.id))?.profile_id||"");
           editarForm.elements.setor_id.value = u.setor_id || "";
           editarForm.elements.cargo_id.value = u.cargo_id || "";
           dialog.showModal();
@@ -141,12 +169,14 @@ const enviar = (f, url, erroEl, montar = form) => f.addEventListener("submit", a
       const dados = Object.fromEntries(new FormData(editarForm));
       const id = dados.id;
       delete dados.id;
+      const customProfileId=dados.access_profile_id;delete dados.access_profile_id;
       dados.setor_id = dados.setor_id || null;
       dados.cargo_id = dados.cargo_id || null;
       const erro = document.getElementById("erroEditarUsuario");
       erro.textContent = "";
       try {
         await api(`admin/usuarios/${id}`, { method: "PATCH", body: dados });
+        await assignCustomAccessProfile(id,customProfileId);
         dialog.close();
         await carregar();
       } catch (err) { erro.textContent = err.message; }
