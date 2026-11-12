@@ -78,6 +78,8 @@ $("search").addEventListener("input",drawPeople);
  try{
   const r=await fetch("/colaborador/api/eu",{credentials:"same-origin",cache:"no-store"});
   if(!r.ok){location.href="/colaborador/";return;}me=await r.json();
+  const back=document.querySelector(".back");
+  if(back)back.href=me.perfil==="admin"?"/colaborador/painel/oficial/":"/colaborador/oficial/";
   await refreshPeople();
   setInterval(async()=>{try{await refreshPeople();if(selected)await refreshMessages();$("state").textContent="";}catch(err){$("state").textContent="Sem conexão";}},5000);
  }catch(err){$("people").textContent="Não foi possível carregar: "+err.message;}
