@@ -11,7 +11,7 @@
 <div><label>Setor</label><select name="setor_id" class="selSetor"></select></div><div><label>Cargo</label><select name="cargo_id" class="selCargo"></select></div>
 <div><button>Cadastrar</button></div></form><p class="erro" id="eu"></p></section>
 <section class="card"><h2>Candidaturas recebidas</h2><p style="color:#5d6b7e">Currículos enviados pelo site institucional. Acesso restrito à administração.</p><div style="overflow-x:auto"><table><thead><tr><th>Data</th><th>Nome</th><th>Contato</th><th>Área</th><th>Cargo pretendido</th><th>Currículo</th><th>Status</th></tr></thead><tbody id="tc"></tbody></table></div></section>
-<section class="card"><h2>Colaboradores</h2><table><thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Setor</th><th>Cargo</th><th>Status</th><th></th></tr></thead><tbody id="tu"></tbody></table></section>
+<section class="card"><h2>Colaboradores</h2><table><thead><tr><th>Foto</th><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Setor</th><th>Cargo</th><th>Status</th><th></th></tr></thead><tbody id="tu"></tbody></table></section>
 <section class="card"><h2>Setores e cargos</h2><div class="row">
 <form id="fs"><label>Novo setor</label><input name="nome" required><button class="sec" style="margin-top:.5rem">Adicionar setor</button></form>
 <form id="fc"><label>Novo cargo</label><input name="nome" required><button class="sec" style="margin-top:.5rem">Adicionar cargo</button></form></div>
@@ -31,7 +31,7 @@
 <dialog id="editarUsuario" class="modal-usuario">
 <form id="formEditarUsuario">
 <h2>Editar colaborador</h2><input type="hidden" name="id">
-<div class="campo-modal"><label>Nome completo</label><input name="nome" maxlength="160" required></div>
+<div class="campo-modal"><label>Foto do colaborador</label><input name="foto" type="file" accept="image/jpeg,image/png,image/webp"><small>JPG, PNG ou WebP · até 3 MB</small><img id="previewFotoUsuario" alt="Prévia da foto" hidden style="width:76px;height:76px;object-fit:cover;border-radius:50%;margin-top:8px"></div><div class="campo-modal"><label>Nome completo</label><input name="nome" maxlength="160" required></div>
 <div class="campo-modal"><label>E-mail</label><input name="email" type="email" maxlength="190" required></div>
 <div class="campo-modal"><label>Perfil de acesso</label><select name="perfil"><option value="colaborador">Colaborador</option><option value="gestor">Gestor</option><option value="admin">Administrador</option></select></div>
 <div class="campo-modal"><label>Perfil de acesso personalizado</label><select name="access_profile_id" class="selPerfilPersonalizado"><option value="">Nenhum</option></select></div><div class="campo-modal"><label>Setor</label><select name="setor_id" class="selSetor"><option value="">Nenhum</option></select></div>
