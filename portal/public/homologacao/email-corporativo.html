@@ -6,7 +6,7 @@
 <script>
 const api="/colaborador/api/email-corporativo";let caixas=[],current=null,folder="INBOX",items=[],selected=null,folders=[];
 const el=id=>document.getElementById(id);const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));const fmt=d=>d?new Date(d).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"}):"";
-async function call(path,opts={}){const r=await fetch(api+path,{credentials:"same-origin",cache:"no-store",...opts});const data=await r.json().catch(()=>({}));if(!r.ok)throw Error(data.erro||"Falha ao comunicar com o servidor.");return data}
+async function call(path,opts={}){const headers={...(opts.headers||{})};if(opts.method&&opts.method!=="GET")headers["X-Portal"]="1";const r=await fetch(api+path,{credentials:"same-origin",cache:"no-store",...opts,headers});const data=await r.json().catch(()=>({}));if(!r.ok)throw Error(data.erro||"Falha ao comunicar com o servidor.");return data}
 function toast(t){el("toast").textContent=t;el("toast").classList.add("show");setTimeout(()=>el("toast").classList.remove("show"),4000)}
 function modal(id,on){el(id).classList.toggle("show",on)}
 function setStatus(ok){el("connection").textContent=ok?"Conectado à Hostinger":"Integração pendente";el("connection").className="status"+(ok?" ok":"")}
