@@ -35,6 +35,8 @@ const messageTime=m=>{const v=m.sentAt||m.createdAt||m.timestamp||m.date;if(!v)r
 async function loadTeam(){try{const [a,b]=await Promise.all([fetch("/colaborador/api/atendimento/rodrinox/atribuicoes",{credentials:"same-origin"}),fetch("/colaborador/api/atendimento/rodrinox/equipe",{credentials:"same-origin"})]);if(a.ok){const d=await a.json();assignments=d.atribuicoes||[];currentUser=d.usuario;}if(b.ok)team=await b.json()}catch(e){console.warn("Equipe indisponível")}}
 async function saveAssignment(){if(!active||!team)return;const id=selected==="contatos"?active.id:active.contactId||active.contact?.id;if(!id)return;const user=document.getElementById("caAssignUser"),sector=document.getElementById("caAssignSector");const response=await fetch("/colaborador/api/atendimento/rodrinox/atribuicoes/"+encodeURIComponent(id),{method:"PUT",credentials:"same-origin",headers:{"Content-Type":"application/json","X-Portal":"1"},body:JSON.stringify({usuario_id:user.value?Number(user.value):null,setor_id:sector.value?Number(sector.value):null})});const data=await response.json();if(!response.ok){alert(data.erro||"Não foi possível atribuir");return}await loadTeam();openRecord(active.id)}
 let historyBusy=false;
+let sentPending=[];
+const msgKey=m=>String(m.id||"")||[messageText(m),m.createdAt||m.sentAt||""].join("|");
 async function openRecord(id,redraw=true){
   if(redraw){active=records.find(r=>String(r.id)===String(id));draw();}if(!active)return;
   if(historyBusy)return;historyBusy=true;
@@ -50,12 +52,16 @@ async function openRecord(id,redraw=true){
     const res=await fetch("/colaborador/api/atendimento/consultar/messages?contactId="+encodeURIComponent(contactId),{credentials:"same-origin",cache:"no-store"});
     const data=await res.json();if(!res.ok)throw Error(data.erro||"Consulta indisponível");
     const messages=rows(data).filter(isMessage).sort((a,b)=>new Date(a.sentAt||a.createdAt||a.timestamp||0)-new Date(b.sentAt||b.createdAt||b.timestamp||0)).slice(-100);
+    sentPending=sentPending.filter(p=>p.contactId!==String(contactId)||(!messages.some(m=>(p.id&&String(m.id)===p.id)||(messageText(m)===p.text&&Math.abs(new Date(m.createdAt||m.sentAt||0).getTime()-p.time)<120000))&&Date.now()-p.time<120000));
     target.innerHTML=messages.length?messages.map(m=>{
       const body=messageText(m),type=messageType(m),sender=m.user?.name||m.contact?.name||m.origin||"Mensagem";
       const content=body||("[Conteúdo "+(type||"multimídia")+" não disponível nesta integração]");
       const sent=m.origin==='user'||m.isFromMe===true||m.fromMe===true||m.direction==='outbound';
       return '<div class="ca-msg '+(sent?'ca-msg-out':'ca-msg-in')+'"><small>'+safe(sender)+' · '+safe(messageTime(m))+'</small><p>'+safe(content)+'</p></div>';
-    }).join(""):'Nenhuma mensagem de texto disponível para este contato. Registros internos e eventos de sistema foram ocultados.';
+    }).join(""):'Nenhuma mensagem disponível para este contato.';
+    const pending=sentPending.filter(p=>p.contactId===String(contactId));
+    if(pending.length)target.innerHTML+=pending.map(p=>'<div class="ca-msg ca-msg-out"><small>Enviada · aguardando atualização do histórico</small><p>'+safe(p.text)+'</p></div>').join('');
+    const scroll=target.closest('.ca-messages');if(scroll&&redraw)scroll.scrollTop=scroll.scrollHeight;
   }catch(e){target.textContent="Falha ao atualizar o histórico: "+e.message}
   finally{historyBusy=false}
 }
@@ -66,14 +72,16 @@ async function sendMessage(){
  const contactId=selected==="contatos"?active.id:active.contactId||active.contact?.id;
  const message=textarea.value.trim();
  if(!contactId||!message)return;
- if(!window.confirm("Enviar esta mensagem pelo WhatsApp para "+nameOf(active)+"?\n\n"+message))return;
+
  button.disabled=true;button.textContent="Enviando...";
  try{
   const response=await fetch("/colaborador/api/atendimento/enviar",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json","X-Portal":"1"},body:JSON.stringify({contactId,userId:digiUserId,text:message})});
   const result=await response.json();
   if(!response.ok||!result.enviado)throw Error((result.erro||"Envio não confirmado")+(result.codigo?" (HTTP "+result.codigo+")":""));
   textarea.value="";
+  sentPending.push({contactId:String(contactId),text:message,id:result.id?String(result.id):null,time:Date.now()});
   await openRecord(active.id,false);
+  const scroll=document.querySelector(".ca-messages");if(scroll)scroll.scrollTop=scroll.scrollHeight;
  }catch(err){alert(err.message+" Verifique a DigiSac antes de reenviar, para evitar duplicidade.")}
  finally{const b=document.getElementById("caSend");if(b){b.textContent="Enviar";b.disabled=false}}
 }
@@ -87,6 +95,7 @@ root.innerHTML='<div class="ca-head"><div><h3>Central de Atendimento</h3><div cl
 '<div class="ca-banner"><b>Homologação segura:</b> mensagens só são enviadas após confirmação manual e resposta da API. O WhatsApp e as filas atuais continuam funcionando na plataforma de origem.</div>'+
 '<section class="ca-panel"><h4>Preparação da integração</h4><div class="ca-steps"><span class="ca-step ready">✓ Interface Rodrinox</span><span class="ca-step">Conexão API</span><span class="ca-step">Filas e permissões</span><span class="ca-step">Envio de mensagens</span></div><p class="ca-meta" id="caDetails">Aguardando verificação do servidor.</p></section>';
 document.getElementById("caSend")?.addEventListener("click",sendMessage);
+document.getElementById("caComposeText")?.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();sendMessage()}});
 document.getElementById("caRefresh")?.addEventListener("click",async()=>{await loadTeam();await resolveDigiUser();await load()});
 root.querySelectorAll("[data-ca-tab]").forEach(b=>b.addEventListener("click",()=>{selected=b.dataset.caTab;if(selected==="meta")draw();else load()}));
 root.querySelectorAll("[data-ca-id]").forEach(b=>b.addEventListener("click",()=>openRecord(b.dataset.caId)));
