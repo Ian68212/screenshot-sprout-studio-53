@@ -1,7 +1,7 @@
 (()=>{"use strict";
 const css=`
-#rp-profile-trigger{display:inline-flex;align-items:center;gap:9px;border:0;background:transparent;color:inherit;font:inherit;cursor:pointer;padding:5px 8px;border-radius:12px}
-#rp-profile-trigger:hover{background:#ffffff18}
+.rp-profile-trigger{display:inline-flex;align-items:center;gap:9px;border:0;background:transparent;color:inherit;font:inherit;cursor:pointer;padding:5px 8px;border-radius:12px}
+.rp-profile-trigger:hover{background:#ffffff18}
 #rp-profile-avatar{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;overflow:hidden;flex:none;background:#eaf2f8;color:#173b58;border:2px solid #f18d37;font-weight:800}
 #rp-profile-avatar img{width:100%;height:100%;object-fit:cover}
 #rp-profile-caption{display:grid;text-align:left;gap:2px}
@@ -17,11 +17,11 @@ const css=`
 #rp-profile-dialog button{border:0;border-radius:9px;padding:10px 15px;font-weight:700;cursor:pointer;background:#173b58;color:#fff}
 #rp-profile-dialog button.secondary{background:#edf2f6;color:#29445b}
 #rp-profile-message{min-height:18px;color:#b42332;font-size:12px}
-@media(max-width:650px){#rp-profile-caption small{display:none}#rp-profile-avatar{width:34px;height:34px}#rp-profile-trigger{gap:5px;padding:3px}}
+@media(max-width:650px){#rp-profile-caption small{display:none}#rp-profile-avatar{width:34px;height:34px}.rp-profile-trigger{gap:5px;padding:3px}}
 `;
 const style=document.createElement("style");style.textContent=css;document.head.append(style);
 const nameNode=document.getElementById("user");if(!nameNode)return;
-const trigger=document.createElement("button");trigger.type="button";trigger.id="rp-profile-trigger";trigger.title="Ver e atualizar minha foto";
+const trigger=document.createElement("button");trigger.type="button";trigger.id="user";trigger.className="rp-profile-trigger";trigger.title="Ver e atualizar minha foto";
 const avatar=document.createElement("span");avatar.id="rp-profile-avatar";
 const caption=document.createElement("span");caption.id="rp-profile-caption";
 const name=document.createElement("strong");name.textContent=nameNode.textContent.trim()||"Colaborador";
