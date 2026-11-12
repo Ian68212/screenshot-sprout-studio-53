@@ -20,6 +20,7 @@ import { siteRouter } from "./site-cms.js";
 import { mediaRouter } from "./site-media.js";
 import { publicSiteRouter } from "./public-site.js";
 import menuPermissoesRouter from "./menu-permissoes.js";
+import emailCorporativoRouter from "./email-corporativo.js";
 
 const BASE = process.env.BASE_PATH || "/colaborador";
 const dir = path.dirname(fileURLToPath(import.meta.url));
@@ -322,6 +323,7 @@ r.get("/api/atendimento/diagnostico", exigir("painel"), wrap(async (req,res)=>{
 
 // Permissões de navegação: sessões reais e alterações exclusivas do administrador.
 r.use("/api/menu", menuPermissoesRouter);
+r.use("/api/email-corporativo", emailCorporativoRouter);
 r.use("/api/access-profiles", accessProfilesRouter);
 r.use("/api/tasks-official", tasksRouter);
 r.use("/api/atendimento/rodrinox", atendimentoRodrinoxRouter);
