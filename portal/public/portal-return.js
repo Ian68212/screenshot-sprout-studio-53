@@ -7,4 +7,7 @@ async function resolve(){
  }catch(e){console.warn("Não foi possível identificar o destino do portal",e)}
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",resolve,{once:true});else resolve();
+if(new URLSearchParams(location.search).get("abrir")==="atendimento"){
+ let tries=0;const go=()=>{const b=document.querySelector('nav [data-tab="atendimento"]');if(b){b.click();return;}if(++tries<20)setTimeout(go,300)};setTimeout(go,350);
+}
 })();
