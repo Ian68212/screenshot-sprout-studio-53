@@ -244,7 +244,12 @@ r.get("/api/atendimento/consultar/:recurso", exigir("painel"), wrap(async (req, 
     url = new URL(base + "/" + endpoint);
     if (url.protocol !== "https:" || url.hostname !== "rodrinoxpro.digisac.app" || !url.pathname.startsWith("/api/v1/")) throw Error("Destino inválido");
   } catch { return res.status(503).json({erro:"URL da API DigiSac inválida."}); }
-  url.searchParams.set("perPage", "20");
+  url.searchParams.set("perPage", req.params.recurso === "tickets" ? "100" : "40");
+  if (req.params.recurso === "tickets") {
+    // A listagem geral mistura chamados encerrados com conversas ativas.
+    // A API DigiSac documenta o filtro Sequelize por isOpen.
+    url.searchParams.set("query", JSON.stringify({where:{isOpen:true},perPage:100}));
+  }
   if (req.params.recurso === "messages") {
     const contactId = String(req.query.contactId || "");
     if (!/^[a-zA-Z0-9-]{1,80}$/.test(contactId)) return res.status(400).json({erro:"Selecione um contato válido."});
