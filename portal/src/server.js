@@ -150,7 +150,24 @@ r.use("/painel/homologacao", wrap(async (req, res, next) => {
 // Arquivos públicos do portal não dependem do MySQL nem de sessão.
 if (publicDir) {
   console.info("Portal: arquivos públicos servidos de", publicDir);
-  r.use(express.static(publicDir, { index: "index.html", fallthrough: true }));
+  r.use(express.static(publicDir, {
+    index: "index.html",
+    fallthrough: true,
+    // Páginas e recursos do portal precisam revalidar após cada publicação.
+    // Evita que o navegador/CDN misture HTML, CSS e JavaScript de versões diferentes.
+    setHeaders(res, filePath) {
+      const ext = path.extname(filePath).toLowerCase();
+      if (ext === ".html") {
+        res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+        res.setHeader("Pragma", "no-cache");
+        res.setHeader("Expires", "0");
+      } else if ([".js", ".css", ".json", ".webmanifest", ".svg"].includes(ext)) {
+        res.setHeader("Cache-Control", "no-cache, must-revalidate");
+        res.setHeader("Pragma", "no-cache");
+        res.setHeader("Expires", "0");
+      }
+    }
+  }));
 } else {
   r.get("/", (_req, res) => res.status(500).type("text/plain").send("Portal: arquivos da interface não encontrados no servidor."));
 }
