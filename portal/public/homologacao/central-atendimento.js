@@ -33,7 +33,7 @@ const isMessage=m=>{
 };
 const messageTime=m=>{const v=m.sentAt||m.createdAt||m.timestamp||m.date;if(!v)return "";const d=new Date(v);return Number.isNaN(d.getTime())?"":d.toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})};
 async function loadTeam(){try{const [a,b]=await Promise.all([fetch("/colaborador/api/atendimento/rodrinox/atribuicoes",{credentials:"same-origin"}),fetch("/colaborador/api/atendimento/rodrinox/equipe",{credentials:"same-origin"})]);if(a.ok){const d=await a.json();assignments=d.atribuicoes||[];currentUser=d.usuario;}if(b.ok)team=await b.json()}catch(e){console.warn("Equipe indisponível")}}
-async function saveAssignment(){if(!active||!team)return;const id=selected==="contatos"?active.id:active.contactId||active.contact?.id;if(!id)return;const user=document.getElementById("caAssignUser"),sector=document.getElementById("caAssignSector");const response=await fetch("/colaborador/api/atendimento/rodrinox/atribuicoes/"+encodeURIComponent(id),{method:"PUT",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({usuario_id:user.value?Number(user.value):null,setor_id:sector.value?Number(sector.value):null})});const data=await response.json();if(!response.ok){alert(data.erro||"Não foi possível atribuir");return}await loadTeam();openRecord(active.id)}
+async function saveAssignment(){if(!active||!team)return;const id=selected==="contatos"?active.id:active.contactId||active.contact?.id;if(!id)return;const user=document.getElementById("caAssignUser"),sector=document.getElementById("caAssignSector");const response=await fetch("/colaborador/api/atendimento/rodrinox/atribuicoes/"+encodeURIComponent(id),{method:"PUT",credentials:"same-origin",headers:{"Content-Type":"application/json","X-Portal":"1"},body:JSON.stringify({usuario_id:user.value?Number(user.value):null,setor_id:sector.value?Number(sector.value):null})});const data=await response.json();if(!response.ok){alert(data.erro||"Não foi possível atribuir");return}await loadTeam();openRecord(active.id)}
 async function openRecord(id){
   active=records.find(r=>String(r.id)===String(id));draw();if(!active)return;
   const contactId=selected==="contatos"?active.id:active.contactId||active.contact?.id;
@@ -65,7 +65,7 @@ async function sendMessage(){
  if(!window.confirm("Enviar esta mensagem pelo WhatsApp para "+nameOf(active)+"?\n\n"+message))return;
  button.disabled=true;button.textContent="Enviando...";
  try{
-  const response=await fetch("/colaborador/api/atendimento/enviar",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({contactId,userId:digiUserId,text:message})});
+  const response=await fetch("/colaborador/api/atendimento/enviar",{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json","X-Portal":"1"},body:JSON.stringify({contactId,userId:digiUserId,text:message})});
   const result=await response.json();
   if(!response.ok||!result.enviado)throw Error((result.erro||"Envio não confirmado")+(result.codigo?" (HTTP "+result.codigo+")":""));
   textarea.value="";
