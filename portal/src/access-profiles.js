@@ -4,7 +4,7 @@ import { exigir } from "./auth.js";
 
 export const accessProfilesRouter = Router();
 accessProfilesRouter.use(exigir("admin.usuarios"));
-export const TASK_ACTIONS = Object.freeze(["projects.view","projects.create","projects.edit","tasks.create","tasks.assign","tasks.due","tasks.priority","tasks.checklist","tasks.comment","tasks.recurrence","tasks.delete","tasks.history","tasks.status","tasks.all"]);
+export const TASK_ACTIONS = Object.freeze(["projects.view","projects.create","projects.edit","tasks.create","tasks.assign","tasks.due","tasks.priority","tasks.checklist","tasks.comment","tasks.recurrence","tasks.delete","tasks.history","tasks.status","tasks.all","tasks.attachments.upload","tasks.attachments.delete"]);
 let initialized;
 async function schema() {
   if (!initialized) initialized = (async () => {
