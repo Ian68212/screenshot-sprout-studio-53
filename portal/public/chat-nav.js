@@ -6,9 +6,9 @@
  style.textContent=`
  #rp-chat-fab{position:fixed;right:22px;bottom:22px;z-index:99990;display:flex;align-items:center;gap:9px;padding:13px 17px;background:#f18d37;color:#13283d;border:0;border-radius:28px;box-shadow:0 8px 28px #0006;font:700 14px system-ui,Arial;cursor:pointer}
  #rp-chat-fab .rp-chat-icon{font-size:21px}#rp-chat-fab .rp-chat-badge{display:none;min-width:21px;padding:3px 6px;border-radius:20px;background:#c82d32;color:#fff;font-size:12px}
- #rp-chat-fab.rp-has-unread{animation:rp-chat-pulse 1.7s ease-in-out infinite}
+ #rp-chat-fab.rp-has-unread{animation:rp-chat-pulse 1.15s ease-in-out infinite}
  #rp-chat-fab.rp-has-unread .rp-chat-badge{display:inline-block}
- @keyframes rp-chat-pulse{50%{box-shadow:0 0 0 8px #f18d3730,0 8px 28px #0006}}
+ @keyframes rp-chat-pulse{0%,100%{background:#f18d37;color:#13283d;box-shadow:0 8px 28px #0006;transform:scale(1)}50%{background:#fff0bd;color:#13283d;box-shadow:0 0 0 9px #f18d3740,0 8px 28px #0006;transform:scale(1.065)}}
  #rp-chat-toast{position:fixed;right:22px;bottom:89px;z-index:99991;background:#fff;color:#19344b;border-left:4px solid #f18d37;border-radius:12px;box-shadow:0 10px 35px #0006;padding:13px 16px;max-width:min(320px,calc(100vw - 28px));font:14px system-ui;cursor:pointer}
  #rp-chat-toast strong{display:block;margin-bottom:4px}
  @media(max-width:700px){#rp-chat-fab{right:14px;bottom:calc(14px + env(safe-area-inset-bottom));padding:12px 15px}#rp-chat-toast{right:14px;bottom:calc(80px + env(safe-area-inset-bottom))}}
