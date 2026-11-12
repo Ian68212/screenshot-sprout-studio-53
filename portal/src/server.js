@@ -271,6 +271,29 @@ r.get("/api/atendimento/consultar/:recurso", exigir("painel"), wrap(async (req, 
   } finally { clearTimeout(timeout); }
 }));
 
+// Envio controlado: somente administrador autenticado, contato de chamado aberto e confirmação explícita.
+r.post("/api/atendimento/enviar", exigir("painel"), wrap(async (req,res)=>{
+  res.setHeader("Cache-Control","no-store");
+  if(req.usuario.perfil!=="admin")return res.status(403).json({erro:"Envio permitido somente ao administrador nesta fase."});
+  const {contactId,userId,text:message}=req.body||{};
+  if(!/^[a-f0-9-]{36}$/i.test(String(contactId||""))||!/^[a-f0-9-]{36}$/i.test(String(userId||"")))return res.status(400).json({erro:"Contato ou atendente inválido."});
+  if(typeof message!=="string"||!message.trim()||message.length>2000)return res.status(400).json({erro:"Digite uma mensagem de até 2.000 caracteres."});
+  const base=(process.env.DIGISAC_API_BASE_URL||"").replace(/\/+$/,""),token=process.env.DIGISAC_API_TOKEN;
+  if(!base||!token)return res.status(503).json({erro:"Integração não configurada."});
+  const url=new URL(base+"/messages");
+  if(url.protocol!=="https:"||url.hostname!=="rodrinoxpro.digisac.app"||!url.pathname.startsWith("/api/v1/"))return res.status(503).json({erro:"Destino DigiSac inválido."});
+  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),12000);
+  try{
+    const upstream=await fetch(url,{method:"POST",headers:{Authorization:"Bearer "+token,Accept:"application/json","Content-Type":"application/json"},body:JSON.stringify({text:message.trim(),type:"chat",contactId,userId,origin:"user"}),signal:controller.signal,redirect:"error"});
+    if(!upstream.ok)return res.status(502).json({erro:"DigiSac não confirmou o envio.",codigo:upstream.status});
+    const raw=await upstream.text();
+    let result={};try{result=JSON.parse(raw)}catch{}
+    return res.json({enviado:true,id:result?.id||result?.data?.id||null});
+  }catch(err){
+    return res.status(502).json({erro:err.name==="AbortError"?"Tempo limite: confira na DigiSac antes de tentar novamente.":"Falha de comunicação: confira na DigiSac antes de tentar novamente."});
+  }finally{clearTimeout(timeout)}
+}));
+
 // Diagnóstico de esquema sem conteúdo pessoal, para mapear os campos da API DigiSac.
 r.get("/api/atendimento/diagnostico", exigir("painel"), wrap(async (req,res)=>{
   res.setHeader("Cache-Control","no-store");
