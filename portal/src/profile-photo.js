@@ -35,7 +35,7 @@ async function savePhoto(req,res,id){
   const filename=randomUUID()+"."+extensions.get(kind.mime);
   await mkdir(SITE_MEDIA_DIR,{recursive:true,mode:0o700});
   await writeFile(path.join(SITE_MEDIA_DIR,filename),req.file.buffer,{flag:"wx",mode:0o600});
-  const url="/colaborador/api/perfil/foto/"+id+"/arquivo";
+  const url="/colaborador/api/perfil/foto/"+id+"/arquivo/"+filename;
   try{
     await q("UPDATE usuarios SET foto_url=? WHERE id=?",[url,id]);
     await auditar(req.usuario.id,"perfil_foto_atualizada",String(id),req.ip);
@@ -55,7 +55,7 @@ profilePhotoRouter.put("/foto/:id",exigir("painel"),upload.single("foto"),async(
     await savePhoto(req,res,id);
   }catch(e){next(e);}
 });
-profilePhotoRouter.get("/foto/:id/arquivo",exigir("painel"),async(req,res,next)=>{
+profilePhotoRouter.get("/foto/:id/arquivo/:filename",exigir("painel"),async(req,res,next)=>{
   try{
     const id=validId(req.params.id);
     if(!id)return res.status(400).json({erro:"Identificador inválido."});
@@ -63,9 +63,11 @@ profilePhotoRouter.get("/foto/:id/arquivo",exigir("painel"),async(req,res,next)=
     await ensureProfilePhotoSchema();
     const [user]=await q("SELECT foto_url FROM usuarios WHERE id=?",[id]);
     if(!user?.foto_url)return res.status(404).end();
-    const match=String(user.foto_url).match(/\/([a-f0-9-]{36}\.(?:jpg|png|webp))$/i);
-    if(!match)return res.status(404).end();
-    const file=path.join(SITE_MEDIA_DIR,match[1]);
+    const filename=String(req.params.filename||"");
+    if(!/^[a-f0-9-]{36}\\.(?:jpg|png|webp)$/i.test(filename))return res.status(404).end();
+    const expected="/colaborador/api/perfil/foto/"+id+"/arquivo/"+filename;
+    if(user.foto_url!==expected)return res.status(404).end();
+    const file=path.join(SITE_MEDIA_DIR,filename);
     const buffer=await readFile(file);
     const ext=path.extname(file).toLowerCase();
     res.set("Content-Type",ext===".jpg"?"image/jpeg":ext===".png"?"image/png":"image/webp");
