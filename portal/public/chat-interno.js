@@ -48,7 +48,7 @@ function updatePeerPresence(){
 }
 async function heartbeat(){if(document.visibilityState!=="visible")return;try{await api("/presenca",{method:"POST",headers:{"X-Portal":"1"}})}catch(_){} }
 async function openChat(id){
- selected=id;lastSignature="";app.classList.add("chat-open");drawPeople();
+ selected=id;lastSignature="";app.classList.add("chat-open");drawPeople();updatePeerPresence();
  const p=people.find(x=>x.id===id);$("peer").textContent=p?.nome||"Colaborador";
  $("message").disabled=false;$("send").disabled=false;$("message").focus();
  await refreshMessages(true);
