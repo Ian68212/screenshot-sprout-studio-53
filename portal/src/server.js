@@ -151,7 +151,17 @@ r.use("/painel/homologacao", wrap(async (req, res, next) => {
 // Arquivos públicos do portal não dependem do MySQL nem de sessão.
 if (publicDir) {
   console.info("Portal: arquivos públicos servidos de", publicDir);
-  r.use(express.static(publicDir, { index: "index.html", fallthrough: true }));
+  r.use(express.static(publicDir, {
+  index: "index.html",
+  fallthrough: true,
+  setHeaders(res, filePath) {
+    if (/\.(?:html?|js|mjs|css)$/i.test(filePath)) {
+      res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0");
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
+    }
+  }
+}));
 } else {
   r.get("/", (_req, res) => res.status(500).type("text/plain").send("Portal: arquivos da interface não encontrados no servidor."));
 }
@@ -217,6 +227,104 @@ r.post("/api/logout", wrap(async (req, res) => {
 
 r.get("/api/eu", exigir("painel"), (req, res) => res.json(req.usuario));
 r.use("/api/chat-interno", chatInternoRouter);
+
+// Estado da integração de atendimento: nunca expõe token, URL interna ou credenciais.
+// Disponível somente a usuários autenticados do portal.
+r.get("/api/atendimento/status", exigir("painel"), (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  res.json({
+    configurada: Boolean(process.env.DIGISAC_API_TOKEN && process.env.DIGISAC_API_BASE_URL),
+    ativa: Boolean(process.env.DIGISAC_API_TOKEN && process.env.DIGISAC_API_BASE_URL),
+    modo: "api",
+    usuario: { id: req.usuario.id, perfil: req.usuario.perfil }
+  });
+});
+
+// Proxy de leitura DigiSac. Token fica exclusivamente no servidor.
+// Nesta fase, apenas admin pode consultar dados de clientes: usuários comuns não herdam
+// acesso irrestrito às filas pelo simples fato de possuir sessão do portal.
+const digiPaths = Object.freeze({contacts:"contacts",tickets:"tickets",messages:"messages",departments:"departments",users:"users",tags:"tags","ticket-topics":"ticket-topics"});
+
+async function chamarDigiSac(endpoint, method="GET", body) {
+ const base=(process.env.DIGISAC_API_BASE_URL||"").replace(/\/+$/,""),token=process.env.DIGISAC_API_TOKEN;
+ if(!base||!token)throw Object.assign(new Error("Integração DigiSac não configurada."),{status:503});
+ let url;try{url=new URL(base+endpoint);if(url.protocol!=="https:"||url.hostname!=="rodrinoxpro.digisac.app"||!url.pathname.startsWith("/api/v1/"))throw Error("Destino inválido")}catch{throw Object.assign(new Error("URL da API DigiSac inválida."),{status:503})}
+ const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),12000);
+ try{const options={method,headers:{Authorization:"Bearer "+token,Accept:"application/json"},signal:controller.signal,redirect:"error"};if(body!==undefined){options.headers["Content-Type"]="application/json";options.body=JSON.stringify(body)}const upstream=await fetch(url,options),raw=await upstream.text();let payload={};try{payload=raw?JSON.parse(raw):{}}catch{payload={mensagem:raw.slice(0,300)}}if(!upstream.ok)throw Object.assign(new Error(payload?.message||payload?.error||"DigiSac recusou a operação."),{status:upstream.status});return payload}catch(err){if(err.name==="AbortError")throw Object.assign(new Error("Tempo limite ao comunicar com a DigiSac."),{status:504});throw err}finally{clearTimeout(timeout)}
+}
+r.get("/api/atendimento/consultar/:recurso", exigir("painel"), wrap(async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  if (req.usuario.perfil !== "admin") return res.status(403).json({erro:"Acesso não autorizado para consultar a DigiSac."});
+  const endpoint = digiPaths[req.params.recurso];
+  if (!endpoint) return res.status(404).json({erro:"Consulta não disponível."});
+  const base = (process.env.DIGISAC_API_BASE_URL || "").replace(/\/+$/, "");
+  const token = process.env.DIGISAC_API_TOKEN;
+  if (!base || !token) return res.status(503).json({erro:"Credenciais DigiSac não configuradas."});
+  let url;
+  try {
+    url = new URL(base + "/" + endpoint);
+    if (url.protocol !== "https:" || url.hostname !== "rodrinoxpro.digisac.app" || !url.pathname.startsWith("/api/v1/")) throw Error("Destino inválido");
+  } catch { return res.status(503).json({erro:"URL da API DigiSac inválida."}); }
+  url.searchParams.set("perPage", req.params.recurso === "tickets" ? "100" : "100");
+  if (req.params.recurso === "tickets") {
+    // A listagem geral mistura chamados encerrados com conversas ativas.
+    // A API DigiSac documenta o filtro Sequelize por isOpen.
+    url.searchParams.set("query", JSON.stringify({where:{isOpen:true},perPage:100}));
+  }
+  if (req.params.recurso === "messages") {
+    const contactId = String(req.query.contactId || "");
+    if (!/^[a-zA-Z0-9-]{1,80}$/.test(contactId)) return res.status(400).json({erro:"Selecione um contato válido."});
+    url.searchParams.set("where[contactId]", contactId);
+    // A API DigiSac aceita consulta Sequelize: buscar as mensagens mais recentes,
+    // em vez de receber apenas a primeira página (mensagens antigas).
+    url.searchParams.set("query", JSON.stringify({where:{contactId},order:[["createdAt","DESC"]],perPage:100}));
+  }
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 9000);
+  try {
+    const upstream = await fetch(url, {headers:{Authorization:"Bearer " + token, Accept:"application/json"},signal:controller.signal,redirect:"error"});
+    if (!upstream.ok) return res.status(502).json({erro:"DigiSac recusou a consulta.",codigo:upstream.status});
+    const raw = await upstream.text();
+    if (raw.length > 500000) return res.status(502).json({erro:"Resposta da DigiSac excedeu o limite."});
+    let payload;
+    try { payload = JSON.parse(raw); } catch { return res.status(502).json({erro:"DigiSac retornou resposta inválida."}); }
+    res.json(payload);
+  } catch (err) {
+    console.warn("Consulta DigiSac falhou:", err.name === "AbortError" ? "timeout" : "erro de comunicação");
+    res.status(502).json({erro:"Não foi possível comunicar com a DigiSac."});
+  } finally { clearTimeout(timeout); }
+}));
+
+// Envio controlado: somente administrador autenticado, contato de chamado aberto e confirmação explícita.
+r.post("/api/atendimento/enviar", exigir("painel"), wrap(async (req,res)=>{
+  res.setHeader("Cache-Control","no-store");
+  if(req.usuario.perfil!=="admin")return res.status(403).json({erro:"Envio permitido somente ao administrador nesta fase."});
+  const {contactId,userId,text:message}=req.body||{};
+  if(!/^[a-f0-9-]{36}$/i.test(String(contactId||""))||!/^[a-f0-9-]{36}$/i.test(String(userId||"")))return res.status(400).json({erro:"Contato ou atendente inválido."});
+  if(typeof message!=="string"||!message.trim()||message.length>2000)return res.status(400).json({erro:"Digite uma mensagem de até 2.000 caracteres."});
+  const base=(process.env.DIGISAC_API_BASE_URL||"").replace(/\/+$/,""),token=process.env.DIGISAC_API_TOKEN;
+  if(!base||!token)return res.status(503).json({erro:"Integração não configurada."});
+  const url=new URL(base+"/messages");
+  if(url.protocol!=="https:"||url.hostname!=="rodrinoxpro.digisac.app"||!url.pathname.startsWith("/api/v1/"))return res.status(503).json({erro:"Destino DigiSac inválido."});
+  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),12000);
+  try{
+    const upstream=await fetch(url,{method:"POST",headers:{Authorization:"Bearer "+token,Accept:"application/json","Content-Type":"application/json"},body:JSON.stringify({text:message.trim(),type:"chat",contactId,userId,origin:"user"}),signal:controller.signal,redirect:"error"});
+    if(!upstream.ok)return res.status(502).json({erro:"DigiSac não confirmou o envio.",codigo:upstream.status});
+    const raw=await upstream.text();
+    let result={};try{result=JSON.parse(raw)}catch{}
+    return res.json({enviado:true,id:result?.id||result?.data?.id||null});
+  }catch(err){
+    return res.status(502).json({erro:err.name==="AbortError"?"Tempo limite: confira na DigiSac antes de tentar novamente.":"Falha de comunicação: confira na DigiSac antes de tentar novamente."});
+  }finally{clearTimeout(timeout)}
+}));
+
+
+r.get("/api/atendimento/contato/:id",exigir("painel"),wrap(async(req,res)=>{res.setHeader("Cache-Control","no-store");if(req.usuario.perfil!=="admin")return res.status(403).json({erro:"Acesso restrito ao administrador."});const id=String(req.params.id||"");if(!/^[a-f0-9-]{36}$/i.test(id))return res.status(400).json({erro:"Contato inválido."});try{res.json(await chamarDigiSac("/contacts/"+encodeURIComponent(id)+"?include[0]=tags"))}catch(e){res.status(e.status||502).json({erro:e.message||"Falha ao consultar contato."})}}));
+r.post("/api/atendimento/transferir",exigir("painel"),wrap(async(req,res)=>{res.setHeader("Cache-Control","no-store");if(req.usuario.perfil!=="admin")return res.status(403).json({erro:"Somente administradores podem transferir atendimentos."});const {contactId,departmentId,userId,byUserId,comments=""}=req.body||{};if(!/^[a-f0-9-]{36}$/i.test(String(contactId||""))||!/^[a-f0-9-]{36}$/i.test(String(departmentId||""))||!(userId==null||userId===""||/^[a-f0-9-]{36}$/i.test(String(userId)))||(byUserId&&!/^[a-f0-9-]{36}$/i.test(String(byUserId))))return res.status(400).json({erro:"Selecione um setor e um atendente válido."});if(typeof comments!=="string"||comments.length>500)return res.status(400).json({erro:"Comentário inválido."});try{const data=await chamarDigiSac("/contacts/"+encodeURIComponent(contactId)+"/ticket/transfer","POST",{departmentId,...(userId?{userId}:{}),comments:comments.trim(),...(byUserId?{byUserId}:{})});await auditar(req.usuario.id,"digisac_transferencia",JSON.stringify({contactId,departmentId,userId:userId||null}),req.ip);res.json({ok:true,data})}catch(e){res.status(e.status||502).json({erro:e.message||"Não foi possível transferir o atendimento."})}}));
+r.post("/api/atendimento/etiquetas",exigir("painel"),wrap(async(req,res)=>{res.setHeader("Cache-Control","no-store");if(req.usuario.perfil!=="admin")return res.status(403).json({erro:"Somente administradores podem alterar etiquetas."});const {contactId,tagIds,byUserId}=req.body||{};if(!/^[a-f0-9-]{36}$/i.test(String(contactId||""))||!Array.isArray(tagIds)||tagIds.length>50||!tagIds.every(x=>/^[a-f0-9-]{36}$/i.test(String(x)))||(byUserId&&!/^[a-f0-9-]{36}$/i.test(String(byUserId))))return res.status(400).json({erro:"Contato ou etiquetas inválidos."});try{const data=await chamarDigiSac("/contacts/"+encodeURIComponent(contactId),"PUT",{tagIds});await auditar(req.usuario.id,"digisac_etiquetas",JSON.stringify({contactId,tagIds}),req.ip);res.json({ok:true,data})}catch(e){res.status(e.status||502).json({erro:e.message||"Não foi possível atualizar as etiquetas."})}}));
+r.post("/api/atendimento/finalizar",exigir("painel"),wrap(async(req,res)=>{res.setHeader("Cache-Control","no-store");if(req.usuario.perfil!=="admin")return res.status(403).json({erro:"Somente administradores podem finalizar atendimentos."});const {contactId,ticketTopicIds=[],byUserId,comments=""}=req.body||{};if(!/^[a-f0-9-]{36}$/i.test(String(contactId||""))||!Array.isArray(ticketTopicIds)||ticketTopicIds.length>10||!ticketTopicIds.every(x=>/^[a-f0-9-]{36}$/i.test(String(x)))||(byUserId&&!/^[a-f0-9-]{36}$/i.test(String(byUserId))))return res.status(400).json({erro:"Contato ou assunto inválido."});if(typeof comments!=="string"||comments.length>500)return res.status(400).json({erro:"Comentário inválido."});try{const data=await chamarDigiSac("/contacts/"+encodeURIComponent(contactId)+"/ticket/close","POST",{ticketTopicIds,comments:comments.trim(),...(byUserId?{byUserId}:{})});await auditar(req.usuario.id,"digisac_atendimento_finalizado",JSON.stringify({contactId,ticketTopicIds}),req.ip);res.json({ok:true,data})}catch(e){res.status(e.status||502).json({erro:e.message||"Não foi possível finalizar o atendimento."})}}));
+
+
 
 // Estado da integração de atendimento: nunca expõe token, URL interna ou credenciais.
 // Disponível somente a usuários autenticados do portal.
