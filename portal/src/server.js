@@ -275,7 +275,7 @@ r.get("/api/atendimento/consultar/:recurso", exigir("painel"), wrap(async (req, 
 r.get("/api/atendimento/diagnostico", exigir("painel"), wrap(async (req,res)=>{
   res.setHeader("Cache-Control","no-store");
   if(req.usuario.perfil!=="admin")return res.status(403).json({erro:"Acesso restrito."});
-  const base=(process.env.DIGISAC_API_BASE_URL||"").replace(/\\/+$/,"");
+  const base=(process.env.DIGISAC_API_BASE_URL||"").replace(/\/+$/,"");
   const token=process.env.DIGISAC_API_TOKEN;
   if(!base||!token)return res.status(503).json({erro:"Integração não configurada."});
   const url=new URL(base+"/tickets");
