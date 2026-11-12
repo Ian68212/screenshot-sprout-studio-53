@@ -16,5 +16,5 @@ window.addEventListener("appinstalled", () => {
   if (installButton) installButton.style.display = "none";
 });
 if ("serviceWorker" in navigator && location.protocol === "https:") {
-  window.addEventListener("load", () => navigator.serviceWorker.register("/colaborador/sw.js", { scope: "/colaborador/" }).catch(() => {}));
+  window.addEventListener("load", async () => { try { const registration = await navigator.serviceWorker.register("/colaborador/sw.js", { scope: "/colaborador/", updateViaCache: "none" }); await registration.update(); } catch (error) { console.warn("Atualizacao do portal indisponivel:", error); } });
 }
