@@ -17,10 +17,19 @@ async function schema() {
       INDEX ix_destinatario (destinatario_id, remetente_id, id),
       INDEX ix_remetente (remetente_id, destinatario_id, id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+    await q(`CREATE TABLE IF NOT EXISTS chat_interno_presenca (
+      usuario_id BIGINT NOT NULL PRIMARY KEY,
+      ultimo_acesso TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX ix_ultimo_acesso (ultimo_acesso)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
   })().catch(e => { ready = null; throw e; });
   return ready;
 }
 const fail = (fn) => async (req,res,next) => { try { await schema(); await fn(req,res); } catch(e) { next(e); } };
+router.post("/presenca", fail(async (req,res) => {
+  await q("INSERT INTO chat_interno_presenca (usuario_id,ultimo_acesso) VALUES (?,NOW()) ON DUPLICATE KEY UPDATE ultimo_acesso=NOW()",[req.usuario.id]);
+  res.set("Cache-Control","no-store").json({ok:true});
+}));
 router.get("/pessoas", fail(async (req,res) => {
   const pessoas = await q("SELECT id,nome,setor_id FROM usuarios WHERE ativo=1 AND id<>? ORDER BY nome", [req.usuario.id]);
   res.set("Cache-Control","no-store").json({pessoas});
@@ -30,8 +39,11 @@ router.get("/conversas", fail(async (req,res) => {
   const conversas=await q(`SELECT u.id,u.nome,s.nome AS setor,
     (SELECT m.texto FROM chat_interno_mensagens m WHERE (m.remetente_id=? AND m.destinatario_id=u.id) OR (m.destinatario_id=? AND m.remetente_id=u.id) ORDER BY m.id DESC LIMIT 1) AS ultima,
     (SELECT m.criado_em FROM chat_interno_mensagens m WHERE (m.remetente_id=? AND m.destinatario_id=u.id) OR (m.destinatario_id=? AND m.remetente_id=u.id) ORDER BY m.id DESC LIMIT 1) AS ultima_em,
-    (SELECT COUNT(*) FROM chat_interno_mensagens m WHERE m.remetente_id=u.id AND m.destinatario_id=? AND m.lido_em IS NULL) AS nao_lidas
+    (SELECT COUNT(*) FROM chat_interno_mensagens m WHERE m.remetente_id=u.id AND m.destinatario_id=? AND m.lido_em IS NULL) AS nao_lidas,
+    CASE WHEN p.ultimo_acesso >= NOW() - INTERVAL 75 SECOND THEN 1 ELSE 0 END AS online,
+    p.ultimo_acesso AS ultimo_acesso
     FROM usuarios u LEFT JOIN setores s ON s.id=u.setor_id
+    LEFT JOIN chat_interno_presenca p ON p.usuario_id=u.id
     WHERE u.ativo=1 AND u.id<>? ORDER BY (ultima_em IS NULL),ultima_em DESC,u.nome`,
     [id,id,id,id,id,id]);
   res.set("Cache-Control","no-store").json({conversas});
