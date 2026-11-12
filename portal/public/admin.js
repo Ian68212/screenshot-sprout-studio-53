@@ -19,7 +19,7 @@ async function carregar() {
   document.querySelectorAll(".selCargo").forEach((s) => (s.innerHTML = opts(cargos, "Qualquer / nenhum")));
   lista.textContent = `Setores: ${setores.map((s) => s.nome).join(", ") || "—"} | Cargos: ${cargos.map((c) => c.nome).join(", ") || "—"}`;
   const us = await api("admin/usuarios");
-  tu.innerHTML = us.map((u) => `<tr><td>${esc(u.nome)}</td><td>${esc(u.email)}</td><td>${esc(u.perfil)}</td><td>${esc(u.setor || "—")}</td><td>${esc(u.cargo || "—")}</td>
+  tu.innerHTML = us.map((u) => `<tr><td>${u.foto_url ? `<img src="${esc(u.foto_url)}?v=${Date.now()}" alt="" style="width:38px;height:38px;object-fit:cover;border-radius:50%">` : `<span style="display:inline-grid;place-items:center;width:38px;height:38px;border-radius:50%;background:#eaf2f8;color:#173b58;font-weight:700">${esc((u.nome||"R").split(/\\s+/).slice(0,2).map(x=>x[0]||"").join("").toUpperCase())}</span>`}</td><td>${esc(u.nome)}</td><td>${esc(u.email)}</td><td>${esc(u.perfil)}</td><td>${esc(u.setor || "—")}</td><td>${esc(u.cargo || "—")}</td>
     <td>${u.ativo ? "Ativo" : "Inativo"}</td><td class="acoes-usuario">
       <button class="sec" data-acao="editar" data-id="${u.id}">Editar</button>
       <button class="sec" data-acao="status" data-id="${u.id}" data-ativo="${u.ativo ? 0 : 1}">${u.ativo ? "Desativar" : "Ativar"}</button>
@@ -143,6 +143,9 @@ const enviar = (f, url, erroEl, montar = form) => f.addEventListener("submit", a
           if (!u) throw new Error("Colaborador não encontrado.");
           editarForm.elements.id.value = u.id;
           editarForm.elements.nome.value = u.nome || "";
+          if(editarForm.elements.foto)editarForm.elements.foto.value="";
+          const fotoPreview=document.getElementById("previewFotoUsuario");
+          if(fotoPreview){fotoPreview.hidden=!u.foto_url;if(u.foto_url)fotoPreview.src=u.foto_url+"?v="+Date.now();}
           editarForm.elements.email.value = u.email || "";
           editarForm.elements.perfil.value = u.perfil || "colaborador";
           await loadCustomAccessProfiles();
@@ -168,6 +171,8 @@ const enviar = (f, url, erroEl, montar = form) => f.addEventListener("submit", a
     editarForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const dados = Object.fromEntries(new FormData(editarForm));
+      const foto = editarForm.elements.foto?.files?.[0] || null;
+      delete dados.foto;
       const id = dados.id;
       delete dados.id;
       const customProfileId=dados.access_profile_id;delete dados.access_profile_id;
