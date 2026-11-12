@@ -34,12 +34,14 @@ const isMessage=m=>{
 const messageTime=m=>{const v=m.sentAt||m.createdAt||m.timestamp||m.date;if(!v)return "";const d=new Date(v);return Number.isNaN(d.getTime())?"":d.toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})};
 async function loadTeam(){try{const [a,b]=await Promise.all([fetch("/colaborador/api/atendimento/rodrinox/atribuicoes",{credentials:"same-origin"}),fetch("/colaborador/api/atendimento/rodrinox/equipe",{credentials:"same-origin"})]);if(a.ok){const d=await a.json();assignments=d.atribuicoes||[];currentUser=d.usuario;}if(b.ok)team=await b.json()}catch(e){console.warn("Equipe indisponível")}}
 async function saveAssignment(){if(!active||!team)return;const id=selected==="contatos"?active.id:active.contactId||active.contact?.id;if(!id)return;const user=document.getElementById("caAssignUser"),sector=document.getElementById("caAssignSector");const response=await fetch("/colaborador/api/atendimento/rodrinox/atribuicoes/"+encodeURIComponent(id),{method:"PUT",credentials:"same-origin",headers:{"Content-Type":"application/json","X-Portal":"1"},body:JSON.stringify({usuario_id:user.value?Number(user.value):null,setor_id:sector.value?Number(sector.value):null})});const data=await response.json();if(!response.ok){alert(data.erro||"Não foi possível atribuir");return}await loadTeam();openRecord(active.id)}
-async function openRecord(id){
-  active=records.find(r=>String(r.id)===String(id));draw();if(!active)return;
+let historyBusy=false;
+async function openRecord(id,redraw=true){
+  if(redraw){active=records.find(r=>String(r.id)===String(id));draw();}if(!active)return;
+  if(historyBusy)return;historyBusy=true;
   const contactId=selected==="contatos"?active.id:active.contactId||active.contact?.id;
   const target=document.getElementById("caMessageBody");if(!target)return;
   if(!contactId){target.textContent="Este chamado não informa o contato associado.";return}
-  target.textContent="Carregando histórico...";
+  if(redraw)target.textContent="Carregando histórico...";
   const assignment=assignments.find(a=>String(a.contato_digisac)===String(contactId));
   const tools=document.getElementById("caAssignTools");
   if(tools&&team){tools.innerHTML='<label>Setor <select id="caAssignSector"><option value="">Sem setor</option>'+team.setores.map(x=>'<option value="'+safe(x.id)+'" '+(Number(assignment?.setor_id)===Number(x.id)?"selected":"")+'>'+safe(x.nome)+'</option>').join("")+'</select></label> <label>Responsável <select id="caAssignUser"><option value="">Não atribuído</option>'+team.usuarios.map(x=>'<option value="'+safe(x.id)+'" '+(Number(assignment?.usuario_id)===Number(x.id)?"selected":"")+'>'+safe(x.nome)+'</option>').join("")+'</select></label> <button type="button" id="caSaveAssign">Salvar atribuição</button>';document.getElementById("caSaveAssign").onclick=saveAssignment;
@@ -47,13 +49,15 @@ async function openRecord(id){
   try{
     const res=await fetch("/colaborador/api/atendimento/consultar/messages?contactId="+encodeURIComponent(contactId),{credentials:"same-origin",cache:"no-store"});
     const data=await res.json();if(!res.ok)throw Error(data.erro||"Consulta indisponível");
-    const messages=rows(data).filter(isMessage).slice(-40);
+    const messages=rows(data).filter(isMessage).sort((a,b)=>new Date(a.sentAt||a.createdAt||a.timestamp||0)-new Date(b.sentAt||b.createdAt||b.timestamp||0)).slice(-100);
     target.innerHTML=messages.length?messages.map(m=>{
       const body=messageText(m),type=messageType(m),sender=m.user?.name||m.contact?.name||m.origin||"Mensagem";
       const content=body||("[Conteúdo "+(type||"multimídia")+" não disponível nesta integração]");
-      return '<div class="ca-msg"><small>'+safe(sender)+' · '+safe(messageTime(m))+'</small><p>'+safe(content)+'</p></div>';
+      const sent=m.origin==='user'||m.isFromMe===true||m.fromMe===true||m.direction==='outbound';
+      return '<div class="ca-msg '+(sent?'ca-msg-out':'ca-msg-in')+'"><small>'+safe(sender)+' · '+safe(messageTime(m))+'</small><p>'+safe(content)+'</p></div>';
     }).join(""):'Nenhuma mensagem de texto disponível para este contato. Registros internos e eventos de sistema foram ocultados.';
-  }catch(e){target.textContent=e.message}
+  }catch(e){target.textContent="Falha ao atualizar o histórico: "+e.message}
+  finally{historyBusy=false}
 }
 
 async function sendMessage(){
@@ -69,8 +73,7 @@ async function sendMessage(){
   const result=await response.json();
   if(!response.ok||!result.enviado)throw Error((result.erro||"Envio não confirmado")+(result.codigo?" (HTTP "+result.codigo+")":""));
   textarea.value="";
-  await openRecord(active.id);
-  alert("Mensagem aceita pela DigiSac. Confira o recebimento no WhatsApp.");
+  await openRecord(active.id,false);
  }catch(err){alert(err.message+" Verifique a DigiSac antes de reenviar, para evitar duplicidade.")}
  finally{const b=document.getElementById("caSend");if(b){b.textContent="Enviar";b.disabled=false}}
 }
@@ -89,6 +92,6 @@ root.querySelectorAll("[data-ca-tab]").forEach(b=>b.addEventListener("click",()=
 root.querySelectorAll("[data-ca-id]").forEach(b=>b.addEventListener("click",()=>openRecord(b.dataset.caId)));
 if(status){document.getElementById("caConnection").textContent=status.configurada?"Conexão API · consulta de leitura disponível":"Integração não configurada";document.getElementById("caDetails").textContent=status.configurada?"Consulta de leitura habilitada para administrador. Envio de texto disponível para administrador com chamado aberto selecionado; transferência permanece bloqueada.":"Para conectar, configure as credenciais da API somente no servidor, sem colocá-las no navegador ou no repositório."}
 }
-setInterval(()=>{const root=document.getElementById("items");if(root?.querySelector(".ca-layout")&&!loading&&!active&&status?.configurada)loadTeam().then(load)},20000);
+setInterval(()=>{const root=document.getElementById("items");if(!root?.querySelector(".ca-layout")||!status?.configurada)return;if(active)openRecord(active.id,false);else if(!loading)loadTeam().then(load)},12000);
 window.renderCentralAtendimento=()=>{selected="fila";status=null;records=[];active=null;contactsById.clear();draw();fetch("/colaborador/api/atendimento/status",{credentials:"same-origin",cache:"no-store"}).then(async r=>{if(!r.ok)throw Error("Não foi possível verificar a integração");return r.json()}).then(s=>{status=s;Promise.all([loadTeam(),resolveDigiUser()]).then(load)}).catch(()=>{status={configurada:false};draw()})};
 })();
