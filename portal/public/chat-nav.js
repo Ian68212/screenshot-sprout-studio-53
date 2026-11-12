@@ -6,7 +6,14 @@
  style.textContent=`
  #rp-chat-fab{position:fixed;right:22px;bottom:22px;z-index:99990;display:flex;align-items:center;gap:9px;padding:13px 17px;background:#f18d37;color:#13283d;border:0;border-radius:28px;box-shadow:0 8px 28px #0006;font:700 14px system-ui,Arial;cursor:pointer}
  #rp-chat-fab .rp-chat-icon{font-size:21px}#rp-chat-fab .rp-chat-badge{display:none;min-width:21px;padding:3px 6px;border-radius:20px;background:#c82d32;color:#fff;font-size:12px}
- #rp-chat-fab.rp-has-unread{animation:rp-chat-pulse 1.15s ease-in-out infinite}
+ #rp-chat-fab.rp-has-unread{animation:rp-chat-alarm .58s steps(2,end) infinite;border:2px solid #ff2f36;box-shadow:0 0 0 5px #ff313a66,0 8px 28px #0008}
+ #rp-chat-fab.rp-has-unread:after{content:"";position:absolute;right:-3px;top:-5px;width:13px;height:13px;border-radius:50%;background:#ff252f;border:2px solid #fff;animation:rp-dot-blink .55s steps(2,end) infinite}
+ #menu button[data-tab=chat-interno].rp-chat-nav-alert:after{content:"";display:inline-block;width:10px;height:10px;margin-left:7px;border-radius:50%;background:#ff2934;box-shadow:0 0 0 3px #ff293455;animation:rp-dot-blink .55s steps(2,end) infinite;vertical-align:middle}
+ #menu button[data-tab=chat-interno].rp-chat-nav-alert{animation:rp-nav-flash .7s steps(2,end) infinite}
+ #rp-chat-fab.rp-has-unread .rp-chat-badge,.chat-nav-count:not([hidden]){background:#ff2934!important;color:#fff!important;animation:rp-dot-blink .55s steps(2,end) infinite}
+ @keyframes rp-chat-alarm{0%,100%{background:#f18d37;color:#13283d;transform:scale(1)}50%{background:#ff2633;color:#fff;transform:scale(1.09);box-shadow:0 0 0 12px #ff263355,0 8px 28px #0009}}
+ @keyframes rp-dot-blink{0%,100%{opacity:1}50%{opacity:.08}}
+ @keyframes rp-nav-flash{0%,100%{background:#2b4969}50%{background:#a3222a;color:#fff}}
  #rp-chat-fab.rp-has-unread .rp-chat-badge{display:inline-block}
  @keyframes rp-chat-pulse{0%,100%{background:#f18d37;color:#13283d;box-shadow:0 8px 28px #0006;transform:scale(1)}50%{background:#fff0bd;color:#13283d;box-shadow:0 0 0 9px #f18d3740,0 8px 28px #0006;transform:scale(1.065)}}
  #rp-chat-window{position:fixed;right:22px;bottom:82px;width:min(450px,calc(100vw - 28px));height:min(680px,calc(100dvh - 110px));z-index:99989;background:#09243c;border:1px solid #38607c;border-radius:16px;box-shadow:0 18px 65px #0009;overflow:hidden;display:flex;flex-direction:column}
@@ -65,7 +72,7 @@
    if(!r.ok)return;
    const data=await r.json(),n=Math.max(0,Number(data.total)||0);
    document.querySelectorAll(".chat-nav-count").forEach(b=>{b.hidden=!n;b.textContent=n>99?"99+":String(n);b.style.cssText="display:"+(n?"inline-block":"none")+";background:#f28c3d;color:#10243b;border-radius:20px;padding:2px 6px;margin-left:5px;font-size:11px;font-weight:700"});
-   fab.classList.toggle("rp-has-unread",n>0);fab.querySelector(".rp-chat-badge").textContent=n>99?"99+":String(n);
+   fab.classList.toggle("rp-has-unread",n>0);document.querySelectorAll("[data-tab=chat-interno]").forEach(b=>b.classList.toggle("rp-chat-nav-alert",n>0));fab.querySelector(".rp-chat-badge").textContent=n>99?"99+":String(n);
    fab.setAttribute("aria-label",n?"Chat interno: "+n+" mensagens não lidas":"Abrir Chat Interno Rodrinox");
    if(lastCount!==null&&n>lastCount){beep();toast(n);if(document.hidden&&"Notification" in window&&Notification.permission==="granted"){try{new Notification("Rodrinox Pro • Nova mensagem",{body:"Você recebeu uma mensagem no chat interno.",tag:"rp-chat-interno"});}catch{}}}
    lastCount=n;
