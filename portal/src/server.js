@@ -1,4 +1,5 @@
 import { tasksRouter } from "./tasks-official.js";
+import { taskAttachmentsRouter } from "./task-attachments.js";
 import chatInternoRouter from "./chat-interno.js";
 import { accessProfilesRouter } from "./access-profiles.js";
 import atendimentoRodrinoxRouter from "./atendimento-rodrinox.js";
@@ -351,6 +352,7 @@ r.use("/api/menu", menuPermissoesRouter);
 r.use("/api/email-corporativo", emailCorporativoRouter);
 r.use("/api/access-profiles", accessProfilesRouter);
 r.use("/api/tasks-official", tasksRouter);
+r.use("/api/task-attachments", taskAttachmentsRouter);
 r.use("/api/atendimento/rodrinox", atendimentoRodrinoxRouter);
 r.use("/api/whatsapp-meta", whatsappMetaRouter);
 
