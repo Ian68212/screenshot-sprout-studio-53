@@ -31,7 +31,7 @@
  const frame=document.createElement("iframe");frame.title="Conversas privadas Rodrinox";frame.loading="lazy";
  panel.append(bar,frame);document.body.append(panel);
  let frameLoaded=false;
- function openChat(){panel.hidden=false;fab.setAttribute("aria-expanded","true");document.getElementById("rp-chat-toast")?.remove();if(!frameLoaded){frame.src=URL;frameLoaded=true;}}
+ function openChat(){panel.hidden=false;fab.setAttribute("aria-expanded","true");if(!frameLoaded){frame.src=URL;frameLoaded=true;}}
  function closeChat(){panel.hidden=true;fab.setAttribute("aria-expanded","false");if(frameLoaded){frame.src="about:blank";frameLoaded=false;}check();}
  fab.setAttribute("aria-expanded","false");
  fab.addEventListener("click",()=>panel.hidden?openChat():closeChat());
@@ -67,7 +67,8 @@
    fab.classList.toggle("rp-has-unread",n>0);fab.querySelector(".rp-chat-badge").textContent=n>99?"99+":String(n);
    if(n===0)document.getElementById("rp-chat-toast")?.remove();
    fab.setAttribute("aria-label",n?"Chat interno: "+n+" mensagens não lidas":"Abrir Chat Interno Rodrinox");
-   if(lastCount!==null&&n>lastCount){beep();toast(n);if(document.hidden&&"Notification" in window&&Notification.permission==="granted"){try{new Notification("Rodrinox Pro • Nova mensagem",{body:"Você recebeu uma mensagem no chat interno.",tag:"rp-chat-interno"});}catch{}}}
+   if(n>0&&(lastCount===null||n>lastCount))toast(n);
+   if(lastCount!==null&&n>lastCount){beep();if(document.hidden&&"Notification" in window&&Notification.permission==="granted"){try{new Notification("Rodrinox Pro • Nova mensagem",{body:"Você recebeu uma mensagem no chat interno.",tag:"rp-chat-interno"});}catch{}}}
    lastCount=n;
   }catch{}finally{checking=false}
  }
