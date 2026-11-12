@@ -1,6 +1,6 @@
 "use strict";
 (function(){
- const URL="/colaborador/chat-interno.html";
+ const URL="/colaborador/chat-interno.html?janela=1";
  let lastCount=null, audio=null, unlocked=false, checking=false;
  const style=document.createElement("style");
  style.textContent=`
@@ -9,14 +9,35 @@
  #rp-chat-fab.rp-has-unread{animation:rp-chat-pulse 1.15s ease-in-out infinite}
  #rp-chat-fab.rp-has-unread .rp-chat-badge{display:inline-block}
  @keyframes rp-chat-pulse{0%,100%{background:#f18d37;color:#13283d;box-shadow:0 8px 28px #0006;transform:scale(1)}50%{background:#fff0bd;color:#13283d;box-shadow:0 0 0 9px #f18d3740,0 8px 28px #0006;transform:scale(1.065)}}
+ #rp-chat-window{position:fixed;right:22px;bottom:82px;width:min(450px,calc(100vw - 28px));height:min(680px,calc(100dvh - 110px));z-index:99989;background:#09243c;border:1px solid #38607c;border-radius:16px;box-shadow:0 18px 65px #0009;overflow:hidden;display:flex;flex-direction:column}
+ #rp-chat-window[hidden]{display:none}
+ #rp-chat-window-header{height:46px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 10px 0 16px;background:#10314c;color:#fff;font:700 14px system-ui,Arial;border-bottom:1px solid #33546e}
+ #rp-chat-window-header button{border:0;border-radius:8px;background:#234967;color:#fff;padding:6px 10px;cursor:pointer;font-size:16px}
+ #rp-chat-window iframe{width:100%;height:100%;border:0;flex:1;min-height:0;background:#09243c}
  #rp-chat-toast{position:fixed;right:22px;bottom:89px;z-index:99991;background:#fff;color:#19344b;border-left:4px solid #f18d37;border-radius:12px;box-shadow:0 10px 35px #0006;padding:13px 16px;max-width:min(320px,calc(100vw - 28px));font:14px system-ui;cursor:pointer}
  #rp-chat-toast strong{display:block;margin-bottom:4px}
- @media(max-width:700px){#rp-chat-fab{right:14px;bottom:calc(14px + env(safe-area-inset-bottom));padding:12px 15px}#rp-chat-toast{right:14px;bottom:calc(80px + env(safe-area-inset-bottom))}}
+ @media(max-width:700px){#rp-chat-window{right:8px;bottom:75px;width:calc(100vw - 16px);height:calc(100dvh - 91px);border-radius:12px}#rp-chat-fab{right:14px;bottom:calc(14px + env(safe-area-inset-bottom));padding:12px 15px}#rp-chat-toast{right:14px;bottom:calc(80px + env(safe-area-inset-bottom))}}
  @media(prefers-reduced-motion:reduce){#rp-chat-fab.rp-has-unread{animation:none}}
  `;
  document.head.append(style);
  const fab=document.createElement("button");fab.type="button";fab.id="rp-chat-fab";fab.setAttribute("aria-label","Abrir Chat Interno Rodrinox");fab.innerHTML='<span class="rp-chat-icon" aria-hidden="true">✉</span><span>Chat interno</span><span class="rp-chat-badge" aria-hidden="true"></span>';
- fab.addEventListener("click",()=>location.assign(URL));
+ const panel=document.createElement("section");panel.id="rp-chat-window";panel.hidden=true;panel.setAttribute("aria-label","Janela do Chat Interno Rodrinox");
+ const bar=document.createElement("div");bar.id="rp-chat-window-header";
+ const heading=document.createElement("strong");heading.textContent="Chat Interno • Rodrinox Pro";
+ const actions=document.createElement("div");
+ const minimize=document.createElement("button");minimize.type="button";minimize.title="Minimizar chat";minimize.setAttribute("aria-label","Minimizar chat");minimize.textContent="—";
+ const expand=document.createElement("button");expand.type="button";expand.title="Abrir em tela inteira";expand.setAttribute("aria-label","Abrir chat em tela inteira");expand.textContent="⤢";
+ actions.append(minimize,expand);bar.append(heading,actions);
+ const frame=document.createElement("iframe");frame.title="Conversas privadas Rodrinox";frame.loading="lazy";
+ panel.append(bar,frame);document.body.append(panel);
+ let frameLoaded=false;
+ function openChat(){panel.hidden=false;fab.setAttribute("aria-expanded","true");if(!frameLoaded){frame.src=URL;frameLoaded=true;}}
+ function closeChat(){panel.hidden=true;fab.setAttribute("aria-expanded","false");check();}
+ fab.setAttribute("aria-expanded","false");
+ fab.addEventListener("click",()=>panel.hidden?openChat():closeChat());
+ minimize.addEventListener("click",closeChat);
+ expand.addEventListener("click",()=>location.assign("/colaborador/chat-interno.html"));
+ window.addEventListener("message",e=>{if(e.origin===location.origin&&e.source===frame.contentWindow&&e.data?.type==="rodrinox-chat-minimize")closeChat()});
  document.body.append(fab);
  document.addEventListener("click",function(e){const b=e.target.closest('button[data-tab="chat-interno"]');if(!b)return;e.preventDefault();e.stopImmediatePropagation();location.assign(URL)},true);
  function unlock(){
@@ -34,7 +55,7 @@
   const t=document.createElement("div");t.id="rp-chat-toast";t.setAttribute("role","status");
   const h=document.createElement("strong");h.textContent="Nova mensagem no Chat Interno";
   const p=document.createElement("span");p.textContent=count===1?"Você tem 1 mensagem não lida.":"Você tem "+count+" mensagens não lidas.";
-  t.append(h,p);t.addEventListener("click",()=>location.assign(URL));document.body.append(t);
+  t.append(h,p);t.addEventListener("click",()=>openChat());document.body.append(t);
   setTimeout(()=>t.remove(),7500);
  }
  async function check(){
