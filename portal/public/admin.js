@@ -147,6 +147,7 @@ const enviar = (f, url, erroEl, montar = form) => f.addEventListener("submit", a
           editarForm.elements.perfil.value = u.perfil || "colaborador";
           await loadCustomAccessProfiles();
           editarForm.elements.access_profile_id.value=String(customAccessAssignments.find(a=>String(a.user_id)===String(u.id))?.profile_id||"");
+          editarForm.elements.access_profile_id.disabled=u.perfil==="admin";
           editarForm.elements.setor_id.value = u.setor_id || "";
           editarForm.elements.cargo_id.value = u.cargo_id || "";
           dialog.showModal();
@@ -176,7 +177,7 @@ const enviar = (f, url, erroEl, montar = form) => f.addEventListener("submit", a
       erro.textContent = "";
       try {
         await api(`admin/usuarios/${id}`, { method: "PATCH", body: dados });
-        await assignCustomAccessProfile(id,customProfileId);
+        if(dados.perfil!=="admin")await assignCustomAccessProfile(id,customProfileId);
         dialog.close();
         await carregar();
       } catch (err) { erro.textContent = err.message; }
