@@ -271,6 +271,27 @@ r.get("/api/atendimento/consultar/:recurso", exigir("painel"), wrap(async (req, 
   } finally { clearTimeout(timeout); }
 }));
 
+// Diagnóstico de esquema sem conteúdo pessoal, para mapear os campos da API DigiSac.
+r.get("/api/atendimento/diagnostico", exigir("painel"), wrap(async (req,res)=>{
+  res.setHeader("Cache-Control","no-store");
+  if(req.usuario.perfil!=="admin")return res.status(403).json({erro:"Acesso restrito."});
+  const base=(process.env.DIGISAC_API_BASE_URL||"").replace(/\\/+$/,"");
+  const token=process.env.DIGISAC_API_TOKEN;
+  if(!base||!token)return res.status(503).json({erro:"Integração não configurada."});
+  const url=new URL(base+"/tickets");
+  if(url.protocol!=="https:"||url.hostname!=="rodrinoxpro.digisac.app"||!url.pathname.startsWith("/api/v1/"))return res.status(503).json({erro:"Destino inválido."});
+  url.searchParams.set("perPage","2");
+  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),9000);
+  try{
+    const upstream=await fetch(url,{headers:{Authorization:"Bearer "+token,Accept:"application/json"},signal:controller.signal,redirect:"error"});
+    if(!upstream.ok)return res.status(502).json({erro:"Falha na consulta.",codigo:upstream.status});
+    const payload=await upstream.json();
+    const list=Array.isArray(payload)?payload:Array.isArray(payload?.data)?payload.data:Array.isArray(payload?.rows)?payload.rows:Array.isArray(payload?.items)?payload.items:[];
+    const structure=o=>o&&typeof o==="object"&&!Array.isArray(o)?Object.fromEntries(Object.entries(o).map(([k,v])=>[k,v===null?"null":Array.isArray(v)?"array":typeof v==="object"?Object.keys(v):typeof v])):{};
+    res.json({camposResposta:structure(payload),quantidadeAmostra:list.length,camposChamado:list.slice(0,2).map(structure)});
+  }catch(e){res.status(502).json({erro:"Diagnóstico indisponível."})}finally{clearTimeout(timeout)}
+}));
+
 // Permissões de navegação: sessões reais e alterações exclusivas do administrador.
 r.use("/api/menu", menuPermissoesRouter);
 r.use("/api/access-profiles", accessProfilesRouter);
