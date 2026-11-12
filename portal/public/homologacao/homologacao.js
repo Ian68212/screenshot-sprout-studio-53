@@ -138,7 +138,7 @@ function renderTarefas(){
  '<p class="tasks-note">'+(rtSharedReady?'Quadro compartilhado no servidor. As tarefas pessoais são filtradas pelo usuário autenticado.':'Sincronização indisponível: '+esc(rtSyncError||'aguardando resposta')+'. Não faça alterações até restabelecer a conexão.')+'</p></section>';
 }
 document.addEventListener("change",async e=>{
- if(e.target.classList.contains("rt-upload")){const id=Number(e.target.dataset.id);if(!rtState.tasks.some(t=>t.id===id))return;for(const file of Array.from(e.target.files||[])){if(file.size>1024*1024){alert(file.name+": máximo de 1 MB nesta demonstração.");continue;}if(!/\\.(pdf|png|jpe?g|webp|txt|csv|docx?|xlsx?)$/i.test(file.name)){alert("Formato não permitido: "+file.name);continue;}const data=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(new Error("Falha na leitura"));reader.readAsDataURL(file);});const entry={name:file.name,size:file.size,data};(rtAttachments[id]??=[]).push(entry);}try{rtSaveAttachments();}catch{}rtDraw();}
+ if(e.target.classList.contains("rt-upload")){if(!rtCan("tasks.attachments.upload")){alert("Seu perfil não permite anexar documentos.");e.target.value="";return;}const id=Number(e.target.dataset.id);if(!rtState.tasks.some(t=>t.id===id))return;for(const file of Array.from(e.target.files||[])){if(file.size>1024*1024){alert(file.name+": máximo de 1 MB nesta demonstração.");continue;}if(!/\\.(pdf|png|jpe?g|webp|txt|csv|docx?|xlsx?)$/i.test(file.name)){alert("Formato não permitido: "+file.name);continue;}const data=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(new Error("Falha na leitura"));reader.readAsDataURL(file);});const entry={name:file.name,size:file.size,data};(rtAttachments[id]??=[]).push(entry);}try{rtSaveAttachments();}catch{}rtDraw();}
 
  if(e.target.id==="rt-search"){rtSearch=e.target.value;rtDraw();}
  if(e.target.id==="rt-priority"){rtPriority=e.target.value;rtDraw();}
@@ -152,7 +152,7 @@ document.addEventListener("click",e=>{
  const b=e.target.closest("button");if(!b)return;
  if(b.id==="rt-mode-mine"||b.id==="rt-mode-all"){rtBoardMode=b.id==="rt-mode-mine"?"mine":"all";rtProject=0;rtProjectStatusFilter="todos";rtDraw();return;}
   if(b.classList.contains("rt-download")){const a=rtAttachments[Number(b.dataset.id)]?.[Number(b.dataset.index)];if(a){const link=document.createElement("a");link.href=a.data;link.download=a.name;document.body.appendChild(link);link.click();link.remove();}return;}
- if(b.classList.contains("rt-remove-file")){const list=rtAttachments[Number(b.dataset.id)];if(list){list.splice(Number(b.dataset.index),1);rtSaveAttachments();rtDraw();}return;}
+ if(b.classList.contains("rt-remove-file")){if(!rtCan("tasks.attachments.delete")){alert("Seu perfil não permite excluir documentos anexados.");return;}const list=rtAttachments[Number(b.dataset.id)];if(list){list.splice(Number(b.dataset.index),1);rtSaveAttachments();rtDraw();}return;}
  if(b.classList.contains("rt-history-btn")){const id=Number(b.dataset.id);rtHistoryOpen=rtHistoryOpen===id?null:id;rtDraw();return;}
  if(b.classList.contains("rt-handoff")){rtOpenPicker(Number(b.dataset.id),"handoff");return;}
  if(b.classList.contains("rt-person-cancel")){rtPicker=null;rtDraw();return;}
