@@ -4,6 +4,14 @@ import { exigir } from "./auth.js";
 
 // Fase 1: catálogo e concessões. Nenhuma credencial IMAP/SMTP é armazenada.
 const router=Router();
+// Exige origem legítima para mutações autenticadas por cookie.
+router.use((req,res,next)=>{
+ if(!["POST","PUT","PATCH","DELETE"].includes(req.method))return next();
+ const origin=req.get("Origin");
+ const expected=`${req.protocol}://${req.get("host")}`;
+ if(!origin||origin!==expected)return res.status(403).json({erro:"Origem da requisição não autorizada."});
+ next();
+});
 const emailRx=/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i;
 let init;
 async function schema(){
