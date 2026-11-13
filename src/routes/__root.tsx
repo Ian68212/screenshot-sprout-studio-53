@@ -13,7 +13,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Header } from "@/components/site/Header";
-import { Footer, WhatsAppFab } from "@/components/site/Footer";
+import { Footer, WhatsAppFab, InstagramFab } from "@/components/site/Footer";
 
 function NotFoundComponent() {
   return (
@@ -127,6 +127,7 @@ function RootComponent() {
         <Outlet />
       </main>
       <Footer />
+      <InstagramFab />
       <WhatsAppFab />
     </QueryClientProvider>
   );
