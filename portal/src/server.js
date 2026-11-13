@@ -329,6 +329,42 @@ r.post("/api/atendimento/enviar", exigir("painel"), wrap(async (req,res)=>{
   }finally{clearTimeout(timeout)}
 }));
 
+// Envio experimental de mídia: faz upload na DigiSac e só envia mensagem após receber um ID válido.
+// Não reenvia automaticamente em caso de timeout, para evitar duplicação.
+const digiMediaUpload=multer({storage:multer.memoryStorage(),limits:{fileSize:15*1024*1024,files:1}});
+r.post("/api/atendimento/enviar-anexo",exigir("painel"),(req,res,next)=>digiMediaUpload.single("arquivo")(req,res,err=>err?res.status(400).json({erro:err.code==="LIMIT_FILE_SIZE"?"Arquivo acima de 15 MB.":"Falha ao receber arquivo."}):next()),wrap(async(req,res)=>{
+ res.setHeader("Cache-Control","no-store");
+ if(req.usuario.perfil!=="admin")return res.status(403).json({erro:"Acesso não autorizado."});
+ const {contactId,userId,text:caption=""}=req.body||{};
+ if(!/^[a-f0-9-]{36}$/i.test(String(contactId||""))||!/^[a-f0-9-]{36}$/i.test(String(userId||"")))return res.status(400).json({erro:"Contato ou atendente inválido."});
+ if(!req.file)return res.status(400).json({erro:"Selecione um arquivo."});
+ const ext=path.extname(req.file.originalname).toLowerCase();
+ const mimeMap={".jpg":"image/jpeg",".jpeg":"image/jpeg",".png":"image/png",".webp":"image/webp",".gif":"image/gif",".pdf":"application/pdf",".doc":"application/msword",".docx":"application/vnd.openxmlformats-officedocument.wordprocessingml.document",".xls":"application/vnd.ms-excel",".xlsx":"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",".txt":"text/plain",".csv":"text/csv"};
+ if(!mimeMap[ext])return res.status(400).json({erro:"Formato não permitido."});
+ if(typeof caption!=="string"||caption.length>2000)return res.status(400).json({erro:"Legenda inválida."});
+ const base=(process.env.DIGISAC_API_BASE_URL||"").replace(/\\/+$/,""),token=process.env.DIGISAC_API_TOKEN;
+ if(!base||!token)return res.status(503).json({erro:"Integração DigiSac não configurada."});
+ const uploadUrl=new URL(base+"/files"),messageUrl=new URL(base+"/messages");
+ if([uploadUrl,messageUrl].some(u=>u.protocol!=="https:"||u.hostname!=="rodrinoxpro.digisac.app"||!u.pathname.startsWith("/api/v1/")))return res.status(503).json({erro:"Destino DigiSac inválido."});
+ const form=new FormData();
+ form.append("file",new Blob([req.file.buffer],{type:mimeMap[ext]}),path.basename(req.file.originalname).slice(0,120));
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
+ try{
+  const uploaded=await fetch(uploadUrl,{method:"POST",headers:{Authorization:"Bearer "+token,Accept:"application/json"},body:form,signal:controller.signal,redirect:"error"});
+  if(!uploaded.ok)return res.status(502).json({erro:"A DigiSac recusou o upload. Nenhuma mensagem foi enviada.",etapa:"upload",codigo:uploaded.status});
+  const uploadData=await uploaded.json().catch(()=>({}));
+  const fileId=uploadData?.id||uploadData?.data?.id||uploadData?.file?.id;
+  if(!/^[a-z0-9-]{8,100}$/i.test(String(fileId||"")))return res.status(502).json({erro:"Upload sem identificador de arquivo reconhecido. Nenhuma mensagem foi enviada.",etapa:"upload"});
+  const payload={contactId,userId,origin:"user",type:"chat",fileId};
+  if(caption.trim())payload.text=caption.trim();
+  const sent=await fetch(messageUrl,{method:"POST",headers:{Authorization:"Bearer "+token,Accept:"application/json","Content-Type":"application/json"},body:JSON.stringify(payload),signal:controller.signal,redirect:"error"});
+  if(!sent.ok)return res.status(502).json({erro:"Arquivo carregado, mas a DigiSac não confirmou a mensagem.",etapa:"mensagem",codigo:sent.status});
+  const result=await sent.json().catch(()=>({}));
+  return res.json({enviado:true,id:result?.id||result?.data?.id||null});
+ }catch(err){return res.status(502).json({erro:err.name==="AbortError"?"Tempo limite; confira a DigiSac antes de repetir.":"Falha na comunicação com a DigiSac; confira antes de repetir."});}
+ finally{clearTimeout(timer)}
+}));
+
 // Diagnóstico de esquema sem conteúdo pessoal, para mapear os campos da API DigiSac.
 r.get("/api/atendimento/diagnostico", exigir("painel"), wrap(async (req,res)=>{
   res.setHeader("Cache-Control","no-store");
