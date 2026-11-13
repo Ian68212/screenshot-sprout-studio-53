@@ -17,7 +17,7 @@ const SMTP_PORT=Number(process.env.EMAIL_SMTP_PORT||465);
 const timeout=Number(process.env.EMAIL_AUTH_TIMEOUT_MS||15000);
 let schemaReady;
 const notificationCache=new Map();
-function key(){const raw=process.env.EMAIL_CREDENTIALS_KEY||"";const b=Buffer.from(raw,"base64");if(b.length!==32)throw new Error("EMAIL_CREDENTIALS_KEY ausente ou inválida");return b}
+function key(){const raw=(process.env.EMAIL_CREDENTIALS_KEY||"").trim();let b;if(/^[0-9a-fA-F]{64}$/.test(raw)){b=Buffer.from(raw,"hex")}else if(/^[A-Za-z0-9+/]{43}=$/.test(raw)){b=Buffer.from(raw,"base64")}else if(/^[A-Za-z0-9_-]{43}$/.test(raw)){b=Buffer.from(raw,"base64url")}else{throw new Error("EMAIL_CREDENTIALS_KEY ausente ou inválida: use 32 bytes em Base64 ou 64 caracteres hexadecimais")}if(b.length!==32)throw new Error("EMAIL_CREDENTIALS_KEY inválida: chave deve ter 32 bytes");return b}
 function encrypt(value){const iv=crypto.randomBytes(12),c=crypto.createCipheriv("aes-256-gcm",key(),iv);const data=Buffer.concat([c.update(value,"utf8"),c.final()]);return {data:data.toString("base64"),iv:iv.toString("base64"),tag:c.getAuthTag().toString("base64")}}
 function decrypt(row){const d=crypto.createDecipheriv("aes-256-gcm",key(),Buffer.from(row.cred_iv,"base64"));d.setAuthTag(Buffer.from(row.cred_tag,"base64"));return Buffer.concat([d.update(Buffer.from(row.cred_enc,"base64")),d.final()]).toString("utf8")}
 async function schema(){if(!schemaReady)schemaReady=(async()=>{
