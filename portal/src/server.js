@@ -1,6 +1,7 @@
 import { tasksRouter } from "./tasks-official.js";
 import { taskAttachmentsRouter } from "./task-attachments.js";
 import { googleDriveRouter } from "./google-drive-oauth.js";
+import { uploadDriveFile, readDriveFile } from "./drive-storage.js";
 import chatInternoRouter from "./chat-interno.js";
 import { accessProfilesRouter } from "./access-profiles.js";
 import atendimentoRodrinoxRouter from "./atendimento-rodrinox.js";
@@ -78,10 +79,7 @@ const publicDir = localizarPastaPublica();
 const uploadDir = path.join(dir, "..", "private", "curriculos");
 fs.mkdirSync(uploadDir, { recursive: true });
 const upload = multer({
-  storage: multer.diskStorage({
-    destination: (_req, _file, cb) => cb(null, uploadDir),
-    filename: (_req, file, cb) => cb(null, `${crypto.randomUUID()}${path.extname(file.originalname).toLowerCase()}`),
-  }),
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024, files: 1 },
   fileFilter: (_req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
@@ -395,7 +393,7 @@ const limiteCandidaturas = rateLimit({ windowMs: 60 * 60 * 1000, limit: 10, stan
 r.post("/api/candidaturas", limiteCandidaturas, upload.single("curriculo"), wrap(async (req, res) => {
   const { nome, email, telefone, area, cargo_pretendido } = req.body || {};
   if (!nome?.trim() || !email?.trim() || !telefone?.trim() || !area?.trim() || !req.file || req.body?.consent !== "on") {
-    if (req.file) fs.unlink(req.file.path, () => {});
+    
     return res.status(400).json({ erro: "Preencha os campos obrigatórios, anexe seu currículo e confirme o consentimento." });
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))
@@ -403,13 +401,15 @@ r.post("/api/candidaturas", limiteCandidaturas, upload.single("curriculo"), wrap
   const ext = path.extname(req.file.originalname).toLowerCase();
   const allowedMime = ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/octet-stream"];
   if (![".pdf", ".doc", ".docx"].includes(ext) || !allowedMime.includes(req.file.mimetype)) {
-    fs.unlink(req.file.path, () => {});
     return res.status(400).json({ erro: "Formato de currículo não permitido." });
   }
-  await q(
-    "INSERT INTO candidaturas (nome,email,telefone,area,cargo_pretendido,arquivo_nome,arquivo_path,consent_at) VALUES (?,?,?,?,?,?,?,NOW())",
-    [nome.trim().slice(0,150), email.trim().toLowerCase().slice(0,180), telefone.trim().slice(0,30), area.trim().slice(0,100), String(cargo_pretendido || "").trim().slice(0,120) || null, path.basename(req.file.originalname).slice(0,255), req.file.path],
-  );
+  const driveId = await uploadDriveFile({category:"Curriculos",name:req.file.originalname,mime:req.file.mimetype,buffer:req.file.buffer});
+  try{
+    await q(
+      "INSERT INTO candidaturas (nome,email,telefone,area,cargo_pretendido,arquivo_nome,arquivo_path,consent_at) VALUES (?,?,?,?,?,?,?,NOW())",
+      [nome.trim().slice(0,150), email.trim().toLowerCase().slice(0,180), telefone.trim().slice(0,30), area.trim().slice(0,100), String(cargo_pretendido || "").trim().slice(0,120) || null, path.basename(req.file.originalname).slice(0,255), "gdrive:"+driveId],
+    );
+  }catch(e){console.error("[candidaturas] Arquivo salvo no Drive, mas registro falhou",driveId);throw e;}
   res.status(201).json({ ok: true });
 }));
 
@@ -428,8 +428,17 @@ r.patch("/api/admin/candidaturas/:id", exigir("admin.usuarios"), wrap(async (req
 
 r.get("/api/admin/candidaturas/:id/curriculo", exigir("admin.usuarios"), wrap(async (req, res) => {
   const [item] = await q("SELECT arquivo_nome,arquivo_path FROM candidaturas WHERE id=?", [Number(req.params.id)]);
-  if (!item || !fs.existsSync(item.arquivo_path)) return res.status(404).json({ erro: "Currículo não encontrado." });
-  res.download(item.arquivo_path, item.arquivo_nome);
+  if(!item)return res.status(404).json({erro:"Currículo não encontrado."});
+  if(String(item.arquivo_path||"").startsWith("gdrive:")){
+    const buffer=await readDriveFile(item.arquivo_path.slice(7));
+    res.set("Cache-Control","private, no-store");
+    res.set("Content-Type","application/octet-stream");
+    res.set("X-Content-Type-Options","nosniff");
+    res.set("Content-Disposition","attachment; filename*=UTF-8''"+encodeURIComponent(item.arquivo_nome));
+    return res.send(buffer);
+  }
+  if(!fs.existsSync(item.arquivo_path))return res.status(404).json({erro:"Currículo não encontrado."});
+  res.download(item.arquivo_path,item.arquivo_nome);
 }));
 
 // ---------- Administração ----------
