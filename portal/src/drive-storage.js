@@ -52,3 +52,34 @@ export async function deleteDriveFile(id){
  if(!/^[A-Za-z0-9_-]{10,}$/.test(String(id)))throw Error("Identificador de arquivo inválido");
  await google(api+"/"+encodeURIComponent(id),{method:"DELETE"});
 }
+
+/** Inicia upload retomável no Google. A URL de sessão permanece apenas no servidor. */
+export async function startResumableDriveUpload({category,name,mime,size}){
+ const root=await folder(rootName),parent=await folder(category,root);
+ const response=await google("https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&fields=id,name,size",{
+  method:"POST",
+  headers:{"Content-Type":"application/json; charset=UTF-8","X-Upload-Content-Type":mime||"application/octet-stream","X-Upload-Content-Length":String(size)},
+  body:JSON.stringify({name:String(name||"arquivo").slice(0,200),parents:[parent],description:"Arquivo privado do portal Rodrinox Pro"})
+ });
+ const location=response.headers.get("location");
+ if(!location||!location.startsWith("https://www.googleapis.com/"))throw Error("Google Drive não retornou sessão de upload válida");
+ return location;
+}
+/** Encaminha apenas um bloco; HTTP 308 indica que o Google espera mais dados. */
+export async function appendResumableDriveChunk(sessionUrl,buffer,start,total,mime){
+ if(!sessionUrl.startsWith("https://www.googleapis.com/"))throw Error("Sessão de upload inválida");
+ const token=await driveAccessToken();
+ const response=await fetch(sessionUrl,{method:"PUT",headers:{
+  Authorization:"Bearer "+token,"Content-Type":mime||"application/octet-stream",
+  "Content-Length":String(buffer.length),
+  "Content-Range":"bytes "+start+"-"+(start+buffer.length-1)+"/"+total
+ },body:buffer,redirect:"error"});
+ if(response.status===308){
+  const range=response.headers.get("range");
+  return {complete:false,nextOffset:range?Number(range.split("-").at(-1))+1:0};
+ }
+ if(!response.ok)throw Error("Google Drive recusou bloco: HTTP "+response.status+" "+(await response.text()).slice(0,250));
+ const data=await response.json();
+ if(!data.id)throw Error("Google Drive não retornou identificador do arquivo");
+ return {complete:true,id:data.id,nextOffset:total};
+}
