@@ -1,5 +1,6 @@
 (()=>{"use strict";
 if(window.__rpPortalReturnReady)return;window.__rpPortalReturnReady=true;
+const profile=document.createElement("script");profile.src="/colaborador/profile-photo.js?v=global-20261113";profile.defer=true;document.head.append(profile);
 async function resolve(){
  try{const r=await fetch("/colaborador/api/eu",{credentials:"same-origin",cache:"no-store"});if(!r.ok)return;const u=await r.json();const target=u.perfil==="admin"?"/colaborador/painel/oficial/":"/colaborador/oficial/";
  document.querySelectorAll('a[href="/colaborador/oficial/"],a[href="/colaborador/painel.html"],a[href="/colaborador/painel.html#"],a[href="painel.html"],a[href="./painel.html"],a[href="/colaborador/oficial"]').forEach(a=>{const t=(a.textContent||"").toLowerCase();if(/portal|voltar|início/.test(t))a.href=target;});
