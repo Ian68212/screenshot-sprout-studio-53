@@ -9,3 +9,7 @@
 .attachment-link{display:block;color:#fff;font-weight:700;text-decoration:underline;text-underline-offset:3px;overflow-wrap:anywhere}
 .attachment-link:focus-visible{outline:2px solid #fff;outline-offset:3px}
 .attachment-size{display:block;font-size:11px;color:#d0e4f2;margin-top:5px}
+
+/* Arrastar e soltar documentos */
+.conversation{position:relative}
+.conversation.drag-over::after{content:"Solte o documento aqui para enviar";position:absolute;inset:12px;z-index:20;display:grid;place-items:center;text-align:center;padding:24px;border:2px dashed #ff9946;border-radius:16px;background:rgba(8,32,53,.94);color:#fff;font-size:17px;font-weight:700;pointer-events:none}
