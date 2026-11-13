@@ -217,7 +217,9 @@ r.post("/api/login", limiteLogin, wrap(async (req, res) => {
   if (s?.indisponivel) return res.status(503).json({ erro: "Não foi possível validar seu e-mail na Hostinger agora. Tente novamente em alguns minutos." });
   if (!s) return res.status(401).json({ erro: "E-mail ou senha incorretos" });
   res.cookie(COOKIE, s.token, {
-    httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "strict", path: BASE, maxAge: s.maxAge,
+    // OAuth do Google retorna por navegação externa: Lax preserva a sessão no callback GET.
+    // HttpOnly, Secure em produção e o escopo de caminho continuam ativos.
+    httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: BASE, maxAge: s.maxAge,
   });
   res.json({ ok: true });
 }));
