@@ -197,7 +197,13 @@ r.use((req, res, next) => {
       && req.path === "/api/tasks-official/board"
       && !!host && origin === "https://" + host
       && req.is("application/json");
-    if (!sameOriginTasks) return res.status(403).json({ erro: "Requisição inválida" });
+    // Upload multipart do atendimento: alguns proxies descartam X-Portal.
+    // Exceção limitada à rota autenticada, POST multipart e origem HTTPS idêntica.
+    const sameOriginAttachment = req.method === "POST"
+      && req.path === "/api/atendimento/enviar-anexo"
+      && !!host && origin === "https://" + host
+      && req.is("multipart/form-data");
+    if (!sameOriginTasks && !sameOriginAttachment) return res.status(403).json({ erro: "Requisição inválida", etapa: "csrf", codigo: 403 });
   }
   next();
 });
