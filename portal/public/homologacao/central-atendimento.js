@@ -1,7 +1,7 @@
 "use strict";
 (function(){
 const safe=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-let stagedFiles=[];let showFiles=()=>{};
+let stagedFiles=[];let showFiles=()=>{};let activeServiceId=null;
 let selected="meus",status=null,records=[],active=null,loading=false,error="",team=null,assignments=[],currentUser=null,lastSync=null,contactsById=new Map(),digiUserId=null,digiMatchStatus="",ticketDiagnostics="",searchTerm="";
 const rows=p=>Array.isArray(p)?p:Array.isArray(p?.rows)?p.rows:Array.isArray(p?.data)?p.data:Array.isArray(p?.items)?p.items:Array.isArray(p?.results)?p.results:[];
 const nameOf=r=>{const c=contactsById.get(String(r.contactId||r.contact?.id))||r.contact||{};return c.name||c.internalName||r.contactName||c.number||r.customer?.name||r.name||r.internalName||r.number||("Chamado #"+(r.protocol||String(r.id||"").slice(0,8)))};
@@ -39,7 +39,7 @@ let historyBusy=false;
 let sentPending=[];
 const msgKey=m=>String(m.id||"")||[messageText(m),m.createdAt||m.sentAt||""].join("|");
 async function openRecord(id,redraw=true){
-  if(redraw){active=records.find(r=>String(r.id)===String(id));draw();}if(!active)return;
+  if(redraw){active=records.find(r=>String(r.id)===String(id));activeServiceId=null;draw();}if(!active)return;
   if(historyBusy)return;historyBusy=true;
   const contactId=selected==="contatos"?active.id:active.contactId||active.contact?.id;
   const target=document.getElementById("caMessageBody");if(!target)return;
@@ -53,6 +53,7 @@ async function openRecord(id,redraw=true){
     const res=await fetch("/colaborador/api/atendimento/consultar/messages?contactId="+encodeURIComponent(contactId),{credentials:"same-origin",cache:"no-store"});
     const data=await res.json();if(!res.ok)throw Error(data.erro||"Consulta indisponível");
     const messages=rows(data).filter(isMessage).sort((a,b)=>new Date(a.sentAt||a.createdAt||a.timestamp||0)-new Date(b.sentAt||b.createdAt||b.timestamp||0)).slice(-100);
+    activeServiceId=messages.findLast(m=>m.serviceId)?.serviceId||active?.serviceId||active?.service?.id||null;
     sentPending=sentPending.filter(p=>p.contactId!==String(contactId)||(!messages.some(m=>(p.id&&String(m.id)===p.id)||(messageText(m)===p.text&&Math.abs(new Date(m.createdAt||m.sentAt||0).getTime()-p.time)<120000))&&Date.now()-p.time<120000));
     target.innerHTML=messages.length?messages.map(m=>{
       const body=messageText(m),type=messageType(m),sender=m.user?.name||m.contact?.name||m.origin||"Mensagem";
@@ -73,7 +74,7 @@ async function sendAttachments(contactId,caption,textarea,button){
  try{
   let count=0;
   for(const file of [...stagedFiles]){
-   const data=new FormData();data.append("contactId",contactId);data.append("userId",digiUserId);data.append("arquivo",file);if(!count&&caption)data.append("text",caption);
+   const data=new FormData();data.append("contactId",contactId);data.append("userId",digiUserId);if(activeServiceId)data.append("serviceId",activeServiceId);data.append("arquivo",file);if(!count&&caption)data.append("text",caption);
    const response=await fetch("/colaborador/api/atendimento/enviar-anexo",{method:"POST",credentials:"same-origin",headers:{"X-Portal":"1"},body:data});
    const result=await response.json().catch(()=>({}));
    if(!response.ok||!result.enviado)throw Error((result.erro||"Envio não confirmado")+(result.etapa?" Etapa: "+result.etapa+".":"")+(result.codigo?" (HTTP "+result.codigo+")":"")+(result.detalhe?" Detalhe: "+result.detalhe:""));
