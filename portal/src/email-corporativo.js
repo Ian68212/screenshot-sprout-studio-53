@@ -26,6 +26,20 @@ async function schema(){if(!schemaReady)schemaReady=(async()=>{
  const cols=await q("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='email_caixas'");const names=new Set(cols.map(x=>x.COLUMN_NAME));
  for(const [name,definition] of [["cred_enc","TEXT NULL"],["cred_iv","VARCHAR(32) NULL"],["cred_tag","VARCHAR(32) NULL"]])if(!names.has(name))await q(`ALTER TABLE email_caixas ADD COLUMN ${name} ${definition}`);
  })().catch(e=>{schemaReady=null;throw e});return schemaReady}
+export async function conectarCaixaIndividualNoLogin(usuarioEmail, senha) {
+  await schema();
+  const email=String(usuarioEmail||"").trim().toLowerCase();
+  if(!emailRx.test(email)||!senha)return;
+  const [usuario]=await q("SELECT id,nome FROM usuarios WHERE email=? AND ativo=1",[email]);
+  if(!usuario)return;
+  const [existing]=await q("SELECT id,tipo,usuario_dono_id FROM email_caixas WHERE endereco=?",[email]);
+  if(existing&&(existing.tipo!=="individual"||Number(existing.usuario_dono_id)!==Number(usuario.id)))return;
+  if(!existing)await q("INSERT IGNORE INTO email_caixas(endereco,nome,tipo,usuario_dono_id) VALUES(?,?,'individual',?)",[email,String(usuario.nome||"Meu e-mail").slice(0,90)+" (Pessoal)",usuario.id]);
+  const [box]=await q("SELECT id,tipo,usuario_dono_id FROM email_caixas WHERE endereco=? AND ativo=1",[email]);
+  if(!box||box.tipo!=="individual"||Number(box.usuario_dono_id)!==Number(usuario.id))return;
+  const enc=encrypt(String(senha));
+  await q("UPDATE email_caixas SET cred_enc=?,cred_iv=?,cred_tag=? WHERE id=?",[enc.data,enc.iv,enc.tag,box.id]);
+}
 async function caixaPermitida(req,id,send=false){await schema();const [c]=await q("SELECT * FROM email_caixas WHERE id=? AND ativo=1",[id]);if(!c)return null;let allowed=false,permissions={pode_ler:0,pode_enviar:0,pode_excluir:0};if(c.tipo==="individual"&&Number(c.usuario_dono_id)===Number(req.usuario.id)){allowed=true;permissions={pode_ler:1,pode_enviar:1,pode_excluir:1}}else if(c.tipo==="compartilhada"&&req.usuario.perfil==="admin"){allowed=true;permissions={pode_ler:1,pode_enviar:1,pode_excluir:1}}else if(c.tipo==="compartilhada"){const [a]=await q("SELECT pode_ler,pode_enviar,pode_excluir FROM email_caixa_acessos WHERE caixa_id=? AND usuario_id=?",[id,req.usuario.id]);permissions=a||permissions;allowed=!!a&&(send?!!a.pode_enviar:!!a.pode_ler)}if(!allowed)return null;if(!c.cred_enc)return {...c,...permissions,senha:null};return {...c,...permissions,senha:decrypt(c)}}
 function imap(c){return new ImapFlow({host:IMAP_HOST,port:IMAP_PORT,secure:true,auth:{user:c.endereco,pass:c.senha},logger:false,socketTimeout:timeout,greetingTimeout:timeout,connectionTimeout:timeout})}
 function smtp(c){return nodemailer.createTransport({host:SMTP_HOST,port:SMTP_PORT,secure:SMTP_PORT===465,auth:{user:c.endereco,pass:c.senha},connectionTimeout:timeout,greetingTimeout:timeout,socketTimeout:timeout})}
