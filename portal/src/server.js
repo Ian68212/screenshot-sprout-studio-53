@@ -342,7 +342,7 @@ r.post("/api/atendimento/enviar-anexo",exigir("painel"),(req,res,next)=>digiMedi
  const mimeMap={".jpg":"image/jpeg",".jpeg":"image/jpeg",".png":"image/png",".webp":"image/webp",".gif":"image/gif",".pdf":"application/pdf",".doc":"application/msword",".docx":"application/vnd.openxmlformats-officedocument.wordprocessingml.document",".xls":"application/vnd.ms-excel",".xlsx":"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",".txt":"text/plain",".csv":"text/csv"};
  if(!mimeMap[ext])return res.status(400).json({erro:"Formato não permitido."});
  if(typeof caption!=="string"||caption.length>2000)return res.status(400).json({erro:"Legenda inválida."});
- const base=(process.env.DIGISAC_API_BASE_URL||"").replace(/\\/+$/,""),token=process.env.DIGISAC_API_TOKEN;
+ const base=(process.env.DIGISAC_API_BASE_URL||"").replace(/\/+$/,""),token=process.env.DIGISAC_API_TOKEN;
  if(!base||!token)return res.status(503).json({erro:"Integração DigiSac não configurada."});
  const uploadUrl=new URL(base+"/files"),messageUrl=new URL(base+"/messages");
  if([uploadUrl,messageUrl].some(u=>u.protocol!=="https:"||u.hostname!=="rodrinoxpro.digisac.app"||!u.pathname.startsWith("/api/v1/")))return res.status(503).json({erro:"Destino DigiSac inválido."});
