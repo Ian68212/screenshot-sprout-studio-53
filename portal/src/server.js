@@ -354,6 +354,8 @@ r.post("/api/atendimento/enviar-anexo",exigir("painel"),(req,res,next)=>digiMedi
  if([uploadUrl,messageUrl].some(u=>u.protocol!=="https:"||u.hostname!=="rodrinoxpro.digisac.app"||!u.pathname.startsWith("/api/v1/")))return res.status(503).json({erro:"Destino DigiSac inválido."});
  const form=new FormData();
  form.append("file",new Blob([req.file.buffer],{type:mimeMap[ext]}),path.basename(req.file.originalname).slice(0,120));
+ form.append("mimetype",mimeMap[ext]);
+ form.append("extension",ext.slice(1));
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
  try{
   const uploaded=await fetch(uploadUrl,{method:"POST",headers:{Authorization:"Bearer "+token,Accept:"application/json"},body:form,signal:controller.signal,redirect:"error"});
