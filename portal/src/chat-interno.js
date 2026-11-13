@@ -3,7 +3,7 @@ import crypto from "node:crypto";
 import { q } from "./db.js";
 import { exigir } from "./auth.js";
 import multer from "multer";
-import { uploadDriveFile, readDriveFile, deleteDriveFile, startResumableDriveUpload, appendResumableDriveChunk } from "./drive-storage.js";
+import { uploadDriveFile, readDriveFile, deleteDriveFile, startResumableDriveUpload, appendResumableDriveChunk, streamDriveFile } from "./drive-storage.js";
 
 const router = Router();
 const attachmentUpload = multer({storage:multer.memoryStorage(),limits:{fileSize:10*1024*1024,files:1},fileFilter(_req,file,cb){
@@ -163,12 +163,11 @@ router.get("/anexos/:messageId",fail(async(req,res)=>{
     INNER JOIN chat_interno_mensagens m ON m.id=a.mensagem_id
     WHERE a.mensagem_id=? AND (m.remetente_id=? OR m.destinatario_id=?)`,[messageId,req.usuario.id,req.usuario.id]);
   if(!file)return res.status(404).json({erro:"Anexo não encontrado"});
-  const buffer=await readDriveFile(file.drive_id);
   res.set("Cache-Control","private, no-store");
   res.set("X-Content-Type-Options","nosniff");
   res.set("Content-Type",file.mime||"application/octet-stream");
   res.set("Content-Disposition","attachment; filename*=UTF-8''"+encodeURIComponent(file.nome));
-  res.send(buffer);
+  await streamDriveFile(file.drive_id,res);
 }));
 router.get("/nao-lidas", fail(async (req,res) => {
   const [row]=await q("SELECT COUNT(*) AS total FROM chat_interno_mensagens WHERE destinatario_id=? AND lido_em IS NULL",[req.usuario.id]);
