@@ -96,3 +96,22 @@ export async function streamDriveFile(id,res){
  const {pipeline}=await import("node:stream/promises");
  await pipeline(Readable.fromWeb(response.body),res);
 }
+
+export async function listManagedDriveFiles(pageToken){
+ const url=new URL(api);
+ url.searchParams.set("q","trashed = false");
+ url.searchParams.set("fields","nextPageToken,files(id,name,mimeType,size,createdTime,modifiedTime,parents,description,webViewLink)");
+ url.searchParams.set("pageSize","100");
+ if(pageToken)url.searchParams.set("pageToken",pageToken);
+ return (await (await google(url)).json());
+}
+export async function managedDriveFile(id){
+ if(!/^[A-Za-z0-9_-]{10,}$/.test(String(id)))throw Error("ID inválido");
+ return (await (await google(api+"/"+encodeURIComponent(id)+"?fields=id,name,mimeType,size,parents,trashed")).json());
+}
+export async function trashManagedDriveFile(id){
+ if(!/^[A-Za-z0-9_-]{10,}$/.test(String(id)))throw Error("ID inválido");
+ return (await (await google(api+"/"+encodeURIComponent(id)+"?fields=id,trashed",{
+  method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({trashed:true})
+ })).json());
+}
