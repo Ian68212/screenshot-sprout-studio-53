@@ -33,6 +33,19 @@ googleDriveRouter.get("/status",exigir("admin.usuarios"),wrap(async(req,res)=>{
  const [row]=await q("SELECT connected_at FROM rp_drive_oauth_tokens WHERE id=1");
  res.set("Cache-Control","no-store").json({configured:configured(),connected:!!row,connectedAt:row?.connected_at||null});
 }));
+googleDriveRouter.get("/files/test",exigir("admin.usuarios"),wrap(async(req,res)=>{
+ res.set("Cache-Control","no-store");
+ if(!configured())return res.status(503).json({ok:false,erro:"Google Drive não configurado"});
+ let token;
+ try{token=await driveAccessToken()}catch(e){return res.status(502).json({ok:false,etapa:"renovar_token",erro:e.message})}
+ const url=new URL("https://www.googleapis.com/drive/v3/files");
+ url.searchParams.set("page_size","10");
+ url.searchParams.set("fields","nextPageToken,files(id,name,mimeType)");
+ const response=await fetch(url,{headers:{Authorization:"Bearer "+token}});
+ const data=await response.json();
+ if(!response.ok)return res.status(502).json({ok:false,etapa:"listar_arquivos",statusGoogle:response.status,erro:data.error?.message||"Falha no Google Drive"});
+ res.json({ok:true,acessoConfirmado:true,escopo:"drive.file",quantidade:data.files?.length||0,arquivos:(data.files||[]).map(f=>({nome:f.name,tipo:f.mimeType})),observacao:"O escopo drive.file permite listar apenas arquivos criados ou autorizados para este aplicativo."});
+}));
 googleDriveRouter.get("/oauth/start",exigir("admin.usuarios"),wrap(async(req,res)=>{
  if(!configured())return res.status(503).json({erro:"Configuração OAuth incompleta. Configure GOOGLE_DRIVE_TOKEN_KEY no servidor."});
  const state=crypto.randomBytes(32).toString("hex");
