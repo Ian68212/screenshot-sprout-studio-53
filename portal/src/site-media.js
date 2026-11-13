@@ -195,13 +195,14 @@ mediaRouter.delete("/:id", exigir("site.editar"), async (req,res,next) => {
       });
     }
 
-    await q("DELETE FROM site_midias WHERE id=?", [id]);
-
+    // Remover o arquivo remoto antes do registro evita perder a referência
+    // caso o Google Drive esteja indisponível.
     if(m.caminho.startsWith("gdrive:"))await deleteDriveFile(m.caminho.slice(7));
     else{
       const arquivo=await localizarArquivo(m.caminho);
       if(arquivo)await unlink(arquivo.arquivo).catch(e=>{if(e.code!=="ENOENT")throw e});
     }
+    await q("DELETE FROM site_midias WHERE id=?", [id]);
 
     await auditar(
       req.usuario.id,
