@@ -351,27 +351,29 @@ r.post("/api/atendimento/enviar-anexo",exigir("painel"),(req,res,next)=>digiMedi
  if(typeof caption!=="string"||caption.length>2000)return res.status(400).json({erro:"Legenda inválida."});
  const base=(process.env.DIGISAC_API_BASE_URL||"").replace(/\/+$/,""),token=process.env.DIGISAC_API_TOKEN;
  if(!base||!token)return res.status(503).json({erro:"Integração DigiSac não configurada."});
- const uploadUrl=new URL(base+"/files"),messageUrl=new URL(base+"/messages");
- if([uploadUrl,messageUrl].some(u=>u.protocol!=="https:"||u.hostname!=="rodrinoxpro.digisac.app"||!u.pathname.startsWith("/api/v1/")))return res.status(503).json({erro:"Destino DigiSac inválido."});
- const form=new FormData();
- form.append("file",new Blob([req.file.buffer],{type:mimeMap[ext]}),path.basename(req.file.originalname).slice(0,120));
- form.append("mimetype",mimeMap[ext]);
- form.append("extension",ext.slice(1));
- // Algumas APIs interpretam atributos do arquivo como campos aninhados.
- form.append("file[mimetype]",mimeMap[ext]);
- form.append("file[extension]",ext.slice(1));
- form.append("file[name]",path.basename(req.file.originalname).slice(0,120));
- const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
+ const serviceId=req.body?.serviceId;
+ if(!/^[a-f0-9-]{36}$/i.test(String(serviceId||"")))return res.status(400).json({erro:"Serviço DigiSac não identificado. Atualize o histórico do chamado antes de enviar.",etapa:"preparacao"});
+ const prepareUrl=new URL(base+"/files/create-to-upload"),messageUrl=new URL(base+"/messages");
+ if([prepareUrl,messageUrl].some(u=>u.protocol!=="https:"||u.hostname!=="rodrinoxpro.digisac.app"||!u.pathname.startsWith("/api/v1/")))return res.status(503).json({erro:"Destino DigiSac inválido."});
+ const filename=path.basename(req.file.originalname).slice(0,120),mimetype=mimeMap[ext];
+ const sendAsDocument=![".jpg",".jpeg",".png",".webp",".gif"].includes(ext);
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),45000);
+ const apiHeaders={Authorization:"Bearer "+token,Accept:"application/json","Content-Type":"application/json"};
+ const fail=async(upstream,etapa)=>{const detail=(await upstream.text().catch(()=>"")).slice(0,1200);let parsed={};try{parsed=JSON.parse(detail)}catch{};return res.status(502).json({erro:"A DigiSac recusou a etapa "+etapa+".",etapa,codigo:upstream.status,detalhe:String(parsed?.message||parsed?.error||parsed?.errors?.[0]?.message||"").slice(0,240)})};
  try{
-  const uploaded=await fetch(uploadUrl,{method:"POST",headers:{Authorization:"Bearer "+token,Accept:"application/json"},body:form,signal:controller.signal,redirect:"error"});
-  if(!uploaded.ok){const detail=(await uploaded.text().catch(()=>"")).slice(0,1200);let parsed={};try{parsed=JSON.parse(detail)}catch{};return res.status(502).json({erro:"A DigiSac recusou o upload. Nenhuma mensagem foi enviada.",etapa:"upload",codigo:uploaded.status,detalhe:String(parsed?.message||parsed?.error||parsed?.errors?.[0]?.message||"").slice(0,240)});}
-  const uploadData=await uploaded.json().catch(()=>({}));
-  const fileId=uploadData?.id||uploadData?.data?.id||uploadData?.file?.id;
-  if(!/^[a-z0-9-]{8,100}$/i.test(String(fileId||"")))return res.status(502).json({erro:"Upload sem identificador de arquivo reconhecido. Nenhuma mensagem foi enviada.",etapa:"upload"});
-  const payload={contactId,userId,origin:"user",type:"chat",fileId};
-  if(caption.trim())payload.text=caption.trim();
-  const sent=await fetch(messageUrl,{method:"POST",headers:{Authorization:"Bearer "+token,Accept:"application/json","Content-Type":"application/json"},body:JSON.stringify(payload),signal:controller.signal,redirect:"error"});
-  if(!sent.ok){const detail=(await sent.text().catch(()=>"")).slice(0,1200);let parsed={};try{parsed=JSON.parse(detail)}catch{};return res.status(502).json({erro:"Arquivo carregado, mas a DigiSac não confirmou a mensagem.",etapa:"mensagem",codigo:sent.status,detalhe:String(parsed?.message||parsed?.error||parsed?.errors?.[0]?.message||"").slice(0,240)});}
+  const prepared=await fetch(prepareUrl,{method:"POST",headers:apiHeaders,body:JSON.stringify({attachedType:"message.file",mimetype,name:filename,sendAsDocument,serviceId}),signal:controller.signal,redirect:"error"});
+  if(!prepared.ok)return await fail(prepared,"preparacao");
+  const preparedData=await prepared.json().catch(()=>({}));
+  const fileId=preparedData?.id||preparedData?.data?.id;
+  const signed=preparedData?.urlToUpload||preparedData?.data?.urlToUpload;
+  if(!/^[a-f0-9-]{36}$/i.test(String(fileId||""))||typeof signed!=="string")return res.status(502).json({erro:"A DigiSac não retornou ID e URL de upload válidos.",etapa:"preparacao"});
+  const signedUrl=new URL(signed);
+  if(signedUrl.protocol!=="https:"||!signedUrl.hostname.endsWith(".objectstorage.sa-vinhedo-1.oraclecloud.com"))return res.status(502).json({erro:"Destino do armazenamento não permitido.",etapa:"upload"});
+  const uploaded=await fetch(signedUrl,{method:"PUT",headers:{"Content-Type":mimetype},body:req.file.buffer,signal:controller.signal,redirect:"error"});
+  if(!uploaded.ok)return res.status(502).json({erro:"Armazenamento recusou o arquivo. Nenhuma mensagem foi enviada.",etapa:"upload",codigo:uploaded.status});
+  const payload={type:"chat",contactId,fileId,isComment:false,itemIndex:0,sendAsDocument,text:caption.trim(),userId,origin:"user"};
+  const sent=await fetch(messageUrl,{method:"POST",headers:apiHeaders,body:JSON.stringify(payload),signal:controller.signal,redirect:"error"});
+  if(!sent.ok)return await fail(sent,"mensagem");
   const result=await sent.json().catch(()=>({}));
   return res.json({enviado:true,id:result?.id||result?.data?.id||null});
  }catch(err){return res.status(502).json({erro:err.name==="AbortError"?"Tempo limite; confira a DigiSac antes de repetir.":"Falha na comunicação com a DigiSac; confira antes de repetir."});}
