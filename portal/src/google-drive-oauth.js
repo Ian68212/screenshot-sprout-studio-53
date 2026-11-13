@@ -4,7 +4,7 @@ import { q, auditar } from "./db.js";
 import { exigir } from "./auth.js";
 
 export const googleDriveRouter=Router();
-googleDriveRouter.use(exigir("admin.usuarios"));
+// O callback OAuth valida o state de uso único; as demais rotas exigem administrador.
 const scope="https://www.googleapis.com/auth/drive.file";
 const callback=()=>process.env.GOOGLE_DRIVE_REDIRECT_URI;
 const client=()=>process.env.GOOGLE_DRIVE_CLIENT_ID;
@@ -29,11 +29,11 @@ async function schema(){
 }
 const wrap=fn=>async(req,res,next)=>{try{await schema();await fn(req,res)}catch(e){next(e)}};
 function configured(){return Boolean(client()&&secret()&&callback()&&process.env.GOOGLE_DRIVE_TOKEN_KEY)}
-googleDriveRouter.get("/status",wrap(async(req,res)=>{
+googleDriveRouter.get("/status",exigir("admin.usuarios"),wrap(async(req,res)=>{
  const [row]=await q("SELECT connected_at FROM rp_drive_oauth_tokens WHERE id=1");
  res.set("Cache-Control","no-store").json({configured:configured(),connected:!!row,connectedAt:row?.connected_at||null});
 }));
-googleDriveRouter.get("/oauth/start",wrap(async(req,res)=>{
+googleDriveRouter.get("/oauth/start",exigir("admin.usuarios"),wrap(async(req,res)=>{
  if(!configured())return res.status(503).json({erro:"Configuração OAuth incompleta. Configure GOOGLE_DRIVE_TOKEN_KEY no servidor."});
  const state=crypto.randomBytes(32).toString("hex");
  await q("DELETE FROM rp_drive_oauth_state WHERE expires_at < UTC_TIMESTAMP()");
@@ -49,12 +49,12 @@ googleDriveRouter.get("/oauth/callback",wrap(async(req,res)=>{
  const hash=crypto.createHash("sha256").update(state).digest("hex");
  const [row]=await q("SELECT user_id FROM rp_drive_oauth_state WHERE state_hash=? AND expires_at>UTC_TIMESTAMP()",[hash]);
  await q("DELETE FROM rp_drive_oauth_state WHERE state_hash=?",[hash]);
- if(!row||Number(row.user_id)!==Number(req.usuario.id))return res.status(403).send("Autorização expirada ou sessão diferente.");
+ if(!row)return res.status(403).send("Autorização expirada ou inválida. Inicie a conexão novamente pelo portal.");
  const response=await fetch("https://oauth2.googleapis.com/token",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:new URLSearchParams({code,client_id:client(),client_secret:secret(),redirect_uri:callback(),grant_type:"authorization_code"})});
  const data=await response.json();
  if(!response.ok||!data.refresh_token)return res.status(502).send("Google não forneceu um token de renovação. Tente conectar novamente.");
- await q("INSERT INTO rp_drive_oauth_tokens(id,refresh_token_enc,connected_by) VALUES(1,?,?) ON DUPLICATE KEY UPDATE refresh_token_enc=VALUES(refresh_token_enc),connected_by=VALUES(connected_by)",[encrypt(data.refresh_token),req.usuario.id]);
- await auditar(req.usuario.id,"google_drive_conectado","Integração OAuth autorizada",req.ip);
+ await q("INSERT INTO rp_drive_oauth_tokens(id,refresh_token_enc,connected_by) VALUES(1,?,?) ON DUPLICATE KEY UPDATE refresh_token_enc=VALUES(refresh_token_enc),connected_by=VALUES(connected_by)",[encrypt(data.refresh_token),row.user_id]);
+ await auditar(row.user_id,"google_drive_conectado","Integração OAuth autorizada",req.ip);
  res.set("Cache-Control","no-store").type("html").send("<!doctype html><html lang='pt-BR'><meta charset='utf-8'><title>Google Drive conectado</title><body><h2>Google Drive conectado à Rodrinox Pro.</h2><p>Você pode fechar esta janela.</p></body></html>");
 }));
 export async function driveAccessToken(){
