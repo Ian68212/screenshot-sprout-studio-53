@@ -1,7 +1,13 @@
 (()=>{"use strict";
 if(window.__rpGlobalProfile)return;window.__rpGlobalProfile=true;
 const style=document.createElement("style");style.textContent=`
-#rp-global-profile{position:fixed;right:18px;top:12px;z-index:8500;font:14px Arial,sans-serif;color:#fff}
+#rp-global-profile{position:fixed;right:18px;top:12px;z-index:8500;font:14px Arial,sans-serif;color:#fff;pointer-events:none}
+#rp-global-profile>.rp-trigger,#rp-global-profile>.rp-menu,#rp-global-profile>.rp-dialog{pointer-events:auto}
+#rp-global-profile.rp-in-header{position:relative;right:auto;top:auto;z-index:100;flex:none;margin-left:auto;pointer-events:auto}
+#rp-global-profile.rp-in-header .rp-menu{z-index:9000}
+#rp-global-profile.rp-in-header .rp-dialog{position:fixed}
+#rp-global-profile.rp-compact .rp-name{display:none}
+#rp-global-profile.rp-compact .rp-trigger{padding:4px 7px}
 #rp-global-profile .rp-trigger{display:flex;align-items:center;gap:10px;padding:6px 12px;border:1px solid #ffffff33;border-radius:14px;background:#102d49ed;color:#fff;box-shadow:0 5px 18px #0003;cursor:pointer}
 #rp-global-profile .rp-avatar{display:grid;place-items:center;flex:none;width:39px;height:39px;border:2px solid #87b9e1;border-radius:50%;overflow:hidden;background:#264a69;color:#fff;font-weight:700}
 #rp-global-profile .rp-avatar img{width:100%;height:100%;object-fit:cover}
@@ -24,6 +30,28 @@ const style=document.createElement("style");style.textContent=`
 `;document.head.append(style);
 const root=document.createElement("div");root.id="rp-global-profile";root.innerHTML=`<button class="rp-trigger" type="button" aria-label="Abrir menu do usuário" aria-expanded="false"><span class="rp-avatar">RP</span><span class="rp-name">Meu perfil</span><span aria-hidden="true">⌄</span></button><div class="rp-menu" hidden><button type="button" class="rp-edit">📷 Alterar minha foto</button><button type="button" class="rp-logout">↪ Sair do portal</button></div><dialog class="rp-dialog"><form><h2>Minha foto de perfil</h2><small>Essa foto será utilizada em todos os painéis e no Chat Interno.</small><img class="rp-preview" alt="Foto de perfil"><input type="file" accept="image/jpeg,image/png,image/webp" required><small>JPG, PNG ou WebP · máximo 3 MB</small><p class="rp-feedback" role="status"></p><button type="submit" class="rp-save">Salvar foto</button><button type="button" class="rp-cancel">Cancelar</button></form></dialog>`;
 document.body.append(root);
+function positionProfile(){
+ const headers=[...document.querySelectorAll("header")].filter(el=>{
+  const b=el.getBoundingClientRect();
+  return b.top>=-3&&b.top<75&&b.width>Math.min(420,innerWidth*.55)&&b.height>=45&&b.height<150&&!el.closest("aside,dialog");
+ });
+ const header=headers.sort((a,b)=>b.getBoundingClientRect().width-a.getBoundingClientRect().width)[0];
+ if(header){
+  // Anexar o perfil ao fluxo do cabeçalho, evitando sobrepor botões existentes.
+  if(root.parentElement!==header)header.append(root);
+  root.classList.add("rp-in-header");
+  header.style.display="flex";
+  header.style.alignItems="center";
+  header.style.minWidth="0";
+  root.classList.toggle("rp-compact",header.getBoundingClientRect().width<950);
+ }else{
+  if(root.parentElement!==document.body)document.body.append(root);
+  root.classList.remove("rp-in-header");
+  root.classList.toggle("rp-compact",innerWidth<1000);
+ }
+}
+positionProfile();
+window.addEventListener("resize",positionProfile);
 const trigger=root.querySelector(".rp-trigger"),menu=root.querySelector(".rp-menu"),avatar=root.querySelector(".rp-avatar"),name=root.querySelector(".rp-name"),dialog=root.querySelector("dialog"),file=root.querySelector("input"),preview=root.querySelector(".rp-preview"),feedback=root.querySelector(".rp-feedback");
 let user=null,photo="";
 function paint(){avatar.replaceChildren();if(photo){const img=document.createElement("img");img.src=photo;img.alt="";img.onerror=()=>{avatar.textContent=(user?.nome||"RP").slice(0,2).toUpperCase()};avatar.append(img);preview.src=photo}else{avatar.textContent=(user?.nome||"RP").split(" ").slice(0,2).map(v=>v[0]||"").join("").toUpperCase();preview.removeAttribute("src")}name.textContent=user?.nome||"Meu perfil";}
