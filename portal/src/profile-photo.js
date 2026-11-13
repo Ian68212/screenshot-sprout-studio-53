@@ -61,10 +61,11 @@ profilePhotoRouter.get("/foto/:id/arquivo/:filename",exigir("painel"),async(req,
   try{
     const id=validId(req.params.id);
     if(!id)return res.status(400).json({erro:"Identificador inválido."});
-    if(!canManage(req,id))return res.status(403).json({erro:"Acesso negado."});
+    // Fotos de colaboradores ativos são visíveis a colegas autenticados, inclusive no chat.
+    // A alteração continua restrita ao titular ou administrador.
     await ensureProfilePhotoSchema();
-    const [user]=await q("SELECT foto_url FROM usuarios WHERE id=?",[id]);
-    if(!user?.foto_url)return res.status(404).end();
+    const [user]=await q("SELECT foto_url,ativo FROM usuarios WHERE id=?",[id]);
+    if(!user?.foto_url||(!user.ativo&&!canManage(req,id)))return res.status(404).end();
     const filename=String(req.params.filename||"");
     if(!/^(?:[a-f0-9-]{36}|gdrive-[A-Za-z0-9_-]+)\.(?:jpg|png|webp)$/i.test(filename))return res.status(404).end();
     const expected="/colaborador/api/perfil/foto/"+id+"/arquivo/"+filename;
