@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { q, auditar } from "./db.js";
 import { pode, MAX_TENTATIVAS, BLOQUEIO_MINUTOS } from "./permissions.js";
 import { validarSenhaHostinger, EmailAuthUnavailableError } from "./hostinger-auth.js";
+import { vincularCaixaAposLogin } from "./email-corporativo.js";
 
 export const COOKIE = "rp_sessao";
 const HORAS = Number(process.env.SESSION_HOURS || 8);
@@ -35,6 +36,7 @@ export async function login(email, senha, ip) {
   }
 
   await q("UPDATE usuarios SET tentativas_falhas = 0, bloqueado_ate = NULL WHERE id = ?", [u.id]);
+  try { await vincularCaixaAposLogin(u, String(senha)); } catch (error) { console.error("Falha ao vincular caixa após login:", error?.code || error?.name || "erro"); }
   const token = crypto.randomBytes(32).toString("hex");
   await q("INSERT INTO sessoes (token_hash, usuario_id, expira_em) VALUES (?,?,?)", [
     hash(token), u.id, new Date(Date.now() + HORAS * 3600000),
