@@ -62,12 +62,12 @@ router.post("/presenca", fail(async (req,res) => {
   res.set("Cache-Control","no-store").json({ok:true});
 }));
 router.get("/pessoas", fail(async (req,res) => {
-  const pessoas = await q("SELECT id,nome,setor_id FROM usuarios WHERE ativo=1 AND id<>? ORDER BY nome", [req.usuario.id]);
+  const pessoas = await q("SELECT id,nome,setor_id,foto_url FROM usuarios WHERE ativo=1 AND id<>? ORDER BY nome", [req.usuario.id]);
   res.set("Cache-Control","no-store").json({pessoas});
 }));
 router.get("/conversas", fail(async (req,res) => {
   const id=req.usuario.id;
-  const conversas=await q(`SELECT u.id,u.nome,s.nome AS setor,
+  const conversas=await q(`SELECT u.id,u.nome,u.foto_url,s.nome AS setor,
     (SELECT m.texto FROM chat_interno_mensagens m WHERE (m.remetente_id=? AND m.destinatario_id=u.id) OR (m.destinatario_id=? AND m.remetente_id=u.id) ORDER BY m.id DESC LIMIT 1) AS ultima,
     (SELECT m.criado_em FROM chat_interno_mensagens m WHERE (m.remetente_id=? AND m.destinatario_id=u.id) OR (m.destinatario_id=? AND m.remetente_id=u.id) ORDER BY m.id DESC LIMIT 1) AS ultima_em,
     (SELECT COUNT(*) FROM chat_interno_mensagens m WHERE m.remetente_id=u.id AND m.destinatario_id=? AND m.lido_em IS NULL) AS nao_lidas,
