@@ -7,16 +7,18 @@ function cell(tr,value){const td=document.createElement("td");td.textContent=val
 function render(){
  const names=new Map(files.map(f=>[f.id,f.name]));
  const term=$("search").value.trim().toLocaleLowerCase("pt-BR"),type=$("type").value;
- const rows=files.filter(f=>(!term||(f.name||"").toLocaleLowerCase("pt-BR").includes(term))&&(!type||(type==="folder")===(f.mimeType==="application/vnd.google-apps.folder")));
+ const category=$("category").value;
+ const rows=files.filter(f=>(!category||f.category===category)&&(!term||(f.name||"").toLocaleLowerCase("pt-BR").includes(term))&&(!type||(type==="folder")===(f.mimeType==="application/vnd.google-apps.folder")));
  const tbody=$("rows");tbody.replaceChildren();
  for(const f of rows){
   const folder=f.mimeType==="application/vnd.google-apps.folder",tr=document.createElement("tr");
   cell(tr,(folder?"📁 ":"📄 ")+(f.name||"Sem nome"));
-  const parent=(f.parents||[]).map(id=>names.get(id)||"Pasta externa / não carregada").join(", ")||"Raiz / não identificado";
-  cell(tr,parent);cell(tr,folder?"Pasta":fmt(f.size));
+  const parent=(f.parents||[]).map(id=>names.get(id)||"Pasta não carregada").join(", ")||"Raiz";
+  cell(tr,(f.category||"Sem categoria")+" · "+parent);cell(tr,folder?"Pasta":fmt(f.size));
   cell(tr,f.modifiedTime?new Date(f.modifiedTime).toLocaleDateString("pt-BR"):"—");
   const td=cell(tr,"");
   if(!folder){
+   if(f.emUso){const used=document.createElement("span");used.textContent="Em uso · ";used.title="Gerencie a exclusão pelo módulo de origem";td.append(used);}
    const download=document.createElement("button");download.textContent="Baixar";download.onclick=()=>location.href="/colaborador/api/gestao-arquivos/baixar/"+encodeURIComponent(f.id);td.append(download);
    const remove=document.createElement("button");remove.textContent="Enviar à lixeira";remove.className="danger";remove.style.marginLeft="7px";
    remove.onclick=async()=>{
@@ -39,9 +41,31 @@ async function load(reset=false){
   if(reset){files=[];nextToken=null}
   const data=await api("/listar"+(nextToken?"?pageToken="+encodeURIComponent(nextToken):""));
   files.push(...(data.files||[]));nextToken=data.nextPageToken;
+  const map=new Map(files.map(f=>[f.id,f]));
+  for(const f of files){let node=f,category=f.origem||null,depth=0;
+   while(!category&&node&&depth++<12){if(node.mimeType==="application/vnd.google-apps.folder"&&node.name!=="Rodrinox Pro - Portal")category=node.name;node=map.get(node.parents?.[0]);}
+   f.category=category||"Outros / sem classificação";
+  }
+  const current=$("category").value;
+  const categories=[...new Set(files.map(f=>f.category))].sort((a,b)=>a.localeCompare(b,"pt-BR"));
+  $("category").replaceChildren(new Option("Todas as categorias",""),...categories.map(c=>new Option(c,c)));
+  $("category").value=categories.includes(current)?current:"";
   $("status").textContent=files.length+" itens carregados"+(nextToken?" · há mais resultados":"")+".";
   render();
  }catch(e){$("status").textContent="Não foi possível consultar o Google Drive: "+e.message}
  finally{$("refresh").disabled=false;$("next").disabled=false}
 }
-$("refresh").onclick=()=>load(true);$("next").onclick=()=>load();$("search").oninput=render;$("type").onchange=render;load(true);
+$("refresh").onclick=()=>load(true);$("next").onclick=()=>load();$("search").oninput=render;$("type").onchange=render;$("category").onchange=render;
+(async()=>{try{const data=await api("/categorias");$("uploadCategory").replaceChildren(new Option("Selecione o setor / categoria",""),...data.categories.map(c=>new Option(c,c)))}catch(e){$("status").textContent=e.message}})();
+$("uploadForm").onsubmit=async e=>{
+ e.preventDefault();
+ const file=$("uploadFile").files[0],category=$("uploadCategory").value;
+ if(!file||!category)return;
+ if(file.size>25*1024*1024){alert("O envio por esta página aceita até 25 MB.");return}
+ const form=new FormData();form.append("categoria",category);form.append("arquivo",file);
+ const button=$("uploadForm").querySelector("button");button.disabled=true;$("status").textContent="Enviando arquivo...";
+ try{await api("/adicionar",{method:"POST",headers:{"X-Portal":"1"},body:form});$("uploadFile").value="";await load(true);$("status").textContent="Arquivo adicionado à categoria "+category}
+ catch(err){$("status").textContent=err.message}
+ finally{button.disabled=false}
+};
+load(true);
