@@ -1,8 +1,17 @@
 import { Router } from "express";
 import { q } from "./db.js";
 import { exigir } from "./auth.js";
+import multer from "multer";
+import { uploadDriveFile, readDriveFile, deleteDriveFile } from "./drive-storage.js";
 
 const router = Router();
+const attachmentUpload = multer({storage:multer.memoryStorage(),limits:{fileSize:10*1024*1024,files:1},fileFilter(_req,file,cb){
+  const allowed=/^(application\/(pdf|msword|vnd\.openxmlformats-officedocument\.(wordprocessingml\.document|spreadsheetml\.sheet|presentationml\.presentation)|vnd\.ms-excel|vnd\.ms-powerpoint|zip|x-zip-compressed|octet-stream)|image\/(jpeg|png|webp)|text\/plain)$/;
+  if(!allowed.test(file.mimetype))return cb(Object.assign(new Error("Formato não permitido. Envie PDF, Office, imagem, TXT ou ZIP."),{status:400}));
+  cb(null,true);
+}});
+function safeName(name){return String(name||"documento").replace(/[\r\n\\/"]/g,"_").slice(0,180)||"documento";}
+
 router.use(exigir("painel"));
 let ready;
 async function schema() {
@@ -16,6 +25,15 @@ async function schema() {
       lido_em TIMESTAMP NULL DEFAULT NULL,
       INDEX ix_destinatario (destinatario_id, remetente_id, id),
       INDEX ix_remetente (remetente_id, destinatario_id, id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+    await q(`CREATE TABLE IF NOT EXISTS chat_interno_anexos (
+      mensagem_id BIGINT UNSIGNED NOT NULL PRIMARY KEY,
+      drive_id VARCHAR(160) NOT NULL,
+      nome VARCHAR(200) NOT NULL,
+      mime VARCHAR(150) NOT NULL,
+      tamanho BIGINT UNSIGNED NOT NULL,
+      criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      INDEX ix_drive_id (drive_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
     await q(`CREATE TABLE IF NOT EXISTS chat_interno_presenca (
       usuario_id BIGINT NOT NULL PRIMARY KEY,
@@ -53,9 +71,9 @@ router.get("/mensagens/:id", fail(async (req,res) => {
   if (!Number.isSafeInteger(outro) || outro<=0 || outro===id) return res.status(400).json({erro:"Conversa inválida"});
   const [p]=await q("SELECT id,nome FROM usuarios WHERE id=? AND ativo=1",[outro]);
   if(!p) return res.status(404).json({erro:"Colaborador indisponível"});
-  const mensagens=await q(`SELECT * FROM (SELECT id,remetente_id,destinatario_id,texto,criado_em,lido_em
-    FROM chat_interno_mensagens WHERE (remetente_id=? AND destinatario_id=?) OR (remetente_id=? AND destinatario_id=?)
-    ORDER BY id DESC LIMIT 100) x ORDER BY id ASC`,[id,outro,outro,id]);
+  const mensagens=await q(`SELECT * FROM (SELECT m.id,m.remetente_id,m.destinatario_id,m.texto,m.criado_em,m.lido_em,a.nome AS anexo_nome,a.tamanho AS anexo_tamanho\n    FROM chat_interno_mensagens m LEFT JOIN chat_interno_anexos a ON a.mensagem_id=m.id
+    WHERE (m.remetente_id=? AND m.destinatario_id=?) OR (m.remetente_id=? AND m.destinatario_id=?)
+    ORDER BY m.id DESC LIMIT 100) x ORDER BY id ASC`,[id,outro,outro,id]);
   await q("UPDATE chat_interno_mensagens SET lido_em=NOW() WHERE remetente_id=? AND destinatario_id=? AND lido_em IS NULL",[outro,id]);
   res.set("Cache-Control","no-store").json({pessoa:p,mensagens});
 }));
@@ -67,6 +85,33 @@ router.post("/mensagens", fail(async (req,res) => {
   if(!p) return res.status(404).json({erro:"Destinatário indisponível"});
   const result=await q("INSERT INTO chat_interno_mensagens (remetente_id,destinatario_id,texto) VALUES (?,?,?)",[id,outro,texto]);
   res.status(201).json({ok:true,id:result.insertId});
+}));
+router.post("/anexos",attachmentUpload.single("arquivo"),fail(async(req,res)=>{
+  const id=req.usuario.id,outro=Number(req.body?.destinatario_id),file=req.file;
+  if(!Number.isSafeInteger(outro)||outro<=0||outro===id||!file)return res.status(400).json({erro:"Selecione um destinatário e um arquivo válido."});
+  const [p]=await q("SELECT id FROM usuarios WHERE id=? AND ativo=1",[outro]);
+  if(!p)return res.status(404).json({erro:"Destinatário indisponível"});
+  const nome=safeName(file.originalname);
+  const driveId=await uploadDriveFile({category:"Chat Interno",name:nome,mime:file.mimetype,buffer:file.buffer});
+  try{
+    const result=await q("INSERT INTO chat_interno_mensagens (remetente_id,destinatario_id,texto) VALUES (?,?,?)",[id,outro,"📎 "+nome]);
+    await q("INSERT INTO chat_interno_anexos (mensagem_id,drive_id,nome,mime,tamanho) VALUES (?,?,?,?,?)",[result.insertId,driveId,nome,file.mimetype,file.size]);
+    res.status(201).json({ok:true,id:result.insertId});
+  }catch(err){await deleteDriveFile(driveId).catch(()=>{});throw err;}
+}));
+router.get("/anexos/:messageId",fail(async(req,res)=>{
+  const messageId=Number(req.params.messageId);
+  if(!Number.isSafeInteger(messageId)||messageId<=0)return res.status(400).json({erro:"Anexo inválido"});
+  const [file]=await q(`SELECT a.drive_id,a.nome,a.mime,a.tamanho FROM chat_interno_anexos a
+    INNER JOIN chat_interno_mensagens m ON m.id=a.mensagem_id
+    WHERE a.mensagem_id=? AND (m.remetente_id=? OR m.destinatario_id=?)`,[messageId,req.usuario.id,req.usuario.id]);
+  if(!file)return res.status(404).json({erro:"Anexo não encontrado"});
+  const buffer=await readDriveFile(file.drive_id);
+  res.set("Cache-Control","private, no-store");
+  res.set("X-Content-Type-Options","nosniff");
+  res.set("Content-Type",file.mime||"application/octet-stream");
+  res.set("Content-Disposition","attachment; filename*=UTF-8''"+encodeURIComponent(file.nome));
+  res.send(buffer);
 }));
 router.get("/nao-lidas", fail(async (req,res) => {
   const [row]=await q("SELECT COUNT(*) AS total FROM chat_interno_mensagens WHERE destinatario_id=? AND lido_em IS NULL",[req.usuario.id]);
