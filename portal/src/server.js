@@ -3,6 +3,7 @@ import { taskAttachmentsRouter } from "./task-attachments.js";
 import { googleDriveRouter } from "./google-drive-oauth.js";
 import { uploadDriveFile, readDriveFile } from "./drive-storage.js";
 import chatInternoRouter from "./chat-interno.js";
+import gestaoArquivosRouter from "./gestao-arquivos.js";
 import { accessProfilesRouter } from "./access-profiles.js";
 import atendimentoRodrinoxRouter from "./atendimento-rodrinox.js";
 import whatsappMetaRouter from "./whatsapp-meta.js";
@@ -231,6 +232,7 @@ r.post("/api/logout", wrap(async (req, res) => {
 r.get("/api/eu", exigir("painel"), wrap(async (req, res) => { await ensureProfilePhotoSchema(); const [u]=await q("SELECT foto_url FROM usuarios WHERE id=?",[req.usuario.id]); res.json({...req.usuario,foto_url:u?.foto_url||null}); }));
 r.use("/api/perfil", profilePhotoRouter);
 r.use("/api/chat-interno", chatInternoRouter);
+r.use("/api/gestao-arquivos", gestaoArquivosRouter);
 
 // Estado da integração de atendimento: nunca expõe token, URL interna ou credenciais.
 // Disponível somente a usuários autenticados do portal.
