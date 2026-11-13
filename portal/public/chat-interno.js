@@ -20,7 +20,7 @@ function drawPeople(){
  if(!found.length)area.append(el("div","empty","Nenhum colaborador encontrado."));
  for(const p of found){
   const b=el("button","person"+(p.id===selected?" active":""));
-  b.type="button";b.append(el("span","avatar",initials(p.nome)));
+  b.type="button";const avatar=el("span","avatar",initials(p.nome));if(p.foto_url){avatar.textContent="";const img=el("img");img.src=p.foto_url;img.alt="";img.loading="lazy";img.onerror=()=>{avatar.textContent=initials(p.nome)};avatar.append(img);}b.append(avatar);
   const body=el("span","person-body"),title=el("span","person-name");
   title.append(el("span","",p.nome),el("span","presence "+(Number(p.online)===1?"online":"offline"),Number(p.online)===1?"Online":"Offline"));
   if(Number(p.nao_lidas)>0)title.append(el("span","count",String(p.nao_lidas)));
@@ -50,6 +50,7 @@ async function heartbeat(){if(document.visibilityState!=="visible")return;try{aw
 async function openChat(id){
  selected=id;lastSignature="";app.classList.add("chat-open");drawPeople();updatePeerPresence();
  const p=people.find(x=>x.id===id);$("peer").textContent=p?.nome||"Colaborador";
+ const photo=$("peerPhoto");if(photo){photo.replaceChildren();if(p?.foto_url){const img=el("img");img.src=p.foto_url;img.alt="";photo.append(img);}else photo.textContent=initials(p?.nome||"Colaborador");}
  $("message").disabled=false;$("send").disabled=false;$("attach").disabled=false;$("message").focus();
  await refreshMessages(true);
 }
