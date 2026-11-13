@@ -74,7 +74,7 @@ async function sendAttachments(contactId,caption,textarea,button){
   let count=0;
   for(const file of [...stagedFiles]){
    const data=new FormData();data.append("contactId",contactId);data.append("userId",digiUserId);data.append("arquivo",file);if(!count&&caption)data.append("text",caption);
-   const response=await fetch("/colaborador/api/atendimento/enviar-anexo",{method:"POST",credentials:"same-origin",body:data});
+   const response=await fetch("/colaborador/api/atendimento/enviar-anexo",{method:"POST",credentials:"same-origin",headers:{"X-Portal":"1"},body:data});
    const result=await response.json().catch(()=>({}));
    if(!response.ok||!result.enviado)throw Error((result.erro||"Envio não confirmado")+(result.etapa?" Etapa: "+result.etapa+".":"")+(result.codigo?" (HTTP "+result.codigo+")":"")+(result.detalhe?" Detalhe: "+result.detalhe:""));
    stagedFiles.splice(stagedFiles.indexOf(file),1);count++;showFiles();
