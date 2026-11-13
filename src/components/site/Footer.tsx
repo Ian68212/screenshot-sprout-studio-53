@@ -102,7 +102,7 @@ export function InstagramFab() {
   const contact = cms.content("contato.dados", {});
   const configured = String(identity.instagram_url ?? contact.instagram_url ?? "").trim();
   const url = /^https:\/\/(www\.)?instagram\.com\/[a-zA-Z0-9._/-]+\/?(?:\?.*)?$/.test(configured)
-    ? configured : "https://www.instagram.com/";
+    ? configured : "https://www.instagram.com/rodrinoxpro/";
   const [open, setOpen] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   useEffect(() => {
