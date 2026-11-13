@@ -71,6 +71,7 @@ async function sendMessage(){
  if(!textarea||!button||!active||!digiUserId)return;
  const contactId=selected==="contatos"?active.id:active.contactId||active.contact?.id;
  const message=textarea.value.trim();
+ if(document.querySelector("#caAttachmentPreview [data-ca-remove]")){alert("Os anexos selecionados ainda não podem ser enviados: a API DigiSAC não confirmou o formato de upload. Remova os anexos para enviar somente texto.");return}
  if(!contactId||!message)return;
 
  button.disabled=true;button.textContent="Enviando...";
@@ -147,6 +148,11 @@ attachInput?.addEventListener("change",()=>{addFiles(attachInput.files||[]);atta
 dropZone?.addEventListener("dragover",e=>{if(!e.dataTransfer?.types.includes("Files"))return;e.preventDefault();dropZone.style.outline="2px dashed #2995d3"});
 dropZone?.addEventListener("dragleave",()=>{dropZone.style.outline=""});
 dropZone?.addEventListener("drop",e=>{e.preventDefault();dropZone.style.outline="";addFiles(e.dataTransfer?.files||[])});
+const conversationDrop=document.querySelector(".ca-conversation");
+conversationDrop?.addEventListener("dragover",e=>{if(!e.dataTransfer?.types.includes("Files"))return;e.preventDefault();dropZone.style.outline="2px dashed #2995d3"});
+conversationDrop?.addEventListener("dragleave",e=>{if(!conversationDrop.contains(e.relatedTarget))dropZone.style.outline=""});
+conversationDrop?.addEventListener("drop",e=>{if(!e.dataTransfer?.files?.length)return;e.preventDefault();dropZone.style.outline="";if(!dropZone.contains(e.target))addFiles(e.dataTransfer.files)});
+
 document.getElementById("caSend")?.addEventListener("click",sendMessage);
 document.getElementById("caTransfer")?.addEventListener("click",()=>openTransfer().catch(e=>alert(e.message)));
 document.getElementById("caTags")?.addEventListener("click",()=>openTags().catch(e=>alert(e.message)));
