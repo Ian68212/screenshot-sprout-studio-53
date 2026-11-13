@@ -10,6 +10,7 @@ import { pode, podeVerFerramenta } from "./permissions.js";
 
 // Todas as rotas do portal e do site usam a mesma pasta persistente.
 import { SITE_MEDIA_DIR } from "./media-storage.js";
+import { uploadDriveFile, readDriveFile, deleteDriveFile } from "./drive-storage.js";
 
 export const mediaRouter = Router();
 
@@ -40,17 +41,15 @@ mediaRouter.post("/", exigir("site.editar"), upload.single("imagem"), async (req
     if (!tipo || !tipos.has(tipo.mime)) return res.status(415).json({ erro: "Envie JPG, PNG ou WebP válido" });
     const descricao = String(req.body?.descricao || "").trim().slice(0,255);
     nome = randomUUID() + "." + tipos.get(tipo.mime);
-    const dir = SITE_MEDIA_DIR;
-    await mkdir(dir,{recursive:true,mode:0o700});
-    await writeFile(path.join(dir,nome),req.file.buffer,{flag:"wx",mode:0o600});
+    const driveId=await uploadDriveFile({category:"Midias do site",name:nome,mime:tipo.mime,buffer:req.file.buffer});
+    nome="gdrive:"+driveId;
     const out = await q("INSERT INTO site_midias (caminho,nome_original,mime,tamanho,descricao,criado_por) VALUES (?,?,?,?,?,?)",
       [nome,String(req.file.originalname).slice(0,255),tipo.mime,req.file.size,descricao,req.usuario.id]);
     await auditar(req.usuario.id,"site_enviou_midia",String(out.insertId),req.ip);
     res.status(201).json({id:out.insertId,nome_original:req.file.originalname});
   } catch(e) {
     if(nome) {
-      const dir = SITE_MEDIA_DIR;
-      await unlink(path.join(dir,nome)).catch(()=>{});
+      if(nome.startsWith("gdrive:"))await deleteDriveFile(nome.slice(7)).catch(()=>{});
     }
     const referencia = randomUUID().slice(0,8);
     console.error("[site-media] Falha no upload", {
@@ -103,9 +102,9 @@ mediaRouter.get("/:id/arquivo", exigir("painel"), async (req,res,next) => {
       if (!autorizado) return res.status(403).json({ erro: "Acesso negado", codigo: "MIDIA_SEM_PERMISSAO" });
     }
     const [m] = await q("SELECT caminho,mime,nome_original FROM site_midias WHERE id=?",[id]);
-    if (!m || !/^[a-f0-9-]{36}\.(jpg|png|webp)$/.test(m.caminho))
+    if (!m || (!m.caminho.startsWith("gdrive:") && !/^[a-f0-9-]{36}\.(jpg|png|webp)$/.test(m.caminho)))
       return res.status(404).json({ erro:"Imagem não encontrada" });
-    const arquivo = await localizarArquivo(m.caminho);
+    const arquivo = m.caminho.startsWith("gdrive:") ? {driveId:m.caminho.slice(7)} : await localizarArquivo(m.caminho);
     if (!arquivo) {
       console.error("[site-media] Arquivo de mídia ausente em todos os diretórios", {
         id, diretorio: SITE_MEDIA_DIR,
@@ -115,7 +114,7 @@ mediaRouter.get("/:id/arquivo", exigir("painel"), async (req,res,next) => {
         codigo: "ARQUIVO_AUSENTE",
       });
     }
-    const buffer = await readFile(arquivo.arquivo);
+    const buffer = arquivo.driveId ? await readDriveFile(arquivo.driveId) : await readFile(arquivo.arquivo);
     res.set("Content-Type",m.mime);
     res.set("Cache-Control","private, no-store");
     res.set("X-Content-Type-Options","nosniff");
@@ -190,7 +189,7 @@ mediaRouter.delete("/:id", exigir("site.editar"), async (req,res,next) => {
     }
 
     // Valida o nome do arquivo antes de acessar o armazenamento.
-    if (!/^[a-f0-9-]{36}\.(jpg|png|webp)$/.test(m.caminho)) {
+    if (!m.caminho.startsWith("gdrive:") && !/^[a-f0-9-]{36}\.(jpg|png|webp)$/.test(m.caminho)) {
       return res.status(400).json({
         erro:"Caminho de imagem inválido"
       });
@@ -198,11 +197,10 @@ mediaRouter.delete("/:id", exigir("site.editar"), async (req,res,next) => {
 
     await q("DELETE FROM site_midias WHERE id=?", [id]);
 
-    const arquivo = await localizarArquivo(m.caminho);
-    if (arquivo) {
-      await unlink(arquivo.arquivo).catch(e => {
-        if (e.code !== "ENOENT") throw e;
-      });
+    if(m.caminho.startsWith("gdrive:"))await deleteDriveFile(m.caminho.slice(7));
+    else{
+      const arquivo=await localizarArquivo(m.caminho);
+      if(arquivo)await unlink(arquivo.arquivo).catch(e=>{if(e.code!=="ENOENT")throw e});
     }
 
     await auditar(
