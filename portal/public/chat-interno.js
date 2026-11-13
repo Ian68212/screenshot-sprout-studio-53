@@ -50,7 +50,7 @@ async function heartbeat(){if(document.visibilityState!=="visible")return;try{aw
 async function openChat(id){
  selected=id;lastSignature="";app.classList.add("chat-open");drawPeople();updatePeerPresence();
  const p=people.find(x=>x.id===id);$("peer").textContent=p?.nome||"Colaborador";
- $("message").disabled=false;$("send").disabled=false;$("message").focus();
+ $("message").disabled=false;$("send").disabled=false;$("attach").disabled=false;$("message").focus();
  await refreshMessages(true);
 }
 async function refreshMessages(force=false){
@@ -64,7 +64,14 @@ async function refreshMessages(force=false){
  if(!data.mensagens.length)area.append(el("div","empty","Comece a conversa com uma mensagem."));
  for(const m of data.mensagens){
   const mine=Number(m.remetente_id)===Number(me.id);
-  const bubble=el("div","bubble"+(mine?" mine":""),m.texto);
+  const bubble=el("div","bubble"+(mine?" mine":""),m.anexo_nome?"":m.texto);
+  if(m.anexo_nome){
+    const link=el("a","attachment-link","📎 "+m.anexo_nome);
+    link.href="/colaborador/api/chat-interno/anexos/"+encodeURIComponent(m.id);
+    link.title="Baixar documento privado";
+    link.setAttribute("download",m.anexo_nome);
+    bubble.append(link,el("span","attachment-size",Math.ceil(Number(m.anexo_tamanho||0)/1024)+" KB • Baixar arquivo"));
+  }
   bubble.append(el("small","",when(m.criado_em)+(mine?(m.lido_em?"  ✓✓":"  ✓"):"")));
   area.append(bubble);
  }
@@ -78,6 +85,20 @@ $("composer").addEventListener("submit",async e=>{
   $("message").value="";await refreshMessages(true);await refreshPeople();$("state").textContent="";
  }catch(err){$("state").textContent=err.message;}
  finally{$("send").disabled=false;}
+});
+$("attach").addEventListener("click",()=>{if(selected)$("file").click();});
+$("file").addEventListener("change",async()=>{
+ const file=$("file").files?.[0];if(!file||!selected)return;
+ if(file.size>10*1024*1024){$("state").textContent="Arquivo acima de 10 MB";$("file").value="";return;}
+ const recipient=selected;
+ const form=new FormData();form.append("destinatario_id",String(recipient));form.append("arquivo",file);
+ $("attach").disabled=true;$("state").textContent="Enviando documento...";
+ try{
+  await api("/anexos",{method:"POST",headers:{"X-Portal":"1"},body:form});
+  if(selected===recipient){await refreshMessages(true);await refreshPeople();}
+  $("state").textContent="";
+ }catch(err){$("state").textContent=err.message;}
+ finally{$("file").value="";$("attach").disabled=!selected;}
 });
 $("message").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();$("composer").requestSubmit();}});
 $("mobileBack").addEventListener("click",()=>app.classList.remove("chat-open"));
