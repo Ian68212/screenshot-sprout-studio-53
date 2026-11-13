@@ -115,3 +115,7 @@ export async function trashManagedDriveFile(id){
   method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({trashed:true})
  })).json());
 }
+
+export async function uploadManagedDriveFile({category,name,mime,buffer}){
+ return uploadDriveFile({category,name,mime,buffer});
+}
