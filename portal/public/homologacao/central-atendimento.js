@@ -66,12 +66,30 @@ async function openRecord(id,redraw=true){
   finally{historyBusy=false}
 }
 
+async function sendAttachments(contactId,caption,textarea,button){
+ if(!confirm("Enviar "+stagedFiles.length+" arquivo(s) para este contato via DigiSac?"))return;
+ button.disabled=true;button.textContent="Enviando arquivo...";
+ try{
+  let count=0;
+  for(const file of [...stagedFiles]){
+   const data=new FormData();data.append("contactId",contactId);data.append("userId",digiUserId);data.append("arquivo",file);if(!count&&caption)data.append("text",caption);
+   const response=await fetch("/colaborador/api/atendimento/enviar-anexo",{method:"POST",credentials:"same-origin",body:data});
+   const result=await response.json().catch(()=>({}));
+   if(!response.ok||!result.enviado)throw Error((result.erro||"Envio não confirmado")+(result.codigo?" (HTTP "+result.codigo+")":""));
+   stagedFiles.splice(stagedFiles.indexOf(file),1);count++;showFiles();
+  }
+  textarea.value="";await openRecord(active.id,false);
+  alert(count+" arquivo(s) confirmado(s) pela API DigiSac. Confira a entrega no histórico.");
+ }catch(err){alert("Não foi possível confirmar o envio: "+err.message+" Confira a DigiSac antes de tentar novamente para evitar duplicidade.")}
+ finally{button.disabled=false;button.textContent="Enviar"}
+}
+
 async function sendMessage(){
  const textarea=document.getElementById("caComposeText"),button=document.getElementById("caSend");
  if(!textarea||!button||!active||!digiUserId)return;
  const contactId=selected==="contatos"?active.id:active.contactId||active.contact?.id;
  const message=textarea.value.trim();
- if(document.querySelector("#caAttachmentPreview [data-ca-remove]")){alert("Os anexos selecionados ainda não podem ser enviados: a API DigiSAC não confirmou o formato de upload. Remova os anexos para enviar somente texto.");return}
+ if(stagedFiles.length){await sendAttachments(contactId,message,textarea,button);return}
  if(!contactId||!message)return;
 
  button.disabled=true;button.textContent="Enviando...";
@@ -140,7 +158,7 @@ for (const id of ["caTransfer","caTags","caClose"]) {
 }
 const attachInput=document.getElementById("caAttachmentInput"),dropZone=document.getElementById("caDropZone"),preview=document.getElementById("caAttachmentPreview");
 let stagedFiles=[];
-const showFiles=()=>{if(!preview)return;preview.style.display=stagedFiles.length?"block":"none";preview.innerHTML=stagedFiles.length?'<strong>Arquivos selecionados (ainda não enviados)</strong><div style="font-size:12px;margin:6px 0">O envio de anexos aguarda a validação da API DigiSAC. O botão Enviar continua enviando apenas texto.</div>'+stagedFiles.map((f,i)=>'<div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0"><span>'+safe(f.name)+' · '+Math.ceil(f.size/1024)+' KB</span><button type="button" data-ca-remove="'+i+'">Remover</button></div>').join(""):'';
+const showFiles=()=>{if(!preview)return;preview.style.display=stagedFiles.length?"block":"none";preview.innerHTML=stagedFiles.length?'<strong>Arquivos selecionados (ainda não enviados)</strong><div style="font-size:12px;margin:6px 0">Envio experimental via DigiSac. Confirme o destinatário antes de enviar.</div>'+stagedFiles.map((f,i)=>'<div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0"><span>'+safe(f.name)+' · '+Math.ceil(f.size/1024)+' KB</span><button type="button" data-ca-remove="'+i+'">Remover</button></div>').join(""):'';
 preview.querySelectorAll("[data-ca-remove]").forEach(b=>b.addEventListener("click",()=>{stagedFiles.splice(Number(b.dataset.caRemove),1);showFiles()}));};
 const addFiles=files=>{if(!active||selected==="contatos"){alert("Selecione um chamado em Meus chats ou Fila antes de anexar.");return}const allowed=/^(image\/(png|jpeg|webp|gif)|application\/pdf|text\/(plain|csv)|application\/(msword|vnd\\.openxmlformats-officedocument\\.wordprocessingml\\.document|vnd\\.ms-excel|vnd\\.openxmlformats-officedocument\\.spreadsheetml\\.sheet))$/i;for(const f of files){if(f.size>15*1024*1024){alert("Arquivo acima do limite provisório de 15 MB: "+f.name);continue}if(!allowed.test(f.type)&&!(/\.(docx?|xlsx?|pdf|txt|csv|png|jpe?g|webp|gif)$/i.test(f.name))){alert("Tipo de arquivo não permitido: "+f.name);continue}stagedFiles.push(f)}showFiles()};
 document.getElementById("caAttach")?.addEventListener("click",()=>attachInput?.click());
