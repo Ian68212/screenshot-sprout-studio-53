@@ -1,6 +1,7 @@
 "use strict";
 (function(){
 const safe=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let stagedFiles=[];let showFiles=()=>{};
 let selected="meus",status=null,records=[],active=null,loading=false,error="",team=null,assignments=[],currentUser=null,lastSync=null,contactsById=new Map(),digiUserId=null,digiMatchStatus="",ticketDiagnostics="",searchTerm="";
 const rows=p=>Array.isArray(p)?p:Array.isArray(p?.rows)?p.rows:Array.isArray(p?.data)?p.data:Array.isArray(p?.items)?p.items:Array.isArray(p?.results)?p.results:[];
 const nameOf=r=>{const c=contactsById.get(String(r.contactId||r.contact?.id))||r.contact||{};return c.name||c.internalName||r.contactName||c.number||r.customer?.name||r.name||r.internalName||r.number||("Chamado #"+(r.protocol||String(r.id||"").slice(0,8)))};
@@ -86,9 +87,12 @@ async function sendAttachments(contactId,caption,textarea,button){
 
 async function sendMessage(){
  const textarea=document.getElementById("caComposeText"),button=document.getElementById("caSend");
- if(!textarea||!button||!active||!digiUserId)return;
+ if(!textarea||!button)return;
+ if(!active){alert("Selecione uma conversa antes de enviar.");return}
+ if(!digiUserId){alert("Atendente DigiSac não identificado. Verifique o cadastro do usuário.");return}
  const contactId=selected==="contatos"?active.id:active.contactId||active.contact?.id;
  const message=textarea.value.trim();
+ if(!contactId){alert("Contato DigiSac não identificado neste chamado.");return}
  if(stagedFiles.length){await sendAttachments(contactId,message,textarea,button);return}
  if(!contactId||!message)return;
 
@@ -157,8 +161,7 @@ for (const id of ["caTransfer","caTags","caClose"]) {
   }
 }
 const attachInput=document.getElementById("caAttachmentInput"),dropZone=document.getElementById("caDropZone"),preview=document.getElementById("caAttachmentPreview");
-let stagedFiles=[];
-const showFiles=()=>{if(!preview)return;preview.style.display=stagedFiles.length?"block":"none";preview.innerHTML=stagedFiles.length?'<strong>Arquivos selecionados (ainda não enviados)</strong><div style="font-size:12px;margin:6px 0">Envio experimental via DigiSac. Confirme o destinatário antes de enviar.</div>'+stagedFiles.map((f,i)=>'<div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0"><span>'+safe(f.name)+' · '+Math.ceil(f.size/1024)+' KB</span><button type="button" data-ca-remove="'+i+'">Remover</button></div>').join(""):'';
+showFiles=()=>{if(!preview)return;preview.style.display=stagedFiles.length?"block":"none";preview.innerHTML=stagedFiles.length?'<strong>Arquivos selecionados (ainda não enviados)</strong><div style="font-size:12px;margin:6px 0">Envio experimental via DigiSac. Confirme o destinatário antes de enviar.</div>'+stagedFiles.map((f,i)=>'<div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0"><span>'+safe(f.name)+' · '+Math.ceil(f.size/1024)+' KB</span><button type="button" data-ca-remove="'+i+'">Remover</button></div>').join(""):'';
 preview.querySelectorAll("[data-ca-remove]").forEach(b=>b.addEventListener("click",()=>{stagedFiles.splice(Number(b.dataset.caRemove),1);showFiles()}));};
 const addFiles=files=>{if(!active||selected==="contatos"){alert("Selecione um chamado em Meus chats ou Fila antes de anexar.");return}const allowed=/^(image\/(png|jpeg|webp|gif)|application\/pdf|text\/(plain|csv)|application\/(msword|vnd\\.openxmlformats-officedocument\\.wordprocessingml\\.document|vnd\\.ms-excel|vnd\\.openxmlformats-officedocument\\.spreadsheetml\\.sheet))$/i;for(const f of files){if(f.size>15*1024*1024){alert("Arquivo acima do limite provisório de 15 MB: "+f.name);continue}if(!allowed.test(f.type)&&!(/\.(docx?|xlsx?|pdf|txt|csv|png|jpe?g|webp|gif)$/i.test(f.name))){alert("Tipo de arquivo não permitido: "+f.name);continue}stagedFiles.push(f)}showFiles()};
 document.getElementById("caAttach")?.addEventListener("click",()=>attachInput?.click());
