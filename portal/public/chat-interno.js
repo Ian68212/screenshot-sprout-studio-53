@@ -86,20 +86,54 @@ $("composer").addEventListener("submit",async e=>{
  }catch(err){$("state").textContent=err.message;}
  finally{$("send").disabled=false;}
 });
-$("attach").addEventListener("click",()=>{if(selected)$("file").click();});
-$("file").addEventListener("change",async()=>{
- const file=$("file").files?.[0];if(!file||!selected)return;
- if(file.size>10*1024*1024){$("state").textContent="Arquivo acima de 10 MB";$("file").value="";return;}
+let uploadingAttachment=false;
+async function sendAttachment(file){
+ if(!file||!selected)return;
+ if(uploadingAttachment){$("state").textContent="Aguarde o envio atual.";return;}
+ if(file.size>10*1024*1024){$("state").textContent="Arquivo acima de 10 MB";return;}
+ if(!file.size){$("state").textContent="Arquivo vazio ou pasta não suportada. Selecione um arquivo.";return;}
  const recipient=selected;
  const form=new FormData();form.append("destinatario_id",String(recipient));form.append("arquivo",file);
- $("attach").disabled=true;$("state").textContent="Enviando documento...";
+ uploadingAttachment=true;$("attach").disabled=true;$("state").textContent="Enviando documento...";
  try{
   await api("/anexos",{method:"POST",headers:{"X-Portal":"1"},body:form});
   if(selected===recipient){await refreshMessages(true);await refreshPeople();}
   $("state").textContent="";
  }catch(err){$("state").textContent=err.message;}
- finally{$("file").value="";$("attach").disabled=!selected;}
+ finally{uploadingAttachment=false;$("file").value="";$("attach").disabled=!selected;}
+}
+$("attach").addEventListener("click",()=>{if(selected)$("file").click();});
+$("file").addEventListener("change",()=>sendAttachment($("file").files?.[0]));
+const dropZone=document.querySelector(".conversation");
+let dragDepth=0;
+dropZone.addEventListener("dragenter",event=>{
+ if(!event.dataTransfer?.types?.includes("Files"))return;
+ event.preventDefault();dragDepth++;
+ if(selected)dropZone.classList.add("drag-over");
 });
+dropZone.addEventListener("dragover",event=>{
+ if(!event.dataTransfer?.types?.includes("Files"))return;
+ event.preventDefault();event.dataTransfer.dropEffect=selected?"copy":"none";
+});
+dropZone.addEventListener("dragleave",event=>{
+ if(!event.dataTransfer?.types?.includes("Files"))return;
+ dragDepth=Math.max(0,dragDepth-1);
+ if(!dragDepth)dropZone.classList.remove("drag-over");
+});
+dropZone.addEventListener("drop",event=>{
+ if(!event.dataTransfer?.types?.includes("Files"))return;
+ event.preventDefault();dragDepth=0;dropZone.classList.remove("drag-over");
+ if(!selected){$("state").textContent="Selecione um colaborador antes de anexar.";return;}
+ const items=Array.from(event.dataTransfer.items||[]);
+ if(items.some(item=>item.webkitGetAsEntry?.()?.isDirectory)){
+  $("state").textContent="Para enviar uma pasta, compacte-a em ZIP.";return;
+ }
+ const files=Array.from(event.dataTransfer.files||[]);
+ if(files.length!==1){$("state").textContent="Arraste um arquivo por vez.";return;}
+ sendAttachment(files[0]);
+});
+document.addEventListener("dragover",event=>{if(event.dataTransfer?.types?.includes("Files"))event.preventDefault();});
+document.addEventListener("drop",event=>{if(event.dataTransfer?.types?.includes("Files"))event.preventDefault();});
 $("message").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();$("composer").requestSubmit();}});
 $("mobileBack").addEventListener("click",()=>app.classList.remove("chat-open"));
 $("search").addEventListener("input",drawPeople);
