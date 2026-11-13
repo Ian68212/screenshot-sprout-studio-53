@@ -351,14 +351,14 @@ r.post("/api/atendimento/enviar-anexo",exigir("painel"),(req,res,next)=>digiMedi
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
  try{
   const uploaded=await fetch(uploadUrl,{method:"POST",headers:{Authorization:"Bearer "+token,Accept:"application/json"},body:form,signal:controller.signal,redirect:"error"});
-  if(!uploaded.ok)return res.status(502).json({erro:"A DigiSac recusou o upload. Nenhuma mensagem foi enviada.",etapa:"upload",codigo:uploaded.status});
+  if(!uploaded.ok){const detail=(await uploaded.text().catch(()=>"")).slice(0,1200);let parsed={};try{parsed=JSON.parse(detail)}catch{};return res.status(502).json({erro:"A DigiSac recusou o upload. Nenhuma mensagem foi enviada.",etapa:"upload",codigo:uploaded.status,detalhe:String(parsed?.message||parsed?.error||parsed?.errors?.[0]?.message||"").slice(0,240)});}
   const uploadData=await uploaded.json().catch(()=>({}));
   const fileId=uploadData?.id||uploadData?.data?.id||uploadData?.file?.id;
   if(!/^[a-z0-9-]{8,100}$/i.test(String(fileId||"")))return res.status(502).json({erro:"Upload sem identificador de arquivo reconhecido. Nenhuma mensagem foi enviada.",etapa:"upload"});
   const payload={contactId,userId,origin:"user",type:"chat",fileId};
   if(caption.trim())payload.text=caption.trim();
   const sent=await fetch(messageUrl,{method:"POST",headers:{Authorization:"Bearer "+token,Accept:"application/json","Content-Type":"application/json"},body:JSON.stringify(payload),signal:controller.signal,redirect:"error"});
-  if(!sent.ok)return res.status(502).json({erro:"Arquivo carregado, mas a DigiSac não confirmou a mensagem.",etapa:"mensagem",codigo:sent.status});
+  if(!sent.ok){const detail=(await sent.text().catch(()=>"")).slice(0,1200);let parsed={};try{parsed=JSON.parse(detail)}catch{};return res.status(502).json({erro:"Arquivo carregado, mas a DigiSac não confirmou a mensagem.",etapa:"mensagem",codigo:sent.status,detalhe:String(parsed?.message||parsed?.error||parsed?.errors?.[0]?.message||"").slice(0,240)});}
   const result=await sent.json().catch(()=>({}));
   return res.json({enviado:true,id:result?.id||result?.data?.id||null});
  }catch(err){return res.status(502).json({erro:err.name==="AbortError"?"Tempo limite; confira a DigiSac antes de repetir.":"Falha na comunicação com a DigiSac; confira antes de repetir."});}
