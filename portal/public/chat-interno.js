@@ -90,17 +90,43 @@ let uploadingAttachment=false;
 async function sendAttachment(file){
  if(!file||!selected)return;
  if(uploadingAttachment){$("state").textContent="Aguarde o envio atual.";return;}
- if(file.size>10*1024*1024){$("state").textContent="Arquivo acima de 10 MB";return;}
- if(!file.size){$("state").textContent="Arquivo vazio ou pasta não suportada. Selecione um arquivo.";return;}
+ const maxSize=2*1024*1024*1024;
+ if(file.size>maxSize){$("state").textContent="Limite de 2 GB por arquivo";return;}
+ if(!file.size){$("state").textContent="Arquivo vazio ou pasta não suportada.";return;}
  const recipient=selected;
- const form=new FormData();form.append("destinatario_id",String(recipient));form.append("arquivo",file);
- uploadingAttachment=true;$("attach").disabled=true;$("state").textContent="Enviando documento...";
+ uploadingAttachment=true;$("attach").disabled=true;
+ const progress=$("uploadProgress"),bar=$("uploadBar");
+ progress.hidden=false;bar.value=0;
  try{
-  await api("/anexos",{method:"POST",headers:{"X-Portal":"1"},body:form});
+  const init=await api("/uploads/iniciar",{method:"POST",headers:{"Content-Type":"application/json","X-Portal":"1"},
+   body:JSON.stringify({destinatario_id:recipient,nome:file.name,mime:file.type||"application/octet-stream",tamanho:file.size})});
+  let offset=init.offset||0,attempts=0;
+  while(offset<file.size){
+   const end=Math.min(offset+init.chunkSize,file.size);
+   const part=file.slice(offset,end);
+   $("state").textContent="Enviando "+Math.floor(100*offset/file.size)+"%";
+   try{
+    const response=await fetch("/colaborador/api/chat-interno/uploads/"+encodeURIComponent(init.uploadId)+"/bloco",{
+     method:"PUT",credentials:"same-origin",headers:{"Content-Type":"application/octet-stream","X-Upload-Offset":String(offset),"X-Portal":"1"},body:part
+    });
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok){
+     if(response.status===409&&Number.isFinite(data.offset)){offset=data.offset;continue;}
+     throw Error(data.erro||"Falha no envio ("+response.status+")");
+    }
+    if(data.offset<=offset&&!data.complete)throw Error("Envio não avançou");
+    offset=data.offset;attempts=0;bar.value=Math.round(100*offset/file.size);
+    if(data.complete)break;
+   }catch(error){
+    if(++attempts>3)throw error;
+    const status=await api("/uploads/"+encodeURIComponent(init.uploadId));
+    offset=status.offset;
+   }
+  }
   if(selected===recipient){await refreshMessages(true);await refreshPeople();}
-  $("state").textContent="";
- }catch(err){$("state").textContent=err.message;}
- finally{uploadingAttachment=false;$("file").value="";$("attach").disabled=!selected;}
+  $("state").textContent="Documento enviado";
+ }catch(err){$("state").textContent="Falha no envio: "+err.message;}
+ finally{uploadingAttachment=false;$("file").value="";$("attach").disabled=!selected;progress.hidden=true;}
 }
 $("attach").addEventListener("click",()=>{if(selected)$("file").click();});
 $("file").addEventListener("change",()=>sendAttachment($("file").files?.[0]));
