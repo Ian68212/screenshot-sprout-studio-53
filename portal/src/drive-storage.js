@@ -83,3 +83,16 @@ export async function appendResumableDriveChunk(sessionUrl,buffer,start,total,mi
  if(!data.id)throw Error("Google Drive não retornou identificador do arquivo");
  return {complete:true,id:data.id,nextOffset:total};
 }
+
+/** Download em streaming para não carregar arquivos grandes na RAM. */
+export async function streamDriveFile(id,res){
+ if(!/^[A-Za-z0-9_-]{10,}$/.test(String(id)))throw Error("Identificador inválido");
+ const token=await driveAccessToken();
+ const response=await fetch(api+"/"+encodeURIComponent(id)+"?alt=media",{
+  headers:{Authorization:"Bearer "+token},redirect:"error"
+ });
+ if(!response.ok)throw Error("Falha ao baixar do Google Drive: HTTP "+response.status);
+ const {Readable}=await import("node:stream");
+ const {pipeline}=await import("node:stream/promises");
+ await pipeline(Readable.fromWeb(response.body),res);
+}
