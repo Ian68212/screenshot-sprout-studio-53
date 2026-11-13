@@ -24,7 +24,7 @@ import { siteRouter } from "./site-cms.js";
 import { mediaRouter } from "./site-media.js";
 import { publicSiteRouter } from "./public-site.js";
 import menuPermissoesRouter from "./menu-permissoes.js";
-import emailCorporativoRouter from "./email-corporativo.js";
+import emailCorporativoRouter, { conectarCaixaIndividualNoLogin } from "./email-corporativo.js";
 import { profilePhotoRouter, ensureProfilePhotoSchema } from "./profile-photo.js";
 
 const BASE = process.env.BASE_PATH || "/colaborador";
@@ -221,6 +221,7 @@ r.post("/api/login", limiteLogin, wrap(async (req, res) => {
   if (s?.bloqueado) return res.status(423).json({ erro: "Acesso bloqueado temporariamente. Tente mais tarde." });
   if (s?.indisponivel) return res.status(503).json({ erro: "Não foi possível validar seu e-mail na Hostinger agora. Tente novamente em alguns minutos." });
   if (!s) return res.status(401).json({ erro: "E-mail ou senha incorretos" });
+  try { await conectarCaixaIndividualNoLogin(email, senha); } catch (error) { console.error("[email] Falha ao vincular caixa no login:", error?.message); }
   res.cookie(COOKIE, s.token, {
     // OAuth do Google retorna por navegação externa: Lax preserva a sessão no callback GET.
     // HttpOnly, Secure em produção e o escopo de caminho continuam ativos.
