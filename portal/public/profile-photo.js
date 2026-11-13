@@ -1,42 +1,39 @@
 (()=>{"use strict";
-const css=`
-.rp-profile-trigger{display:inline-flex;align-items:center;gap:9px;border:0;background:transparent;color:inherit;font:inherit;cursor:pointer;padding:5px 8px;border-radius:12px}
-.rp-profile-trigger:hover{background:#ffffff18}
-#rp-profile-avatar{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;overflow:hidden;flex:none;background:#eaf2f8;color:#173b58;border:2px solid #f18d37;font-weight:800}
-#rp-profile-avatar img{width:100%;height:100%;object-fit:cover}
-#rp-profile-caption{display:grid;text-align:left;gap:2px}
-#rp-profile-caption small{font-size:10px;opacity:.75;font-weight:500}
-#rp-profile-dialog{width:min(430px,calc(100vw - 28px));border:0;border-radius:18px;padding:0;box-shadow:0 24px 70px #071d32aa;color:#19354d}
-#rp-profile-dialog::backdrop{background:#061a2acc;backdrop-filter:blur(3px)}
-#rp-profile-dialog form{padding:22px;display:grid;gap:13px}
-#rp-profile-dialog h2{margin:0;font-size:20px}
-#rp-profile-dialog p{margin:0;color:#64788a;font-size:13px;line-height:1.45}
-#rp-profile-preview{width:112px;height:112px;object-fit:cover;border-radius:50%;margin:4px auto 8px;border:4px solid #edf3f8;background:#edf3f8}
-#rp-profile-dialog input[type=file]{width:100%;padding:10px;border:1px solid #d7e1e9;border-radius:10px;background:#f8fafc}
-#rp-profile-dialog .rp-profile-actions{display:flex;justify-content:flex-end;gap:9px}
-#rp-profile-dialog button{border:0;border-radius:9px;padding:10px 15px;font-weight:700;cursor:pointer;background:#173b58;color:#fff}
-#rp-profile-dialog button.secondary{background:#edf2f6;color:#29445b}
-#rp-profile-message{min-height:18px;color:#b42332;font-size:12px}
-@media(max-width:650px){#rp-profile-caption small{display:none}#rp-profile-avatar{width:34px;height:34px}.rp-profile-trigger{gap:5px;padding:3px}}
-`;
-const style=document.createElement("style");style.textContent=css;document.head.append(style);
-const nameNode=document.getElementById("user");if(!nameNode)return;
-const trigger=document.createElement("button");trigger.type="button";trigger.id="user";trigger.className="rp-profile-trigger";trigger.title="Ver e atualizar minha foto";
-const avatar=document.createElement("span");avatar.id="rp-profile-avatar";
-const caption=document.createElement("span");caption.id="rp-profile-caption";
-const name=document.createElement("strong");name.textContent=nameNode.textContent.trim()||"Colaborador";
-const sub=document.createElement("small");sub.textContent="Meu perfil · Alterar foto";
-caption.append(name,sub);trigger.append(avatar,caption);nameNode.replaceWith(trigger);
-const dialog=document.createElement("dialog");dialog.id="rp-profile-dialog";
-dialog.innerHTML='<form id="rp-profile-form"><h2>Meu perfil</h2><p>Atualize sua foto para que ela apareça no portal e na identificação da equipe.</p><img id="rp-profile-preview" alt="Prévia da foto de perfil"><label for="rp-profile-file"><strong>Escolher foto</strong></label><input id="rp-profile-file" type="file" accept="image/jpeg,image/png,image/webp"><p>JPG, PNG ou WebP · até 3 MB</p><div id="rp-profile-message" role="status"></div><div class="rp-profile-actions"><button type="button" class="secondary" id="rp-profile-close">Fechar</button><button type="submit" id="rp-profile-save">Salvar foto</button></div></form>';
-document.body.append(dialog);
-const preview=dialog.querySelector("#rp-profile-preview"),file=dialog.querySelector("#rp-profile-file"),message=dialog.querySelector("#rp-profile-message"),save=dialog.querySelector("#rp-profile-save");
-let currentPhoto="",userName="Colaborador";
-function paint(url){avatar.innerHTML="";if(url){const img=document.createElement("img");img.src=url;img.alt="";avatar.append(img);preview.src=url;}else{const initials=userName.split(/\s+/).slice(0,2).map(x=>x[0]||"").join("").toUpperCase();avatar.textContent=initials||"R";preview.removeAttribute("src");preview.style.objectFit="contain";preview.src="data:image/svg+xml,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect width="100%" height="100%" fill="#eaf2f8"/><text x="50%" y="55%" font-size="40" text-anchor="middle" fill="#173b58" font-family="Arial">'+(initials||"R")+'</text></svg>');}}
-async function load(){try{const r=await fetch("/colaborador/api/eu",{credentials:"same-origin",cache:"no-store"});if(!r.ok)return;const u=await r.json();userName=u.nome||"Colaborador";name.textContent=userName;sub.textContent=[u.setor,u.cargo].filter(Boolean).join(" · ")||"Meu perfil · Alterar foto";currentPhoto=u.foto_url?u.foto_url+"?v="+Date.now():"";paint(currentPhoto);}catch(e){console.warn("Perfil não carregado",e);}}
-trigger.addEventListener("click",()=>{message.textContent="";file.value="";preview.style.objectFit="cover";dialog.showModal();});
-dialog.querySelector("#rp-profile-close").addEventListener("click",()=>dialog.close());
-file.addEventListener("change",()=>{const f=file.files?.[0];if(!f)return;if(!["image/jpeg","image/png","image/webp"].includes(f.type)||f.size>3*1024*1024){file.value="";message.textContent="Escolha JPG, PNG ou WebP de até 3 MB.";return;}preview.src=URL.createObjectURL(f);preview.style.objectFit="cover";message.textContent="";});
-dialog.querySelector("form").addEventListener("submit",async e=>{e.preventDefault();const f=file.files?.[0];if(!f){message.textContent="Escolha uma foto antes de salvar.";return;}save.disabled=true;save.textContent="Enviando...";message.textContent="";try{const data=new FormData();data.append("foto",f);const r=await fetch("/colaborador/api/perfil/foto",{method:"PUT",credentials:"same-origin",headers:{"X-Portal":"1"},body:data});const out=await r.json().catch(()=>({}));if(!r.ok)throw Error(out.erro||"Não foi possível salvar a foto.");currentPhoto=out.foto_url;paint(currentPhoto);dialog.close();}catch(err){message.textContent=err.message;}finally{save.disabled=false;save.textContent="Salvar foto";}});
+if(window.__rpGlobalProfile)return;window.__rpGlobalProfile=true;
+const style=document.createElement("style");style.textContent=`
+#rp-global-profile{position:fixed;right:18px;top:12px;z-index:8500;font:14px Arial,sans-serif;color:#fff}
+#rp-global-profile .rp-trigger{display:flex;align-items:center;gap:10px;padding:6px 12px;border:1px solid #ffffff33;border-radius:14px;background:#102d49ed;color:#fff;box-shadow:0 5px 18px #0003;cursor:pointer}
+#rp-global-profile .rp-avatar{display:grid;place-items:center;flex:none;width:39px;height:39px;border:2px solid #87b9e1;border-radius:50%;overflow:hidden;background:#264a69;color:#fff;font-weight:700}
+#rp-global-profile .rp-avatar img{width:100%;height:100%;object-fit:cover}
+#rp-global-profile .rp-menu{position:absolute;right:0;top:calc(100% + 8px);min-width:235px;background:#fff;color:#18334a;border:1px solid #dbe5ed;border-radius:13px;padding:8px;box-shadow:0 15px 35px #0004}
+#rp-global-profile .rp-menu[hidden]{display:none}
+#rp-global-profile .rp-menu button{display:block;width:100%;padding:12px;border:0;background:transparent;color:#18334a;text-align:left;font:inherit;cursor:pointer;border-radius:8px}
+#rp-global-profile .rp-menu button:hover{background:#eef4f9}
+#rp-global-profile .rp-menu .rp-logout{color:#b42332;border-top:1px solid #e7edf2;border-radius:0}
+#rp-global-profile .rp-name{max-width:155px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+#rp-global-profile .rp-dialog{border:0;border-radius:16px;padding:22px;max-width:410px;width:calc(100vw - 35px);color:#19354d;background:white;box-shadow:0 20px 70px #0007}
+#rp-global-profile .rp-dialog::backdrop{background:#031729b8}
+#rp-global-profile .rp-dialog form{display:grid;gap:12px}
+#rp-global-profile .rp-dialog h2{margin:0}
+#rp-global-profile .rp-dialog img{height:105px;width:105px;border-radius:50%;object-fit:cover;margin:auto;background:#eaf1f7}
+#rp-global-profile .rp-dialog input{max-width:100%}
+#rp-global-profile .rp-dialog button{padding:10px;border:0;border-radius:8px;background:#174e79;color:white;cursor:pointer}
+#rp-global-profile .rp-dialog .rp-cancel{background:#eaf1f7;color:#173b58}
+#rp-global-profile .rp-dialog small{color:#63798c}
+@media(max-width:650px){#rp-global-profile{right:8px;top:7px}.rp-name{display:none}#rp-global-profile .rp-trigger{padding:4px 7px}}
+`;document.head.append(style);
+const root=document.createElement("div");root.id="rp-global-profile";root.innerHTML=`<button class="rp-trigger" type="button" aria-label="Abrir menu do usuário" aria-expanded="false"><span class="rp-avatar">RP</span><span class="rp-name">Meu perfil</span><span aria-hidden="true">⌄</span></button><div class="rp-menu" hidden><button type="button" class="rp-edit">📷 Alterar minha foto</button><button type="button" class="rp-logout">↪ Sair do portal</button></div><dialog class="rp-dialog"><form><h2>Minha foto de perfil</h2><small>Essa foto será utilizada em todos os painéis e no Chat Interno.</small><img class="rp-preview" alt="Foto de perfil"><input type="file" accept="image/jpeg,image/png,image/webp" required><small>JPG, PNG ou WebP · máximo 3 MB</small><p class="rp-feedback" role="status"></p><button type="submit" class="rp-save">Salvar foto</button><button type="button" class="rp-cancel">Cancelar</button></form></dialog>`;
+document.body.append(root);
+const trigger=root.querySelector(".rp-trigger"),menu=root.querySelector(".rp-menu"),avatar=root.querySelector(".rp-avatar"),name=root.querySelector(".rp-name"),dialog=root.querySelector("dialog"),file=root.querySelector("input"),preview=root.querySelector(".rp-preview"),feedback=root.querySelector(".rp-feedback");
+let user=null,photo="";
+function paint(){avatar.replaceChildren();if(photo){const img=document.createElement("img");img.src=photo;img.alt="";img.onerror=()=>{avatar.textContent=(user?.nome||"RP").slice(0,2).toUpperCase()};avatar.append(img);preview.src=photo}else{avatar.textContent=(user?.nome||"RP").split(" ").slice(0,2).map(v=>v[0]||"").join("").toUpperCase();preview.removeAttribute("src")}name.textContent=user?.nome||"Meu perfil";}
+async function load(){try{const r=await fetch("/colaborador/api/eu",{credentials:"same-origin",cache:"no-store"});if(!r.ok){root.hidden=true;return}user=await r.json();photo=user.foto_url?user.foto_url+"?v="+Date.now():"";paint();}catch{root.hidden=true}}
+trigger.onclick=()=>{menu.hidden=!menu.hidden;trigger.setAttribute("aria-expanded",String(!menu.hidden))};
+document.addEventListener("click",e=>{if(!root.contains(e.target)){menu.hidden=true;trigger.setAttribute("aria-expanded","false")}});
+root.querySelector(".rp-edit").onclick=()=>{menu.hidden=true;feedback.textContent="";file.value="";dialog.showModal()};
+root.querySelector(".rp-cancel").onclick=()=>dialog.close();
+file.onchange=()=>{const f=file.files?.[0];if(!f)return;if(!["image/jpeg","image/png","image/webp"].includes(f.type)||f.size>3*1024*1024){feedback.textContent="Selecione uma foto JPG, PNG ou WebP de até 3 MB.";file.value="";return}preview.src=URL.createObjectURL(f)};
+root.querySelector("form").onsubmit=async e=>{e.preventDefault();const f=file.files?.[0];if(!f)return;const btn=root.querySelector(".rp-save");btn.disabled=true;feedback.textContent="Salvando...";try{const form=new FormData();form.append("foto",f);const r=await fetch("/colaborador/api/perfil/foto",{method:"PUT",credentials:"same-origin",headers:{"X-Portal":"1"},body:form});const data=await r.json().catch(()=>({}));if(!r.ok)throw Error(data.erro||"Falha ao salvar");photo=data.foto_url;paint();dialog.close();document.dispatchEvent(new CustomEvent("rp-profile-updated",{detail:{foto_url:photo}}))}catch(err){feedback.textContent=err.message}finally{btn.disabled=false}};
+root.querySelector(".rp-logout").onclick=async()=>{try{await fetch("/colaborador/api/logout",{method:"POST",credentials:"same-origin",headers:{"X-Portal":"1"}})}finally{location.replace("/colaborador/")}};
 load();
 })();
