@@ -6,15 +6,13 @@ import crypto from "node:crypto";
 import { q, auditar } from "./db.js";
 import { exigir } from "./auth.js";
 import { taskPolicy } from "./access-profiles.js";
+import { uploadDriveFile, readDriveFile, deleteDriveFile } from "./drive-storage.js";
 
 export const taskAttachmentsRouter = Router();
 taskAttachmentsRouter.use(exigir("painel"));
 const folder=path.resolve(process.env.TASK_ATTACHMENTS_DIR || path.join(process.cwd(),"private","task-attachments"));
 const allowed=new Set([".pdf",".png",".jpg",".jpeg",".webp",".txt",".csv",".doc",".docx",".xls",".xlsx"]);
-const upload=multer({storage:multer.diskStorage({
- destination:(_req,_file,cb)=>{fs.mkdir(folder,{recursive:true}).then(()=>cb(null,folder),cb);},
- filename:(_req,_file,cb)=>cb(null,crypto.randomUUID())
-}),limits:{fileSize:10*1024*1024,files:1},fileFilter:(_req,file,cb)=>{
+const upload=multer({storage:multer.memoryStorage(),limits:{fileSize:10*1024*1024,files:1},fileFilter:(_req,file,cb)=>{
  const ext=path.extname(file.originalname).toLowerCase();
  cb(null,allowed.has(ext));
 }}).single("arquivo");
@@ -31,6 +29,9 @@ async function schema(){
  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
  INDEX(task_id)
  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`).catch(e=>{ready=null;throw e});
+ await ready;
+ const cols=await q("SHOW COLUMNS FROM rp_task_attachments LIKE 'drive_file_id'");
+ if(!cols.length)await q("ALTER TABLE rp_task_attachments ADD COLUMN drive_file_id VARCHAR(200) NULL");
  return ready;
 }
 const wrap=fn=>async(req,res,next)=>{try{await schema();await fn(req,res);}catch(e){next(e)}};
@@ -56,11 +57,14 @@ taskAttachmentsRouter.post("/:taskId",wrap(async(req,res,next)=>{
   if(err)return next(err);
   if(!req.file)return res.status(400).json({erro:"Arquivo ausente ou formato não permitido"});
   try{
-   const out=await q("INSERT INTO rp_task_attachments(task_id,stored_name,original_name,mime_type,file_size,uploaded_by) VALUES (?,?,?,?,?,?)",
-    [req.params.taskId,req.file.filename,path.basename(req.file.originalname).slice(0,255),req.file.mimetype,req.file.size,req.usuario.id]);
+   const driveId=await uploadDriveFile({category:"Tarefas",name:req.file.originalname,mime:req.file.mimetype,buffer:req.file.buffer});
+   let out;
+   try{out=await q("INSERT INTO rp_task_attachments(task_id,stored_name,original_name,mime_type,file_size,uploaded_by,drive_file_id) VALUES (?,?,?,?,?,?,?)",
+    [req.params.taskId,crypto.randomUUID(),path.basename(req.file.originalname).slice(0,255),req.file.mimetype,req.file.size,req.usuario.id,driveId]);}
+   catch(e){await deleteDriveFile(driveId).catch(()=>{});throw e;}
    await auditar(req.usuario.id,"anexou_documento_tarefa",String(req.params.taskId),req.ip);
    res.status(201).json({id:out.insertId,name:req.file.originalname,size:req.file.size});
-  }catch(e){await fs.unlink(req.file.path).catch(()=>{});next(e)}
+  }catch(e){next(e)}
  });
 }));
 taskAttachmentsRouter.get("/:taskId/:id/download",wrap(async(req,res)=>{
@@ -68,14 +72,22 @@ taskAttachmentsRouter.get("/:taskId/:id/download",wrap(async(req,res)=>{
  const [row]=await q("SELECT * FROM rp_task_attachments WHERE id=? AND task_id=?",[req.params.id,req.params.taskId]);
  if(!row)return res.status(404).json({erro:"Anexo não encontrado"});
  res.set("Cache-Control","private, no-store");
+ if(row.drive_file_id){
+  const bytes=await readDriveFile(row.drive_file_id);
+  res.set("Content-Type","application/octet-stream");
+  res.set("X-Content-Type-Options","nosniff");
+  res.set("Content-Disposition","attachment; filename*=UTF-8''"+encodeURIComponent(row.original_name));
+  return res.send(bytes);
+ }
  res.download(path.join(folder,row.stored_name),row.original_name);
 }));
 taskAttachmentsRouter.delete("/:taskId/:id",wrap(async(req,res)=>{
  if(!await access(req,req.params.taskId,"tasks.attachments.delete"))return res.status(403).json({erro:"Sem permissão para excluir anexos"});
  const [row]=await q("SELECT * FROM rp_task_attachments WHERE id=? AND task_id=?",[req.params.id,req.params.taskId]);
  if(!row)return res.status(404).json({erro:"Anexo não encontrado"});
+ if(row.drive_file_id)await deleteDriveFile(row.drive_file_id);
  await q("DELETE FROM rp_task_attachments WHERE id=?",[row.id]);
- await fs.unlink(path.join(folder,row.stored_name)).catch(()=>{});
+ if(!row.drive_file_id)await fs.unlink(path.join(folder,row.stored_name)).catch(()=>{});
  await auditar(req.usuario.id,"excluiu_documento_tarefa",String(req.params.taskId),req.ip);
  res.json({ok:true});
 }));
