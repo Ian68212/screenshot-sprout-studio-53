@@ -356,6 +356,10 @@ r.post("/api/atendimento/enviar-anexo",exigir("painel"),(req,res,next)=>digiMedi
  form.append("file",new Blob([req.file.buffer],{type:mimeMap[ext]}),path.basename(req.file.originalname).slice(0,120));
  form.append("mimetype",mimeMap[ext]);
  form.append("extension",ext.slice(1));
+ // Algumas APIs interpretam atributos do arquivo como campos aninhados.
+ form.append("file[mimetype]",mimeMap[ext]);
+ form.append("file[extension]",ext.slice(1));
+ form.append("file[name]",path.basename(req.file.originalname).slice(0,120));
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
  try{
   const uploaded=await fetch(uploadUrl,{method:"POST",headers:{Authorization:"Bearer "+token,Accept:"application/json"},body:form,signal:controller.signal,redirect:"error"});
