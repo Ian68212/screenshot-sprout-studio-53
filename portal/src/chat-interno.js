@@ -71,7 +71,8 @@ router.get("/mensagens/:id", fail(async (req,res) => {
   if (!Number.isSafeInteger(outro) || outro<=0 || outro===id) return res.status(400).json({erro:"Conversa inválida"});
   const [p]=await q("SELECT id,nome FROM usuarios WHERE id=? AND ativo=1",[outro]);
   if(!p) return res.status(404).json({erro:"Colaborador indisponível"});
-  const mensagens=await q(`SELECT * FROM (SELECT m.id,m.remetente_id,m.destinatario_id,m.texto,m.criado_em,m.lido_em,a.nome AS anexo_nome,a.tamanho AS anexo_tamanho\n    FROM chat_interno_mensagens m LEFT JOIN chat_interno_anexos a ON a.mensagem_id=m.id
+  const mensagens=await q(`SELECT * FROM (SELECT m.id,m.remetente_id,m.destinatario_id,m.texto,m.criado_em,m.lido_em,a.nome AS anexo_nome,a.tamanho AS anexo_tamanho
+    FROM chat_interno_mensagens m LEFT JOIN chat_interno_anexos a ON a.mensagem_id=m.id
     WHERE (m.remetente_id=? AND m.destinatario_id=?) OR (m.remetente_id=? AND m.destinatario_id=?)
     ORDER BY m.id DESC LIMIT 100) x ORDER BY id ASC`,[id,outro,outro,id]);
   await q("UPDATE chat_interno_mensagens SET lido_em=NOW() WHERE remetente_id=? AND destinatario_id=? AND lido_em IS NULL",[outro,id]);
