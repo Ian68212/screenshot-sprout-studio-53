@@ -266,15 +266,15 @@ r.get("/api/atendimento/arquivo/:id", exigir("painel"), wrap(async(req,res)=>{
   const metaUrl=new URL(base+"/files/"+id);
   if(metaUrl.protocol!=="https:"||metaUrl.hostname!=="rodrinoxpro.digisac.app"||!metaUrl.pathname.startsWith("/api/v1/"))return res.sendStatus(503);
   const metaResponse=await fetch(metaUrl,{headers:{Authorization:"Bearer "+token,Accept:"application/json"},signal:controller.signal,redirect:"error"});
-  if(!metaResponse.ok)return res.sendStatus(502);
+  if(!metaResponse.ok){console.warn("[digisac-arquivo] metadata",metaResponse.status,id);return res.status(502).json({erro:"Falha ao consultar os metadados do arquivo na DigiSac.",etapa:"metadados",codigo:metaResponse.status});}
   const metadata=await metaResponse.json();
   const file=metadata?.data||metadata;
-  const raw=file?.url||file?.downloadUrl||file?.publicUrl||file?.fileUrl||file?.uri;
-  if(typeof raw!=="string")return res.sendStatus(404);
+  const raw=file?.url||file?.downloadUrl||file?.publicUrl||file?.fileUrl||file?.uri||file?.data?.url||file?.data?.downloadUrl;
+  if(typeof raw!=="string"){console.warn("[digisac-arquivo] metadata without URL",id,Object.keys(file||{}));return res.status(502).json({erro:"A DigiSac não forneceu URL de download.",etapa:"url"});}
   const url=new URL(raw);
   if(url.protocol!=="https:"||!url.hostname.endsWith(".objectstorage.sa-vinhedo-1.oraclecloud.com"))return res.sendStatus(502);
   const upstream=await fetch(url,{signal:controller.signal,redirect:"error"});
-  if(!upstream.ok)return res.sendStatus(502);
+  if(!upstream.ok){console.warn("[digisac-arquivo] storage",upstream.status,id);return res.status(502).json({erro:"Armazenamento recusou o download.",etapa:"armazenamento",codigo:upstream.status});}
   const mime=String(upstream.headers.get("content-type")||"application/octet-stream").split(";")[0].trim().toLowerCase();
   const allowed=/^(image\/(jpeg|png|webp|gif)|application\/pdf|text\/plain|application\/octet-stream)$/.test(mime);
   if(!allowed)return res.sendStatus(415);
@@ -284,7 +284,7 @@ r.get("/api/atendimento/arquivo/:id", exigir("painel"), wrap(async(req,res)=>{
   res.setHeader("X-Content-Type-Options","nosniff");
   res.setHeader("Content-Disposition","inline");
   return res.send(bytes);
- }catch{return res.status(502).json({erro:"Não foi possível carregar o arquivo DigiSac."})}
+ }catch(err){console.warn("[digisac-arquivo] network",id,err?.name||"erro");return res.status(502).json({erro:"Não foi possível carregar o arquivo DigiSac.",etapa:"conexao"});}
  finally{clearTimeout(timer)}
 }));
 
