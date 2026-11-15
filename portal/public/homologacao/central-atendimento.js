@@ -37,7 +37,8 @@ const mediaMarkup=m=>{
  const f=m.file||m.data?.file||m.attachment||m.data?.attachment||m.files?.[0]||{};
  const file=Array.isArray(f)?f[0]||{}:f;
  const raw=file.url||file.downloadUrl||file.publicUrl||file.uri||file.fileUrl||file.path||m.fileUrl||m.mediaUrl||m.url||m.thumbnail?.url||m.preview?.url;
- const url=mediaUrl(raw);
+ const fileId=String(m.fileId||file.id||"");
+ const url=/^[a-f0-9-]{36}$/i.test(fileId)?"/colaborador/api/atendimento/arquivo/"+encodeURIComponent(fileId):mediaUrl(raw);
  const name=String(file.name||file.originalName||file.filename||m.fileName||m.filename||"Arquivo");
  const mime=String(file.mimetype||file.mimeType||file.type||m.mimetype||"").toLowerCase();
  const type=messageType(m);
