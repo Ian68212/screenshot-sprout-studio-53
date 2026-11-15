@@ -34,15 +34,17 @@ const isMessage=m=>{
 };
 const mediaUrl=value=>{try{const u=new URL(String(value||""));return u.protocol==="https:"&&(/(^|\.)digisac\.app$/.test(u.hostname)||/(^|\.)objectstorage\.[a-z0-9-]+\.oraclecloud\.com$/.test(u.hostname))?u.href:""}catch{return ""}};
 const mediaMarkup=m=>{
- const file=m.file||m.data?.file||m.attachment||m.data?.attachment||{};
- const raw=file.url||file.downloadUrl||file.publicUrl||file.uri||m.fileUrl||m.mediaUrl||m.url||m.thumbnail?.url||m.preview?.url;
+ const f=m.file||m.data?.file||m.attachment||m.data?.attachment||m.files?.[0]||{};
+ const file=Array.isArray(f)?f[0]||{}:f;
+ const raw=file.url||file.downloadUrl||file.publicUrl||file.uri||file.fileUrl||file.path||m.fileUrl||m.mediaUrl||m.url||m.thumbnail?.url||m.preview?.url;
  const url=mediaUrl(raw);
- const name=String(file.name||file.originalName||m.fileName||m.filename||"Arquivo");
- const mime=String(file.mimetype||file.mimeType||m.mimetype||"").toLowerCase();
+ const name=String(file.name||file.originalName||file.filename||m.fileName||m.filename||"Arquivo");
+ const mime=String(file.mimetype||file.mimeType||file.type||m.mimetype||"").toLowerCase();
  const type=messageType(m);
+ const isImage=mime.startsWith("image/")||type==="image"||/\\.(png|jpe?g|webp|gif)(\\?|$)/i.test(name)||/\\.(png|jpe?g|webp|gif)(\\?|$)/i.test(url);
  if(!url)return m.fileId||file.id||["image","document","file","audio","video"].includes(type)?'<span class="ca-media-missing">📎 '+safe(name==="Arquivo"?"Arquivo anexado":name)+'</span>':"";
- if(mime.startsWith("image/")||type==="image"||/\.(png|jpe?g|webp|gif)(\?|$)/i.test(url))return '<a href="'+safe(url)+'" target="_blank" rel="noopener noreferrer"><img src="'+safe(url)+'" alt="'+safe(name)+'" loading="lazy" style="display:block;max-width:min(100%,320px);max-height:280px;object-fit:contain;border-radius:9px;margin-top:6px"></a>';
- return '<a href="'+safe(url)+'" target="_blank" rel="noopener noreferrer" style="display:inline-block;margin-top:6px">📎 '+safe(name)+'</a>';
+ if(isImage)return '<a href="'+safe(url)+'" target="_blank" rel="noopener noreferrer" title="Abrir imagem"><img src="'+safe(url)+'" alt="'+safe(name)+'" loading="lazy" style="display:block;max-width:min(100%,320px);max-height:320px;object-fit:contain;border-radius:9px;margin-top:6px"></a>';
+ return '<a href="'+safe(url)+'" target="_blank" rel="noopener noreferrer" style="display:inline-flex;gap:8px;align-items:center;margin-top:6px;padding:9px;border:1px solid #c6d9e7;border-radius:8px">📄 '+safe(name)+'</a>';
 };
 const messageTime=m=>{const v=m.sentAt||m.createdAt||m.timestamp||m.date;if(!v)return "";const d=new Date(v);return Number.isNaN(d.getTime())?"":d.toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})};
 async function loadTeam(){try{const [a,b]=await Promise.all([fetch("/colaborador/api/atendimento/rodrinox/atribuicoes",{credentials:"same-origin"}),fetch("/colaborador/api/atendimento/rodrinox/equipe",{credentials:"same-origin"})]);if(a.ok){const d=await a.json();assignments=d.atribuicoes||[];currentUser=d.usuario;}if(b.ok)team=await b.json()}catch(e){console.warn("Equipe indisponível")}}
