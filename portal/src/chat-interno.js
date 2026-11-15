@@ -8,7 +8,7 @@ import { uploadDriveFile, readDriveFile, deleteDriveFile, startResumableDriveUpl
 
 const router = Router();
 const attachmentUpload = multer({storage:multer.memoryStorage(),limits:{fileSize:10*1024*1024,files:1},fileFilter(_req,file,cb){
-  const allowed=/^(application\/(pdf|msword|vnd\.openxmlformats-officedocument\.(wordprocessingml\.document|spreadsheetml\.sheet|presentationml\.presentation)|vnd\.ms-excel|vnd\.ms-powerpoint|zip|x-zip-compressed|octet-stream)|image\/(jpeg|png|webp)|text\/plain)$/;
+  const allowed=/^(application\/(pdf|msword|vnd\.openxmlformats-officedocument\.(wordprocessingml\.document|spreadsheetml\.sheet|presentationml\.presentation)|vnd\.ms-excel|vnd\.ms-powerpoint|zip|x-zip-compressed|octet-stream)|image\/(jpeg|png|webp)|audio\/(webm|mp4|ogg|mpeg|aac|3gpp|x-m4a)|text\/plain)$/;
   if(!allowed.test(file.mimetype))return cb(Object.assign(new Error("Formato não permitido. Envie PDF, Office, imagem, áudio, TXT ou ZIP."),{status:400}));
   cb(null,true);
 }});
@@ -112,6 +112,7 @@ router.post("/anexos",attachmentUpload.single("arquivo"),fail(async(req,res)=>{
   try{
     const result=await q("INSERT INTO chat_interno_mensagens (remetente_id,destinatario_id,texto) VALUES (?,?,?)",[id,outro,"📎 "+nome]);
     await q("INSERT INTO chat_interno_anexos (mensagem_id,drive_id,nome,mime,tamanho) VALUES (?,?,?,?,?)",[result.insertId,driveId,nome,file.mimetype,file.size]);
+    enviarPushSemBloquear(outro,{type:"message",title:"Chat interno Rodrinox Pro",body:file.mimetype.startsWith("audio/")?"Você recebeu uma mensagem de voz.":"Você recebeu um arquivo."});
     res.status(201).json({ok:true,id:result.insertId});
   }catch(err){await deleteDriveFile(driveId).catch(()=>{});throw err;}
 }));
