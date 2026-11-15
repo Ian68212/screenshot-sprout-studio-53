@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { MessageCircle, Instagram, ArrowUpRight, X } from "lucide-react";
+import { useState } from "react";
+import { MessageCircle, Instagram } from "lucide-react";
 import logoOficial from "@/assets/rodrinox-oficial.png";
 import { company, nav, services } from "@/content/site";
 import { whatsappUrl } from "@/lib/whatsapp";
@@ -97,40 +97,16 @@ export function WhatsAppFab() {
 }
 
 export function InstagramFab() {
-  // Perfil oficial fixo: nunca direcionar à página inicial do Instagram por configuração genérica.
-  const url = "https://www.instagram.com/rodrinoxpro/";
-  const [open, setOpen] = useState(false);
-  const [dismissed, setDismissed] = useState(false);
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      if (sessionStorage.getItem("rp-instagram-invite-dismissed")) { setDismissed(true); return; }
-    } catch {}
-    const timer = window.setTimeout(() => setOpen(true), 5500);
-    return () => window.clearTimeout(timer);
-  }, []);
-  function close() {
-    setOpen(false);
-    setDismissed(true);
-    try { sessionStorage.setItem("rp-instagram-invite-dismissed", "1"); } catch {}
-  }
   return (
-    <div className="fixed bottom-24 right-5 z-40 flex flex-col items-end gap-3 sm:bottom-24" aria-label="Instagram da Rodrinox Pro">
-      {open && !dismissed && (
-        <div className="relative w-[min(340px,calc(100vw-40px))] rounded-xl border border-white/15 bg-[#102d49] p-4 text-white shadow-2xl animate-in fade-in slide-in-from-bottom-3 duration-300">
-          <button type="button" onClick={close} aria-label="Fechar convite para o Instagram" className="absolute right-2 top-2 rounded-full p-1.5 text-white/70 hover:bg-white/10 hover:text-white"><X className="h-4 w-4" /></button>
-          <div className="flex items-start gap-3 pr-5">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-[#FEDA75] via-[#E1306C] to-[#833AB4] text-white shadow-md"><Instagram className="h-6 w-6" /></span>
-            <div><strong className="text-sm">Acompanhe a Rodrinox Pro</strong><p className="mt-1 text-xs leading-relaxed text-white/75">Projetos, tecnologia e bastidores da nossa produção.</p></div>
-          </div>
-          <a href={url} target="_blank" rel="noopener noreferrer" onClick={close} className="mt-4 flex items-center justify-center gap-2 rounded-lg bg-[#f58a24] px-4 py-3 text-sm font-semibold text-[#102d49] transition-colors hover:bg-[#ffad53]">
-            Conheça nosso Instagram <ArrowUpRight className="h-4 w-4" />
-          </a>
-        </div>
-      )}
-      <button type="button" onClick={() => { setDismissed(false); setOpen(v => !v); }} aria-label={open ? "Fechar convite do Instagram" : "Conheça nosso Instagram"} aria-expanded={open && !dismissed} className="group relative flex h-14 w-14 items-center justify-center rounded-2xl border border-white/30 bg-gradient-to-tr from-[#FEDA75] via-[#E1306C] to-[#833AB4] text-white shadow-[0_8px_24px_rgba(193,53,132,.38)] transition-all duration-300 hover:-translate-y-1 hover:scale-105 hover:shadow-[0_12px_30px_rgba(193,53,132,.52)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E1306C]">
-        <Instagram className="h-8 w-8 stroke-[2.1] drop-shadow-sm" />
-      </button>
-    </div>
+    <a
+      href="https://www.instagram.com/rodrinoxpro/"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Abrir Instagram da Rodrinox Pro"
+      title="Instagram · @rodrinoxpro"
+      className="group fixed bottom-24 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/30 bg-gradient-to-tr from-[#FEDA75] via-[#E1306C] to-[#833AB4] text-white shadow-[0_8px_24px_rgba(193,53,132,.38)] transition-all duration-300 hover:-translate-y-1 hover:scale-105 hover:shadow-[0_12px_30px_rgba(193,53,132,.52)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E1306C]"
+    >
+      <Instagram className="h-8 w-8 stroke-[2.1] drop-shadow-sm" />
+    </a>
   );
 }
