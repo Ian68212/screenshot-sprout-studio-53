@@ -1,0 +1,72 @@
+import { Router } from "express";
+import crypto from "node:crypto";
+import { q } from "./db.js";
+import { exigir } from "./auth.js";
+
+const router = Router();
+router.use(exigir("painel"));
+let initialized;
+async function schema() {
+  if (!initialized) initialized = q(`CREATE TABLE IF NOT EXISTS dispositivos_push (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    usuario_id BIGINT NOT NULL,
+    token_hash CHAR(64) NOT NULL UNIQUE,
+    token TEXT NOT NULL,
+    plataforma VARCHAR(20) NOT NULL DEFAULT 'android',
+    atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_usuario (usuario_id)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`).catch(err => {initialized=null;throw err;});
+  return initialized;
+}
+const digest = t => crypto.createHash("sha256").update(t).digest("hex");
+router.post("/registrar", async(req,res,next) => {
+  try {
+    await schema();
+    const token=String(req.body?.token||"").trim();
+    if (!/^[A-Za-z0-9_:\-]{40,4096}$/.test(token)) return res.status(400).json({erro:"Token inválido"});
+    await q("INSERT INTO dispositivos_push (usuario_id,token_hash,token) VALUES (?,?,?) ON DUPLICATE KEY UPDATE usuario_id=VALUES(usuario_id),token=VALUES(token),atualizado_em=NOW()",[req.usuario.id,digest(token),token]);
+    res.set("Cache-Control","no-store").json({ok:true});
+  } catch(err){next(err);}
+});
+router.post("/remover", async(req,res,next)=>{
+  try{
+    await schema();
+    const token=String(req.body?.token||"").trim();
+    if(!token)return res.status(400).json({erro:"Token obrigatório"});
+    await q("DELETE FROM dispositivos_push WHERE usuario_id=? AND token_hash=?",[req.usuario.id,digest(token)]);
+    res.json({ok:true});
+  }catch(err){next(err);}
+});
+export async function enviarPush(usuarioId,payload) {
+  const credentials=process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+  if(!credentials)return {sent:0,reason:"firebase_not_configured"};
+  await schema();
+  const {GoogleAuth}=await import("google-auth-library");
+  const serviceAccount=JSON.parse(credentials);
+  const auth=new GoogleAuth({credentials:serviceAccount,scopes:["https://www.googleapis.com/auth/firebase.messaging"]});
+  const client=await auth.getClient();
+  const access=await client.getAccessToken();
+  if(!access.token)throw Error("Não foi possível autenticar Firebase");
+  const devices=await q("SELECT token FROM dispositivos_push WHERE usuario_id=?",[usuarioId]);
+  let sent=0;
+  for(const device of devices){
+    const response=await fetch(`https://fcm.googleapis.com/v1/projects/${encodeURIComponent(serviceAccount.project_id)}/messages:send`,{
+      method:"POST",headers:{"Authorization":`Bearer ${access.token}`,"Content-Type":"application/json"},
+      body:JSON.stringify({message:{token:device.token,data:{
+        type:String(payload.type||"message"),title:String(payload.title||"Rodrinox Pro").slice(0,100),
+        body:String(payload.body||"Nova atividade").slice(0,200),
+        ...(payload.callId?{callId:String(payload.callId)}:{})
+      },android:{priority:"high"}}})
+    });
+    if(response.ok)sent++;
+    else if(response.status===404||response.status===400){
+      const error=await response.json().catch(()=>({}));
+      if(error.error?.details?.some(d=>d.errorCode==="UNREGISTERED"))await q("DELETE FROM dispositivos_push WHERE token_hash=?",[digest(device.token)]);
+    }
+  }
+  return {sent};
+}
+export function enviarPushSemBloquear(usuarioId,payload){
+  enviarPush(usuarioId,payload).catch(error=>console.error("[push] falha ao enviar notificação:",error.message));
+}
+export default router;
