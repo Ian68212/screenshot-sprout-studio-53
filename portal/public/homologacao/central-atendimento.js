@@ -38,13 +38,15 @@ const mediaMarkup=m=>{
  const file=Array.isArray(f)?f[0]||{}:f;
  const raw=file.url||file.downloadUrl||file.publicUrl||file.uri||file.fileUrl||file.path||m.fileUrl||m.mediaUrl||m.url||m.thumbnail?.url||m.preview?.url;
  const fileId=String(m.fileId||file.id||"");
- const url=/^[a-f0-9-]{36}$/i.test(fileId)?"/colaborador/api/atendimento/arquivo/"+encodeURIComponent(fileId):mediaUrl(raw);
+ const signed=mediaUrl(raw);
+ const isOracle=signed&&new URL(signed).hostname.endsWith(".objectstorage.sa-vinhedo-1.oraclecloud.com");
+ const url=isOracle?"/colaborador/api/atendimento/midia?url="+encodeURIComponent(signed):(signed||(/^[a-f0-9-]{36}$/i.test(fileId)?"/colaborador/api/atendimento/arquivo/"+encodeURIComponent(fileId):""));
  const name=String(file.name||file.originalName||file.filename||m.fileName||m.filename||"Arquivo");
  const mime=String(file.mimetype||file.mimeType||file.type||m.mimetype||"").toLowerCase();
  const type=messageType(m);
  const isImage=mime.startsWith("image/")||type==="image"||/\.(png|jpe?g|webp|gif)(\?|$)/i.test(name)||/\.(png|jpe?g|webp|gif)(\?|$)/i.test(url);
  if(!url)return m.fileId||file.id||["image","document","file","audio","video"].includes(type)?'<span class="ca-media-missing">📎 '+safe(name==="Arquivo"?"Arquivo anexado":name)+'</span>':"";
- if(isImage){const fallback=mediaUrl(raw);return '<a href="'+safe(fallback||url)+'" target="_blank" rel="noopener noreferrer" title="Abrir imagem"><img src="'+safe(url)+'" data-digisac-fallback="'+safe(fallback&&fallback!==url?fallback:"")+'" alt="'+safe(name)+'" loading="lazy" style="display:block;max-width:min(100%,320px);max-height:320px;object-fit:contain;border-radius:9px;margin-top:6px"></a>';}
+ if(isImage){const fallback="";return '<a href="'+safe(fallback||url)+'" target="_blank" rel="noopener noreferrer" title="Abrir imagem"><img src="'+safe(url)+'" data-digisac-fallback="'+safe(fallback&&fallback!==url?fallback:"")+'" alt="'+safe(name)+'" loading="lazy" style="display:block;max-width:min(100%,320px);max-height:320px;object-fit:contain;border-radius:9px;margin-top:6px"></a>';}
  return '<a href="'+safe(url)+'" target="_blank" rel="noopener noreferrer" style="display:inline-flex;gap:8px;align-items:center;margin-top:6px;padding:9px;border:1px solid #c6d9e7;border-radius:8px">📄 '+safe(name)+'</a>';
 };
 document.addEventListener("error",event=>{const img=event.target;if(!(img instanceof HTMLImageElement)||!img.hasAttribute("data-digisac-fallback"))return;const fallback=img.getAttribute("data-digisac-fallback");img.removeAttribute("data-digisac-fallback");if(fallback&&img.src!==fallback)img.src=fallback;},true);
