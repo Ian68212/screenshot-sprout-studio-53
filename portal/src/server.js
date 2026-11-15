@@ -253,6 +253,34 @@ r.get("/api/atendimento/status", exigir("painel"), (req, res) => {
   });
 });
 
+// Download de mídia já vinculada à mensagem: evita consultar /files/:id (404).
+// A URL assinada vem do histórico DigiSac, nunca de um host arbitrário.
+r.get("/api/atendimento/midia", exigir("painel"), wrap(async(req,res)=>{
+ res.setHeader("Cache-Control","private, no-store");
+ if(req.usuario.perfil!=="admin")return res.sendStatus(403);
+ let url;
+ try{url=new URL(String(req.query.url||""));}catch{return res.sendStatus(400);}
+ if(url.protocol!=="https:"||url.username||url.password||
+    !url.hostname.endsWith(".objectstorage.sa-vinhedo-1.oraclecloud.com")||
+    !url.pathname.startsWith("/digisac-storage-"))return res.sendStatus(400);
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),18000);
+ try{
+  const upstream=await fetch(url,{signal:controller.signal,redirect:"error"});
+  if(!upstream.ok)return res.status(upstream.status===404?404:502).json({erro:"Mídia DigiSac indisponível.",codigo:upstream.status});
+  const mime=String(upstream.headers.get("content-type")||"").split(";")[0].trim().toLowerCase();
+  if(!/^(image\/(jpeg|png|webp|gif)|application\/pdf|text\/plain|application\/octet-stream)$/.test(mime))return res.sendStatus(415);
+  const size=Number(upstream.headers.get("content-length")||0);
+  if(size>16*1024*1024)return res.sendStatus(413);
+  const bytes=Buffer.from(await upstream.arrayBuffer());
+  if(bytes.length>16*1024*1024)return res.sendStatus(413);
+  res.setHeader("Content-Type",mime);
+  res.setHeader("X-Content-Type-Options","nosniff");
+  res.setHeader("Content-Disposition","inline");
+  return res.send(bytes);
+ }catch(err){console.warn("[digisac-midia] falha",err?.name||"erro");return res.status(502).json({erro:"Não foi possível recuperar a mídia."});}
+ finally{clearTimeout(timer);}
+}));
+
 // Mídia DigiSac: proxy autenticado evita links assinados expirados no navegador.
 r.get("/api/atendimento/arquivo/:id", exigir("painel"), wrap(async(req,res)=>{
  res.setHeader("Cache-Control","private, no-store");
