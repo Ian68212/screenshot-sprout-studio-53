@@ -5,7 +5,8 @@ import { pode, MAX_TENTATIVAS, BLOQUEIO_MINUTOS } from "./permissions.js";
 import { validarSenhaHostinger, EmailAuthUnavailableError } from "./hostinger-auth.js";
 
 export const COOKIE = "rp_sessao";
-const HORAS = Number(process.env.SESSION_HOURS || 8);
+// Sessões persistentes no aplicativo; podem ser reduzidas por SESSION_HOURS no ambiente.
+const HORAS = Math.min(720, Math.max(1, Number(process.env.SESSION_HOURS || 720)));
 const hash = (t) => crypto.createHash("sha256").update(t).digest("hex");
 
 export async function login(email, senha, ip) {
