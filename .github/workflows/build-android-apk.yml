@@ -89,11 +89,11 @@ jobs:
           retention-days: 30
 
       - name: Publish public APK download
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/mobile-app-download-option' || github.event_name == 'workflow_dispatch'
+        if: github.event_name == 'workflow_dispatch' && vars.ANDROID_RELEASE_APPROVED == 'true'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: android-v1.0.2-${{ github.run_number }}
-          name: Rodrinox Pro Android — versão 1.0.2 (build ${{ github.run_number }})
+          tag_name: android-v1.0.5-${{ github.run_number }}
+          name: Rodrinox Pro Android — versão 1.0.5 (build ${{ github.run_number }})
           files: output/Rodrinox-Pro-Android.apk
           make_latest: true
           generate_release_notes: false
