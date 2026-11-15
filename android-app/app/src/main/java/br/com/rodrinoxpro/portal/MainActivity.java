@@ -254,7 +254,7 @@ public class MainActivity extends Activity {
 
     private void registerPushToken(WebView view) {
         FirebaseMessaging.getInstance().getToken().addOnSuccessListener(token -> {
-            if (token == null || !token.matches("[A-Za-z0-9_:\\-]{40,4096}")) return;
+            if (token == null || !token.matches("[A-Za-z0-9_:-]{40,4096}")) return;
             String js = "fetch(\'/colaborador/api/push/registrar\', {method:\'POST\',credentials:\'same-origin\',headers:{\'Content-Type\':\'application/json\'},body:JSON.stringify({token:\'" + token + "\'})}).catch(()=>{});";
             if (view == webView) view.evaluateJavascript(js, null);
         });
