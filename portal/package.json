@@ -19,6 +19,7 @@
     "express-rate-limit": "^7.4.1",
     "file-type": "^20.5.0",
     "helmet": "^8.0.0",
+    "google-auth-library": "^9.15.1",
     "imapflow": "^1.0.181",
     "mysql2": "^3.11.5",
     "multer": "^2.0.2",
