@@ -37,6 +37,7 @@ public class MainActivity extends Activity {
     private static final String PORTAL_URL = "https://rodrinoxpro.com.br/colaborador/";
     private static final int FILE_CHOOSER_REQUEST = 7102;
     private static final int MICROPHONE_PERMISSION_REQUEST = 7103;
+    private static final int NOTIFICATION_PERMISSION_REQUEST = 7104;
     private PermissionRequest pendingMicrophoneRequest;
     private static final long LOAD_TIMEOUT_MS = 25000L;
 
@@ -58,6 +59,14 @@ public class MainActivity extends Activity {
         setContentView(root);
         hideSystemBars();
         createAndLoadWebView();
+        requestNotificationPermission();
+    }
+
+    private void requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= 33
+            && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, NOTIFICATION_PERMISSION_REQUEST);
+        }
     }
 
     private void createAndLoadWebView() {
