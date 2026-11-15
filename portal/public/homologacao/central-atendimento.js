@@ -32,7 +32,7 @@ const isMessage=m=>{
   if(["ticket","user","contact","call_log","department","transfer","status","system"].includes(type))return false;
   return Boolean(messageText(m))||["message","chat","text","audio","image","video","file","document"].includes(type)||Boolean(m.fileId||m.file?.id||m.file?.url);
 };
-const mediaUrl=value=>{try{const u=new URL(String(value||""));return u.protocol==="https:"&&(/(^|\\.)digisac\\.app$/.test(u.hostname)||/(^|\\.)objectstorage\\.[a-z0-9-]+\\.oraclecloud\\.com$/.test(u.hostname))?u.href:""}catch{return ""}};
+const mediaUrl=value=>{try{const u=new URL(String(value||""));return u.protocol==="https:"&&(/(^|\.)digisac\.app$/.test(u.hostname)||/(^|\.)objectstorage\.[a-z0-9-]+\.oraclecloud\.com$/.test(u.hostname))?u.href:""}catch{return ""}};
 const mediaMarkup=m=>{
  const file=m.file||m.data?.file||m.attachment||m.data?.attachment||{};
  const raw=file.url||file.downloadUrl||file.publicUrl||file.uri||m.fileUrl||m.mediaUrl||m.url||m.thumbnail?.url||m.preview?.url;
@@ -41,7 +41,7 @@ const mediaMarkup=m=>{
  const mime=String(file.mimetype||file.mimeType||m.mimetype||"").toLowerCase();
  const type=messageType(m);
  if(!url)return m.fileId||file.id||["image","document","file","audio","video"].includes(type)?'<span class="ca-media-missing">📎 '+safe(name==="Arquivo"?"Arquivo anexado":name)+'</span>':"";
- if(mime.startsWith("image/")||type==="image"||/\\.(png|jpe?g|webp|gif)(\\?|$)/i.test(url))return '<a href="'+safe(url)+'" target="_blank" rel="noopener noreferrer"><img src="'+safe(url)+'" alt="'+safe(name)+'" loading="lazy" style="display:block;max-width:min(100%,320px);max-height:280px;object-fit:contain;border-radius:9px;margin-top:6px"></a>';
+ if(mime.startsWith("image/")||type==="image"||/\.(png|jpe?g|webp|gif)(\?|$)/i.test(url))return '<a href="'+safe(url)+'" target="_blank" rel="noopener noreferrer"><img src="'+safe(url)+'" alt="'+safe(name)+'" loading="lazy" style="display:block;max-width:min(100%,320px);max-height:280px;object-fit:contain;border-radius:9px;margin-top:6px"></a>';
  return '<a href="'+safe(url)+'" target="_blank" rel="noopener noreferrer" style="display:inline-block;margin-top:6px">📎 '+safe(name)+'</a>';
 };
 const messageTime=m=>{const v=m.sentAt||m.createdAt||m.timestamp||m.date;if(!v)return "";const d=new Date(v);return Number.isNaN(d.getTime())?"":d.toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})};
@@ -176,7 +176,7 @@ for (const id of ["caTransfer","caTags","caClose"]) {
 }
 const attachInput=document.getElementById("caAttachmentInput"),dropZone=document.getElementById("caDropZone"),preview=document.getElementById("caAttachmentPreview");
 showFiles=()=>{if(!preview)return;preview.style.display=stagedFiles.length?"block":"none";preview.innerHTML=stagedFiles.length?'<span style="font-size:12px">Enviando '+stagedFiles.length+' arquivo(s)…</span>':'';};
-const addFiles=files=>{if(!active||selected==="contatos"){alert("Selecione um chamado em Meus chats ou Fila antes de anexar.");return}const allowed=/^(image\/(png|jpeg|webp|gif)|application\/pdf|text\/(plain|csv)|application\/(msword|vnd\\.openxmlformats-officedocument\\.wordprocessingml\\.document|vnd\\.ms-excel|vnd\\.openxmlformats-officedocument\\.spreadsheetml\\.sheet))$/i;for(const f of files){if(f.size>15*1024*1024){alert("Arquivo acima do limite provisório de 15 MB: "+f.name);continue}if(!allowed.test(f.type)&&!(/\.(docx?|xlsx?|pdf|txt|csv|png|jpe?g|webp|gif)$/i.test(f.name))){alert("Tipo de arquivo não permitido: "+f.name);continue}stagedFiles.push(f)}showFiles();if(stagedFiles.length&&!attachmentSending)sendMessage()};
+const addFiles=files=>{if(!active||selected==="contatos"){alert("Selecione um chamado em Meus chats ou Fila antes de anexar.");return}const allowed=/^(image\/(png|jpeg|webp|gif)|application\/pdf|text\/(plain|csv)|application\/(msword|vnd\.openxmlformats-officedocument\.wordprocessingml\.document|vnd\.ms-excel|vnd\.openxmlformats-officedocument\.spreadsheetml\.sheet))$/i;for(const f of files){if(f.size>15*1024*1024){alert("Arquivo acima do limite provisório de 15 MB: "+f.name);continue}if(!allowed.test(f.type)&&!(/\.(docx?|xlsx?|pdf|txt|csv|png|jpe?g|webp|gif)$/i.test(f.name))){alert("Tipo de arquivo não permitido: "+f.name);continue}stagedFiles.push(f)}showFiles();if(stagedFiles.length&&!attachmentSending)sendMessage()};
 document.getElementById("caAttach")?.addEventListener("click",()=>attachInput?.click());
 attachInput?.addEventListener("change",()=>{addFiles(attachInput.files||[]);attachInput.value=""});
 dropZone?.addEventListener("dragover",e=>{if(!e.dataTransfer?.types.includes("Files"))return;e.preventDefault();dropZone.style.outline="2px dashed #2995d3"});
