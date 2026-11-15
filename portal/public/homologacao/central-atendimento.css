@@ -115,3 +115,13 @@
  .ca-root .ca-left{padding-top:10px}
  .ca-root .ca-mobile-bottom{position:relative;z-index:2}
 }
+
+@media(max-width:760px){
+ .ca-root .ca-mobile-ticket-actions{display:flex;align-items:center;gap:2px;margin-left:auto}
+ .ca-root .ca-mobile-ticket-actions[hidden]{display:none!important}
+ .ca-root .ca-mobile-ticket-actions button{display:flex!important;align-items:center;justify-content:center;background:transparent!important;border:0!important;color:#fff!important;font-size:27px!important;width:43px!important;height:48px!important;padding:0!important;cursor:pointer}
+ .ca-root .ca-mobile-top>strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1}
+ .ca-root .ca-mobile-top>#caMobileInfo{flex:0 0 40px}
+ #ca-action-modal{z-index:2147483646!important}
+ #ca-action-modal .ca-modal{max-height:90dvh;overflow:auto;width:min(96vw,440px)}
+}
