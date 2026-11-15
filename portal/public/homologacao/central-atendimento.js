@@ -230,9 +230,16 @@ document.getElementById("caMobileTransfer")?.addEventListener("click",()=>{const
 document.getElementById("caMobileClose")?.addEventListener("click",()=>{const b=document.getElementById("caClose");if(b&&!b.disabled)b.click();else alert("Abra um chamado em Meus chats ou Fila para encerrá-lo.")});
 document.getElementById("caMobileInfo")?.addEventListener("click",()=>{const menu=document.getElementById("caMobileMenu");if(menu)menu.hidden=!menu.hidden});
 document.getElementById("caMobileContactInfo")?.addEventListener("click",()=>{document.getElementById("caMobileMenu").hidden=true;const info=document.querySelector(".ca-contact");if(info&&active)info.classList.toggle("ca-mobile-info-open")});
-document.getElementById("caMobileRefresh")?.addEventListener("click",()=>{document.getElementById("caMobileMenu").hidden=true;document.getElementById("caRefresh")?.click()});
-document.getElementById("caMobilePlatform")?.addEventListener("click",()=>{document.getElementById("caMobileMenu").hidden=true;const targets=[...document.querySelectorAll("a,button")].filter(e=>!e.closest("#items")&&/^(início|inicio|voltar ao início|voltar ao inicio)$/i.test(e.textContent.trim()));if(targets.length)targets[0].click();else window.history.back()});
-document.getElementById("caMobileInternal")?.addEventListener("click",()=>{document.getElementById("caMobileMenu").hidden=true;const targets=[...document.querySelectorAll("button,a,[role=button]")].filter(e=>!e.closest("#items")&&/chat interno/i.test(e.textContent.trim()));if(targets.length)targets[targets.length-1].click();else alert("Abra o Chat interno pela plataforma.")});
+document.getElementById("caMobileRefresh")?.addEventListener("click",async()=>{document.getElementById("caMobileMenu").hidden=true;await Promise.all([loadTeam(),resolveDigiUser()]);await load();if(active)await openRecord(active.id,false)});
+function navigatePortalSection(section,pattern){
+ const preferred=document.querySelector('[data-section="'+section+'"],[data-section="'+section.toLowerCase()+'"]');
+ const candidates=[...document.querySelectorAll("a,button,[role=button]")].filter(e=>!e.closest("#items")&&pattern.test((e.textContent||"").trim()));
+ const target=preferred||candidates[0];
+ if(target){target.click();return true}
+ return false;
+}
+document.getElementById("caMobilePlatform")?.addEventListener("click",()=>{document.getElementById("caMobileMenu").hidden=true;if(!navigatePortalSection("inicio",/^(início|inicio|voltar ao início|voltar ao inicio)$/i))window.location.assign("/colaborador/painel/oficial/")});
+document.getElementById("caMobileInternal")?.addEventListener("click",()=>{document.getElementById("caMobileMenu").hidden=true;if(!navigatePortalSection("chat-interno",/^chat interno$/i))alert("Não foi possível localizar o Chat interno. Volte à plataforma e abra o Chat interno pelo menu.")});
 root.querySelectorAll("[data-ca-mobile-tab]").forEach(b=>b.addEventListener("click",()=>{selected=b.dataset.caMobileTab;mobileDetails=false;active=null;load()}));
 document.getElementById("caSend")?.addEventListener("click",sendMessage);
 document.getElementById("caTransfer")?.addEventListener("click",()=>openTransfer().catch(e=>alert(e.message)));
