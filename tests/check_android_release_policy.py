@@ -11,6 +11,12 @@ for name in pages:
     links = re.findall(r'https://github\.com/Ian68212/screenshot-sprout-studio-53/releases/[^"\s<>]+', text)
     if links != [approved]:
         raise SystemExit(f"FAIL {name}: expected exactly the approved APK URL, got {links!r}")
+    if "Versão disponível para download: v1.0.28" not in text:
+        raise SystemExit(f"FAIL {name}: approved version not displayed to user")
+    if name == "portal/public/index.html" and "Baixar app v1.0.28" not in text:
+        raise SystemExit("FAIL portal: button must display APK version")
+    if name == "src/routes/aplicativo.tsx" and "Baixar Android v1.0.28" not in text:
+        raise SystemExit("FAIL site: button must display APK version")
     if "v1.0.5-TESTE" in text or "Versão 1.0.5 TESTE" in text:
         raise SystemExit(f"FAIL {name}: unapproved test version still advertised")
 
