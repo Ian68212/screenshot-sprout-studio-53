@@ -89,13 +89,15 @@ jobs:
           retention-days: 30
 
       - name: Publish public APK download
-        if: github.ref == 'refs/heads/mobile-app-download-option'
+        if: github.ref == 'refs/heads/android-base-aprovada-v1.0.28'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: android-v1.0.29-${{ github.run_number }}
           name: Rodrinox Pro Android — 1.0.29 TESTE (build ${{ github.run_number }})
           files: output/Rodrinox-Pro-Android-v1.0.29-TESTE.apk
-          make_latest: true
+          make_latest: false
+          prerelease: true
+          body: APK de teste baseado na versão aprovada 1.0.28. Microfone requer validação no aparelho; notificações e chamadas ainda não homologadas.
           generate_release_notes: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
