@@ -42,7 +42,7 @@ router.get("/status", async (req, res, next) => {
   try {
     await schema();
     const [row] = await q("SELECT COUNT(*) AS total FROM dispositivos_push WHERE usuario_id=?", [req.usuario.id]);
-    const configured = Boolean(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+    const configured = Boolean(process.env.FIREBASE_SERVICE_ACCOUNT_JSON || process.env.GOOGLE_APPLICATION_CREDENTIALS || process.env.GOOGLE_EXTERNAL_ACCOUNT_JSON);
     res.set("Cache-Control", "no-store").json({
       dispositivosRegistrados: Number(row?.total || 0),
       envioConfigurado: configured,
@@ -53,18 +53,21 @@ router.get("/status", async (req, res, next) => {
 });
 export async function enviarPush(usuarioId,payload) {
   const credentials=process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
-  if(!credentials)return {sent:0,reason:"firebase_not_configured"};
+  const external=process.env.GOOGLE_EXTERNAL_ACCOUNT_JSON;
+  if(!credentials && !external && !process.env.GOOGLE_APPLICATION_CREDENTIALS)return {sent:0,reason:"firebase_not_configured"};
   await schema();
   const {GoogleAuth}=await import("google-auth-library");
-  const serviceAccount=JSON.parse(credentials);
-  const auth=new GoogleAuth({credentials:serviceAccount,scopes:["https://www.googleapis.com/auth/firebase.messaging"]});
+  const auth=new GoogleAuth({
+    ...(credentials ? {credentials:JSON.parse(credentials)} : external ? {credentials:JSON.parse(external)} : {}),
+    scopes:["https://www.googleapis.com/auth/firebase.messaging"]
+  });
   const client=await auth.getClient();
   const access=await client.getAccessToken();
   if(!access.token)throw Error("Não foi possível autenticar Firebase");
   const devices=await q("SELECT token FROM dispositivos_push WHERE usuario_id=?",[usuarioId]);
   let sent=0;
   for(const device of devices){
-    const response=await fetch(`https://fcm.googleapis.com/v1/projects/${encodeURIComponent(serviceAccount.project_id)}/messages:send`,{
+    const response=await fetch(`https://fcm.googleapis.com/v1/projects/${encodeURIComponent("rodrinox-pro")}/messages:send`,{
       method:"POST",headers:{"Authorization":`Bearer ${access.token}`,"Content-Type":"application/json"},
       body:JSON.stringify({message:{token:device.token,data:{
         type:String(payload.type||"message"),title:String(payload.title||"Rodrinox Pro").slice(0,100),
