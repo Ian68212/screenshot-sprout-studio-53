@@ -51,7 +51,7 @@ async function openChat(id){
  selected=id;lastSignature="";app.classList.add("chat-open");drawPeople();updatePeerPresence();
  const p=people.find(x=>x.id===id);$("peer").textContent=p?.nome||"Colaborador";
  const photo=$("peerPhoto");if(photo){photo.replaceChildren();if(p?.foto_url){const img=el("img");img.src=p.foto_url;img.alt="";photo.append(img);}else photo.textContent=initials(p?.nome||"Colaborador");}
- $("message").disabled=false;$("send").disabled=false;$("attach").disabled=false;$("message").focus();
+ $("message").disabled=false;$("send").disabled=false;$("attach").disabled=false;$("recordVoice").disabled=false;$("message").focus();
  await refreshMessages(true);
 }
 async function refreshMessages(force=false){
@@ -71,7 +71,7 @@ async function refreshMessages(force=false){
     link.href="/colaborador/api/chat-interno/anexos/"+encodeURIComponent(m.id);
     link.title="Baixar documento privado";
     link.setAttribute("download",m.anexo_nome);
-    bubble.append(link,el("span","attachment-size",Math.ceil(Number(m.anexo_tamanho||0)/1024)+" KB • Baixar arquivo"));
+    if(String(m.anexo_mime||"").startsWith("audio/")){link.textContent="🎤 Mensagem de voz";const player=el("audio");player.controls=true;player.preload="none";player.src=link.href;bubble.append(player);}else bubble.append(link,el("span","attachment-size",Math.ceil(Number(m.anexo_tamanho||0)/1024)+" KB • Baixar arquivo"));
   }
   bubble.append(el("small","",when(m.criado_em)+(mine?(m.lido_em?"  ✓✓":"  ✓"):"")));
   area.append(bubble);
@@ -129,6 +129,49 @@ async function sendAttachment(file){
  }catch(err){$("state").textContent="Falha no envio: "+err.message;}
  finally{uploadingAttachment=false;$("file").value="";$("attach").disabled=!selected;progress.hidden=true;}
 }
+let voiceRecorder=null,voiceChunks=[],voiceBlob=null,voiceUrl=null,voiceStream=null,voiceRecipient=null;
+const voiceButton=$("recordVoice"),voicePreview=$("voicePreview");
+function voiceCleanup(){
+ if(voiceStream){voiceStream.getTracks().forEach(t=>t.stop());voiceStream=null}
+ if(voiceUrl){URL.revokeObjectURL(voiceUrl);voiceUrl=null}
+ voiceBlob=null;voiceChunks=[];voicePreview.hidden=true;voiceButton.textContent="🎤";voiceButton.classList.remove("recording");
+}
+voiceButton.addEventListener("click",async()=>{
+ if(voiceRecorder?.state==="recording"){voiceRecorder.stop();voiceButton.disabled=true;return}
+ if(!selected||uploadingAttachment)return;
+ if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder){$("state").textContent="Gravação não disponível neste navegador.";return}
+ voiceCleanup();voiceRecipient=selected;
+ try{
+  voiceStream=await navigator.mediaDevices.getUserMedia({audio:true});
+  const mime=["audio/webm;codecs=opus","audio/mp4","audio/ogg;codecs=opus"].find(x=>MediaRecorder.isTypeSupported(x));
+  voiceRecorder=new MediaRecorder(voiceStream,mime?{mimeType:mime}:undefined);
+  voiceChunks=[];
+  voiceRecorder.ondataavailable=e=>{if(e.data.size)voiceChunks.push(e.data)};
+  voiceRecorder.onstop=()=>{
+   voiceStream?.getTracks().forEach(t=>t.stop());voiceStream=null;
+   voiceBlob=new Blob(voiceChunks,{type:voiceRecorder.mimeType||"audio/webm"});
+   if(voiceBlob.size>10*1024*1024){$("state").textContent="Áudio excede 10 MB. Grave uma mensagem mais curta.";voiceCleanup();return}
+   voiceUrl=URL.createObjectURL(voiceBlob);$("voicePlayer").src=voiceUrl;voicePreview.hidden=false;
+   voiceButton.disabled=false;voiceButton.textContent="🎤";voiceButton.classList.remove("recording");
+   $("state").textContent="Ouça antes de enviar.";
+  };
+  voiceRecorder.start();voiceButton.textContent="■ Parar";voiceButton.classList.add("recording");
+  $("state").textContent="Gravando áudio... clique para parar.";
+ }catch(e){voiceCleanup();$("state").textContent=e.name==="NotAllowedError"?"Permita o uso do microfone no navegador.":"Não foi possível iniciar a gravação."}
+});
+$("voiceCancel").onclick=()=>{voiceCleanup();$("state").textContent="Áudio descartado."};
+$("voiceSend").onclick=async()=>{
+ if(!voiceBlob||!voiceRecipient)return;
+ const recipient=voiceRecipient,blob=voiceBlob;
+ const ext=blob.type.includes("mp4")?"m4a":blob.type.includes("ogg")?"ogg":"webm";
+ const form=new FormData();form.append("destinatario_id",String(recipient));form.append("arquivo",new File([blob],"audio-"+Date.now()+"."+ext,{type:blob.type.split(";")[0]}));
+ $("voiceSend").disabled=true;$("state").textContent="Enviando áudio...";
+ try{
+  await api("/anexos",{method:"POST",headers:{"X-Portal":"1"},body:form});
+  voiceCleanup();await refreshMessages(true);await refreshPeople();$("state").textContent="Áudio enviado.";
+ }catch(e){$("state").textContent=e.message}
+ finally{$("voiceSend").disabled=false}
+};
 $("attach").addEventListener("click",()=>{if(selected)$("file").click();});
 $("file").addEventListener("change",()=>sendAttachment($("file").files?.[0]));
 const dropZone=document.querySelector(".conversation");
