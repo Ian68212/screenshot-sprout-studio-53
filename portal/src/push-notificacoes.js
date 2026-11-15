@@ -37,6 +37,20 @@ router.post("/remover", async(req,res,next)=>{
     res.json({ok:true});
   }catch(err){next(err);}
 });
+// Diagnóstico autenticado: nunca retorna tokens nem credenciais.
+router.get("/status", async (req, res, next) => {
+  try {
+    await schema();
+    const [row] = await q("SELECT COUNT(*) AS total FROM dispositivos_push WHERE usuario_id=?", [req.usuario.id]);
+    const configured = Boolean(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+    res.set("Cache-Control", "no-store").json({
+      dispositivosRegistrados: Number(row?.total || 0),
+      envioConfigurado: configured,
+      motivo: configured ? null : "Autenticação do Firebase pendente no servidor",
+      observacao: "Cadastro de dispositivo não comprova entrega de notificações"
+    });
+  } catch (error) { next(error); }
+});
 export async function enviarPush(usuarioId,payload) {
   const credentials=process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
   if(!credentials)return {sent:0,reason:"firebase_not_configured"};
