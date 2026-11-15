@@ -47,10 +47,10 @@ function AppDownload() {
               className="mt-8 inline-flex min-h-14 items-center justify-center gap-2 rounded-lg bg-accent px-6 py-3 text-center font-bold text-accent-foreground transition hover:brightness-95"
             >
               <ArrowDownToLine className="h-5 w-5" />
-              Baixar aplicativo Android
+              Baixar Android v1.0.28
             </a>
             <p className="mt-3 text-xs text-muted-foreground">
-              Versão original aprovada v1.0.28 • APK Android • Acesso restrito a usuários autorizados
+              Versão disponível para download: v1.0.28 (oficial aprovada) • APK Android • Acesso restrito a usuários autorizados
             </p>
           </article>
 
