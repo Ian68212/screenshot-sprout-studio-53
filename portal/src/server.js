@@ -409,7 +409,7 @@ r.post("/api/atendimento/enviar-anexo",exigir("painel"),(req,res,next)=>digiMedi
  if(!/^[a-f0-9-]{36}$/i.test(String(contactId||""))||!/^[a-f0-9-]{36}$/i.test(String(userId||"")))return res.status(400).json({erro:"Contato ou atendente inválido."});
  if(!req.file)return res.status(400).json({erro:"Selecione um arquivo."});
  const ext=path.extname(req.file.originalname).toLowerCase();
- const mimeMap={".jpg":"image/jpeg",".jpeg":"image/jpeg",".png":"image/png",".webp":"image/webp",".gif":"image/gif",".pdf":"application/pdf",".doc":"application/msword",".docx":"application/vnd.openxmlformats-officedocument.wordprocessingml.document",".xls":"application/vnd.ms-excel",".xlsx":"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",".txt":"text/plain",".csv":"text/csv"};
+ const mimeMap={".jpg":"image/jpeg",".jpeg":"image/jpeg",".png":"image/png",".webp":"image/webp",".gif":"image/gif",".pdf":"application/pdf",".doc":"application/msword",".docx":"application/vnd.openxmlformats-officedocument.wordprocessingml.document",".xls":"application/vnd.ms-excel",".xlsx":"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",".txt":"text/plain",".csv":"text/csv",".webm":"audio/webm",".ogg":"audio/ogg",".m4a":"audio/mp4",".mp3":"audio/mpeg"};
  if(!mimeMap[ext])return res.status(400).json({erro:"Formato não permitido."});
  if(typeof caption!=="string"||caption.length>2000)return res.status(400).json({erro:"Legenda inválida."});
  const base=(process.env.DIGISAC_API_BASE_URL||"").replace(/\/+$/,""),token=process.env.DIGISAC_API_TOKEN;
