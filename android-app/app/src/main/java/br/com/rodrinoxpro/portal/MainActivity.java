@@ -32,6 +32,7 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+import com.google.firebase.messaging.FirebaseMessaging;
 
 public class MainActivity extends Activity {
     private static final String PORTAL_URL = "https://rodrinoxpro.com.br/colaborador/";
@@ -125,6 +126,12 @@ public class MainActivity extends Activity {
                 public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
                     handler.removeCallbacks(loadTimeout);
                     handler.postDelayed(loadTimeout, LOAD_TIMEOUT_MS);
+                }
+
+                @Override
+                public void onPageFinished(WebView view, String url) {
+                    super.onPageFinished(view, url);
+                    if (url != null && url.startsWith("https://rodrinoxpro.com.br/colaborador/")) registerPushToken(view);
                 }
 
                 @Override
@@ -243,6 +250,14 @@ public class MainActivity extends Activity {
             showMessage("Falha ao iniciar o aplicativo: " + error.getClass().getSimpleName()
                 + (error.getMessage() == null ? "" : " — " + error.getMessage()), "Tentar novamente");
         }
+    }
+
+    private void registerPushToken(WebView view) {
+        FirebaseMessaging.getInstance().getToken().addOnSuccessListener(token -> {
+            if (token == null || !token.matches("[A-Za-z0-9_:\\-]{40,4096}")) return;
+            String js = "fetch(\'/colaborador/api/push/registrar\', {method:\'POST\',credentials:\'same-origin\',headers:{\'Content-Type\':\'application/json\'},body:JSON.stringify({token:\'" + token + "\'})}).catch(()=>{});";
+            if (view == webView) view.evaluateJavascript(js, null);
+        });
     }
 
     private void showMessage(String message, String buttonText) {
