@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "384388223659",
+    "project_id": "rodrinox-pro",
+    "storage_bucket": "rodrinox-pro.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:384388223659:android:228309790db06ab8411dee",
+        "android_client_info": {
+          "package_name": "br.com.rodrinoxpro.portal.teste"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC-vt9hi_tdB5BrlLysmpJuZAAlhr55qzQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
