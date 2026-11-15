@@ -63,3 +63,42 @@
 .ca-root .ca-contact button:not(:disabled){cursor:pointer;transition:background .15s,border-color .15s,transform .15s}
 .ca-root .ca-contact button:not(:disabled):hover{background:#e9f4ff;border-color:#4d83ad;transform:translateY(-1px)}
 .ca-root .ca-contact button:disabled{opacity:.45;cursor:not-allowed}
+
+/* Central DigiSac: navegação nativa no celular, sem alterar desktop. */
+.ca-mobile-top,.ca-mobile-bottom{display:none}
+@media(max-width:760px){
+ #items.ca-root{position:fixed!important;inset:0!important;z-index:990!important;background:#fff!important;display:flex!important;flex-direction:column!important;padding:0!important;margin:0!important;width:100vw!important;height:100dvh!important;overflow:hidden!important}
+ .ca-root .ca-head,.ca-root .ca-banner,.ca-root .ca-panel{display:none!important}
+ .ca-root .ca-mobile-top{height:64px;min-height:64px;display:flex;align-items:center;gap:14px;background:#314d80;color:white;padding:0 16px;font-size:24px}
+ .ca-root .ca-mobile-top strong{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:22px;font-weight:650}
+ .ca-root .ca-mobile-top button{background:transparent;color:white;border:0;font-size:32px;min-width:40px;min-height:44px;cursor:pointer}
+ .ca-root .ca-layout{flex:1!important;min-height:0!important;height:auto!important;display:flex!important;flex-direction:column!important;border:0!important;border-radius:0!important;overflow:hidden!important}
+ .ca-root .ca-left{flex:1!important;max-height:none!important;height:auto!important;overflow:auto!important;border:0!important}
+ .ca-root .ca-sidebar-title{display:none!important}
+ .ca-root .ca-tabs{display:none!important}
+ .ca-root .ca-refresh{margin:12px 14px 6px!important;width:calc(100% - 28px)!important}
+ .ca-root .ca-search{margin:7px 14px 12px!important;width:calc(100% - 28px)!important;box-sizing:border-box!important}
+ .ca-root .ca-list{overflow:auto!important;max-height:none!important}
+ .ca-root .ca-record{min-height:76px!important;padding:15px 20px!important;border-bottom:1px solid #e7ebf0!important;text-align:left!important}
+ .ca-root .ca-record b{font-size:17px!important}
+ .ca-root .ca-record small{font-size:13px!important}
+ .ca-root .ca-conversation{display:none!important}
+ .ca-root .ca-contact{display:none!important}
+ .ca-root .ca-mobile-bottom{display:flex;justify-content:space-around;align-items:stretch;min-height:74px;background:white;border-top:1px solid #dce2ea;padding-bottom:env(safe-area-inset-bottom)}
+ .ca-root .ca-mobile-bottom button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;flex:1;background:white;color:#60779b;border:0;font-size:23px;cursor:pointer}
+ .ca-root .ca-mobile-bottom button span{font-size:13px}
+ .ca-root .ca-mobile-bottom button.active{color:#304f83;font-weight:750}
+ .ca-root.ca-mobile-chat .ca-left{display:none!important}
+ .ca-root.ca-mobile-chat .ca-conversation{display:flex!important;flex:1!important;min-height:0!important;height:auto!important;overflow:hidden!important;border:0!important}
+ .ca-root.ca-mobile-chat .ca-conversation>header{flex:0 0 auto;padding:9px 12px!important;max-height:132px;overflow:auto!important}
+ .ca-root.ca-mobile-chat .ca-conversation>header>strong,.ca-root.ca-mobile-chat .ca-conversation>header>.ca-meta{display:none!important}
+ .ca-root.ca-mobile-chat .ca-assign{font-size:11px!important;gap:5px!important}
+ .ca-root.ca-mobile-chat .ca-assign select{max-width:145px!important}
+ .ca-root.ca-mobile-chat .ca-messages{flex:1!important;min-height:0!important;overflow-y:auto!important}
+ .ca-root.ca-mobile-chat .ca-messages .ca-msg{max-width:87%!important}
+ .ca-root.ca-mobile-chat .ca-compose{flex:0 0 auto;padding:8px!important;gap:7px!important}
+ .ca-root.ca-mobile-chat .ca-compose textarea{min-width:0!important;flex:1!important}
+ .ca-root.ca-mobile-chat .ca-compose button{padding:8px!important}
+ .ca-root.ca-mobile-chat .ca-mobile-bottom{display:none!important}
+ .ca-root.ca-mobile-chat .ca-contact.ca-mobile-info-open{display:block!important;position:absolute!important;top:64px;right:0;bottom:0;width:min(310px,86vw);z-index:10;box-shadow:-8px 0 30px #0003;overflow:auto!important}
+}
