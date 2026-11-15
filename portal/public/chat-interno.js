@@ -51,7 +51,7 @@ async function openChat(id){
  selected=id;lastSignature="";app.classList.add("chat-open");drawPeople();updatePeerPresence();
  const p=people.find(x=>x.id===id);$("peer").textContent=p?.nome||"Colaborador";
  const photo=$("peerPhoto");if(photo){photo.replaceChildren();if(p?.foto_url){const img=el("img");img.src=p.foto_url;img.alt="";photo.append(img);}else photo.textContent=initials(p?.nome||"Colaborador");}
- $("message").disabled=false;$("send").disabled=false;$("attach").disabled=false;$("recordVoice").disabled=false;$("message").focus();
+ $("startCall").disabled=false;$("message").disabled=false;$("send").disabled=false;$("attach").disabled=false;$("recordVoice").disabled=false;$("message").focus();
  await refreshMessages(true);
 }
 async function refreshMessages(force=false){
@@ -204,6 +204,104 @@ dropZone.addEventListener("drop",event=>{
 });
 document.addEventListener("dragover",event=>{if(event.dataTransfer?.types?.includes("Files"))event.preventDefault();});
 document.addEventListener("drop",event=>{if(event.dataTransfer?.types?.includes("Files"))event.preventDefault();});
+
+/* Chamada de áudio WebRTC. Sinalização autenticada pelo portal. */
+let currentCall=null,peerConnection=null,callStream=null,callCursor=0,callBusy=false,callTimer=null;
+const callApi=(path,method="GET",body)=>api("/chamadas"+path,method==="GET"?{}:{method,headers:{"Content-Type":"application/json","X-Portal":"1"},body:JSON.stringify(body||{})});
+function callUI(title,status,incoming=false){
+ $("callPanel").hidden=false;$("callTitle").textContent=title;$("callStatus").textContent=status;
+ $("acceptCall").hidden=!incoming;$("declineCall").hidden=!incoming;
+ $("muteCall").hidden=incoming;$("hangupCall").hidden=incoming;
+}
+function closeCallUI(){
+ if(peerConnection){peerConnection.close();peerConnection=null}
+ if(callStream){callStream.getTracks().forEach(t=>t.stop());callStream=null}
+ $("callAudio").srcObject=null;$("callPanel").hidden=true;$("muteCall").hidden=true;
+ currentCall=null;callCursor=0;
+}
+async function endCall(state="ended"){
+ const id=currentCall?.id;closeCallUI();
+ if(id)try{await callApi("/"+id+"/estado","POST",{estado:state})}catch(_){}
+}
+async function preparePeer(){
+ if(!navigator.mediaDevices?.getUserMedia||!window.RTCPeerConnection)throw Error("Chamadas indisponíveis neste dispositivo");
+ callStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true},video:false});
+ peerConnection=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"}]});
+ callStream.getTracks().forEach(track=>peerConnection.addTrack(track,callStream));
+ peerConnection.ontrack=event=>{$("callAudio").srcObject=event.streams[0]};
+ peerConnection.onicecandidate=event=>{if(event.candidate&&currentCall)callApi("/"+currentCall.id+"/sinais","POST",{tipo:"candidate",conteudo:event.candidate.toJSON()}).catch(()=>{})};
+ peerConnection.onconnectionstatechange=()=>{
+  if(!peerConnection)return;
+  if(peerConnection.connectionState==="connected")$("callStatus").textContent="Em chamada";
+  if(["failed","closed"].includes(peerConnection.connectionState))endCall().catch(()=>{});
+ };
+}
+async function sendCallSignal(tipo,conteudo){return callApi("/"+currentCall.id+"/sinais","POST",{tipo,conteudo})}
+async function startOffer(){
+ await preparePeer();
+ const offer=await peerConnection.createOffer();await peerConnection.setLocalDescription(offer);
+ await sendCallSignal("offer",peerConnection.localDescription.toJSON());
+ $("callStatus").textContent="Chamando...";
+}
+async function handleSignals(){
+ if(!currentCall)return;
+ const id=currentCall.id;
+ const data=await callApi("/"+id+"/sinais?after="+callCursor);
+ if(currentCall?.id!==id)return;
+ for(const s of data.sinais){
+  callCursor=Math.max(callCursor,Number(s.id));
+  if(s.tipo==="offer"&&currentCall.incoming&&peerConnection){
+   await peerConnection.setRemoteDescription(new RTCSessionDescription(s.conteudo));
+   const answer=await peerConnection.createAnswer();await peerConnection.setLocalDescription(answer);
+   await sendCallSignal("answer",peerConnection.localDescription.toJSON());
+  }else if(s.tipo==="answer"&&peerConnection&&!peerConnection.currentRemoteDescription){
+   await peerConnection.setRemoteDescription(new RTCSessionDescription(s.conteudo));
+  }else if(s.tipo==="candidate"&&peerConnection){
+   try{await peerConnection.addIceCandidate(new RTCIceCandidate(s.conteudo))}catch(_){}
+  }
+ }
+}
+$("startCall").onclick=async()=>{
+ if(!selected||currentCall)return;
+ try{
+  const c=await callApi("","POST",{destinatario_id:selected});
+  currentCall={id:c.id,incoming:false};
+  callUI("Ligando para "+(people.find(p=>Number(p.id)===Number(selected))?.nome||"colaborador"),"Chamando...");
+  await startOffer();
+ }catch(e){if(currentCall)await endCall();$("state").textContent="Chamada: "+e.message}
+};
+$("acceptCall").onclick=async()=>{
+ if(!currentCall)return;
+ try{
+  await preparePeer();
+  await callApi("/"+currentCall.id+"/estado","POST",{estado:"active"});
+  callUI($("callTitle").textContent,"Conectando...");
+  await handleSignals();
+ }catch(e){$("state").textContent=e.message;await endCall()}
+};
+$("declineCall").onclick=()=>endCall("declined");
+$("hangupCall").onclick=()=>endCall();
+$("muteCall").onclick=()=>{
+ const track=callStream?.getAudioTracks()[0];if(!track)return;
+ track.enabled=!track.enabled;$("muteCall").textContent=track.enabled?"Silenciar":"Ativar microfone";
+};
+async function pollCalls(){
+ if(!me||callBusy)return;callBusy=true;
+ try{
+  if(!currentCall){
+   const data=await callApi("/pendentes");
+   if(data.chamada){currentCall={id:data.chamada.id,incoming:true};callUI("Chamada de "+data.chamada.origem_nome,"Chamada recebida",true)}
+  }else{
+   const c=await callApi("/"+currentCall.id);
+   if(["ended","declined"].includes(c.estado)){closeCallUI();return}
+   if(peerConnection)await handleSignals();
+  }
+ }catch(e){if(currentCall)$("callStatus").textContent="Conexão instável: "+e.message}
+ finally{callBusy=false}
+}
+setInterval(pollCalls,1800);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)pollCalls()});
+
 $("message").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();$("composer").requestSubmit();}});
 $("mobileBack").addEventListener("click",()=>app.classList.remove("chat-open"));
 $("search").addEventListener("input",drawPeople);
