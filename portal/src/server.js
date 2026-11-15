@@ -253,6 +253,41 @@ r.get("/api/atendimento/status", exigir("painel"), (req, res) => {
   });
 });
 
+// Mídia DigiSac: proxy autenticado evita links assinados expirados no navegador.
+r.get("/api/atendimento/arquivo/:id", exigir("painel"), wrap(async(req,res)=>{
+ res.setHeader("Cache-Control","private, no-store");
+ if(req.usuario.perfil!=="admin")return res.sendStatus(403);
+ const id=String(req.params.id||"");
+ if(!/^[a-f0-9-]{36}$/i.test(id))return res.sendStatus(400);
+ const base=(process.env.DIGISAC_API_BASE_URL||"").replace(/\\/+$/,""),token=process.env.DIGISAC_API_TOKEN;
+ if(!base||!token)return res.sendStatus(503);
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),18000);
+ try{
+  const metaUrl=new URL(base+"/files/"+id);
+  if(metaUrl.protocol!=="https:"||metaUrl.hostname!=="rodrinoxpro.digisac.app"||!metaUrl.pathname.startsWith("/api/v1/"))return res.sendStatus(503);
+  const metaResponse=await fetch(metaUrl,{headers:{Authorization:"Bearer "+token,Accept:"application/json"},signal:controller.signal,redirect:"error"});
+  if(!metaResponse.ok)return res.sendStatus(502);
+  const metadata=await metaResponse.json();
+  const file=metadata?.data||metadata;
+  const raw=file?.url||file?.downloadUrl||file?.publicUrl||file?.fileUrl||file?.uri;
+  if(typeof raw!=="string")return res.sendStatus(404);
+  const url=new URL(raw);
+  if(url.protocol!=="https:"||!url.hostname.endsWith(".objectstorage.sa-vinhedo-1.oraclecloud.com"))return res.sendStatus(502);
+  const upstream=await fetch(url,{signal:controller.signal,redirect:"error"});
+  if(!upstream.ok)return res.sendStatus(502);
+  const mime=String(upstream.headers.get("content-type")||"application/octet-stream").split(";")[0].trim().toLowerCase();
+  const allowed=/^(image\\/(jpeg|png|webp|gif)|application\\/pdf|text\\/plain|application\\/octet-stream)$/.test(mime);
+  if(!allowed)return res.sendStatus(415);
+  const bytes=Buffer.from(await upstream.arrayBuffer());
+  if(bytes.length>16*1024*1024)return res.sendStatus(413);
+  res.setHeader("Content-Type",mime);
+  res.setHeader("X-Content-Type-Options","nosniff");
+  res.setHeader("Content-Disposition","inline");
+  return res.send(bytes);
+ }catch{return res.status(502).json({erro:"Não foi possível carregar o arquivo DigiSac."})}
+ finally{clearTimeout(timer)}
+}));
+
 // Proxy de leitura DigiSac. Token fica exclusivamente no servidor.
 // Nesta fase, apenas admin pode consultar dados de clientes: usuários comuns não herdam
 // acesso irrestrito às filas pelo simples fato de possuir sessão do portal.
