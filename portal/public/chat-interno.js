@@ -206,7 +206,7 @@ document.addEventListener("dragover",event=>{if(event.dataTransfer?.types?.inclu
 document.addEventListener("drop",event=>{if(event.dataTransfer?.types?.includes("Files"))event.preventDefault();});
 
 /* Chamada de áudio WebRTC. Sinalização autenticada pelo portal. */
-let currentCall=null,peerConnection=null,callStream=null,callCursor=0,callBusy=false,callTimer=null;
+let currentCall=null,peerConnection=null,callStream=null,callCursor=0,callBusy=false,callTimer=null,pendingCandidates=[],remoteOfferApplied=false;
 const callApi=(path,method="GET",body)=>api("/chamadas"+path,method==="GET"?{}:{method,headers:{"Content-Type":"application/json","X-Portal":"1"},body:JSON.stringify(body||{})});
 function callUI(title,status,incoming=false){
  $("callPanel").hidden=false;$("callTitle").textContent=title;$("callStatus").textContent=status;
@@ -217,7 +217,7 @@ function closeCallUI(){
  if(peerConnection){peerConnection.close();peerConnection=null}
  if(callStream){callStream.getTracks().forEach(t=>t.stop());callStream=null}
  $("callAudio").srcObject=null;$("callPanel").hidden=true;$("muteCall").hidden=true;
- currentCall=null;callCursor=0;
+ currentCall=null;callCursor=0;pendingCandidates=[];remoteOfferApplied=false;
 }
 async function endCall(state="ended"){
  const id=currentCall?.id;closeCallUI();
@@ -228,12 +228,12 @@ async function preparePeer(){
  callStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true},video:false});
  peerConnection=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"}]});
  callStream.getTracks().forEach(track=>peerConnection.addTrack(track,callStream));
- peerConnection.ontrack=event=>{$("callAudio").srcObject=event.streams[0]};
+ peerConnection.ontrack=event=>{const audio=$("callAudio");audio.srcObject=event.streams[0]||new MediaStream([event.track]);audio.play().catch(()=>{$("callStatus").textContent="Toque na tela para ativar o áudio.";});};
  peerConnection.onicecandidate=event=>{if(event.candidate&&currentCall)callApi("/"+currentCall.id+"/sinais","POST",{tipo:"candidate",conteudo:event.candidate.toJSON()}).catch(()=>{})};
  peerConnection.onconnectionstatechange=()=>{
   if(!peerConnection)return;
   if(peerConnection.connectionState==="connected")$("callStatus").textContent="Em chamada";
-  if(["failed","closed"].includes(peerConnection.connectionState))endCall().catch(()=>{});
+  if(peerConnection.connectionState==="failed")$("callStatus").textContent="Não foi possível conectar o áudio. Verifique a rede e tente novamente.";
  };
 }
 async function sendCallSignal(tipo,conteudo){return callApi("/"+currentCall.id+"/sinais","POST",{tipo,conteudo})}
@@ -243,6 +243,10 @@ async function startOffer(){
  await sendCallSignal("offer",peerConnection.localDescription.toJSON());
  $("callStatus").textContent="Chamando...";
 }
+async function flushCandidates(){
+ if(!peerConnection?.remoteDescription)return;
+ while(pendingCandidates.length){const candidate=pendingCandidates.shift();try{await peerConnection.addIceCandidate(candidate)}catch(e){console.warn("ICE candidate rejeitado",e)}}
+}
 async function handleSignals(){
  if(!currentCall)return;
  const id=currentCall.id;
@@ -250,14 +254,18 @@ async function handleSignals(){
  if(currentCall?.id!==id)return;
  for(const s of data.sinais){
   callCursor=Math.max(callCursor,Number(s.id));
-  if(s.tipo==="offer"&&currentCall.incoming&&peerConnection){
+  if(s.tipo==="offer"&&currentCall.incoming){
+   if(!peerConnection||remoteOfferApplied)continue;
    await peerConnection.setRemoteDescription(new RTCSessionDescription(s.conteudo));
+   remoteOfferApplied=true;await flushCandidates();
    const answer=await peerConnection.createAnswer();await peerConnection.setLocalDescription(answer);
    await sendCallSignal("answer",peerConnection.localDescription.toJSON());
   }else if(s.tipo==="answer"&&peerConnection&&!peerConnection.currentRemoteDescription){
-   await peerConnection.setRemoteDescription(new RTCSessionDescription(s.conteudo));
-  }else if(s.tipo==="candidate"&&peerConnection){
-   try{await peerConnection.addIceCandidate(new RTCIceCandidate(s.conteudo))}catch(_){}
+   await peerConnection.setRemoteDescription(new RTCSessionDescription(s.conteudo));await flushCandidates();
+  }else if(s.tipo==="candidate"){
+   const candidate=new RTCIceCandidate(s.conteudo);
+   if(peerConnection?.remoteDescription){try{await peerConnection.addIceCandidate(candidate)}catch(e){console.warn("ICE candidate rejeitado",e)}}
+   else pendingCandidates.push(candidate);
   }
  }
 }
