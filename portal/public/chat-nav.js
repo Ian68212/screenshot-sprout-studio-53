@@ -35,7 +35,7 @@
  const minimize=document.createElement("button");minimize.type="button";minimize.title="Minimizar chat";minimize.setAttribute("aria-label","Minimizar chat");minimize.textContent="—";
  const expand=document.createElement("button");expand.type="button";expand.title="Abrir em tela inteira";expand.setAttribute("aria-label","Abrir chat em tela inteira");expand.textContent="⤢";
  actions.append(minimize,expand);bar.append(heading,actions);
- const frame=document.createElement("iframe");frame.title="Conversas privadas Rodrinox";frame.loading="lazy";
+ const frame=document.createElement("iframe");frame.title="Conversas privadas Rodrinox";frame.loading="lazy";frame.allow="microphone; camera; autoplay";
  panel.append(bar,frame);document.body.append(panel);
  let frameLoaded=false;
  function openChat(){panel.hidden=false;fab.setAttribute("aria-expanded","true");if(!frameLoaded){frame.src=URL;frameLoaded=true;}}
