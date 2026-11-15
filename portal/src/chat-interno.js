@@ -173,4 +173,76 @@ router.get("/nao-lidas", fail(async (req,res) => {
   const [row]=await q("SELECT COUNT(*) AS total FROM chat_interno_mensagens WHERE destinatario_id=? AND lido_em IS NULL",[req.usuario.id]);
   res.set("Cache-Control","no-store").json({total:Number(row.total)||0});
 }));
+
+/* Sinalização WebRTC autenticada, sem dependência de WebSocket. */
+let callReady;
+async function callSchema(){
+ if(!callReady)callReady=(async()=>{
+  await q(`CREATE TABLE IF NOT EXISTS chat_interno_chamadas (
+   id CHAR(36) PRIMARY KEY, origem_id BIGINT NOT NULL, destino_id BIGINT NOT NULL,
+   estado VARCHAR(16) NOT NULL DEFAULT 'ringing',
+   criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+   atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+   INDEX ix_destino (destino_id,estado), INDEX ix_origem (origem_id,estado)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+  await q(`CREATE TABLE IF NOT EXISTS chat_interno_sinais (
+   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, chamada_id CHAR(36) NOT NULL,
+   remetente_id BIGINT NOT NULL, tipo VARCHAR(16) NOT NULL,
+   conteudo MEDIUMTEXT NOT NULL, criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+   INDEX ix_chamada (chamada_id,id)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+ })().catch(e=>{callReady=null;throw e});return callReady;
+}
+const callFail=fn=>async(req,res,next)=>{try{await callSchema();await fn(req,res)}catch(e){next(e)}};
+const callId=id=>/^[a-f0-9-]{36}$/i.test(String(id||""));
+async function authorizedCall(req,res){
+ if(!callId(req.params.id)){res.status(400).json({erro:"Chamada inválida"});return null}
+ const [call]=await q("SELECT * FROM chat_interno_chamadas WHERE id=? AND (origem_id=? OR destino_id=?)",[req.params.id,req.usuario.id,req.usuario.id]);
+ if(!call){res.status(404).json({erro:"Chamada não encontrada"});return null}return call;
+}
+router.post("/chamadas",callFail(async(req,res)=>{
+ const to=Number(req.body?.destinatario_id),from=req.usuario.id;
+ if(!Number.isSafeInteger(to)||to<=0||to===from)return res.status(400).json({erro:"Destinatário inválido"});
+ const [person]=await q("SELECT id FROM usuarios WHERE id=? AND ativo=1",[to]);
+ if(!person)return res.status(404).json({erro:"Colaborador indisponível"});
+ const busy=await q("SELECT id FROM chat_interno_chamadas WHERE estado IN ('ringing','active') AND atualizado_em>NOW()-INTERVAL 2 MINUTE AND (origem_id IN (?,?) OR destino_id IN (?,?)) LIMIT 1",[from,to,from,to]);
+ if(busy.length)return res.status(409).json({erro:"Um dos colaboradores já está em chamada"});
+ const id=crypto.randomUUID();
+ await q("INSERT INTO chat_interno_chamadas(id,origem_id,destino_id) VALUES(?,?,?)",[id,from,to]);
+ res.status(201).json({id,estado:"ringing"});
+}));
+router.get("/chamadas/pendentes",callFail(async(req,res)=>{
+ await q("UPDATE chat_interno_chamadas SET estado='ended' WHERE estado IN ('ringing','active') AND atualizado_em<NOW()-INTERVAL 2 MINUTE");
+ const chamadas=await q("SELECT c.id,c.origem_id,c.destino_id,c.estado,u.nome AS origem_nome FROM chat_interno_chamadas c JOIN usuarios u ON u.id=c.origem_id WHERE c.destino_id=? AND c.estado='ringing' ORDER BY c.criado_em DESC LIMIT 1",[req.usuario.id]);
+ res.set("Cache-Control","no-store").json({chamada:chamadas[0]||null});
+}));
+router.get("/chamadas/:id",callFail(async(req,res)=>{
+ const c=await authorizedCall(req,res);if(!c)return;
+ res.set("Cache-Control","no-store").json({id:c.id,estado:c.estado,origem_id:c.origem_id,destino_id:c.destino_id});
+}));
+router.post("/chamadas/:id/estado",callFail(async(req,res)=>{
+ const c=await authorizedCall(req,res);if(!c)return;
+ const state=String(req.body?.estado||"");
+ if(!["active","declined","ended"].includes(state))return res.status(400).json({erro:"Estado inválido"});
+ if(state==="active"&&(c.destino_id!==req.usuario.id||c.estado!=="ringing"))return res.status(409).json({erro:"Não é possível atender"});
+ if(state!=="active"&& !["ringing","active"].includes(c.estado))return res.status(409).json({erro:"Chamada já encerrada"});
+ await q("UPDATE chat_interno_chamadas SET estado=? WHERE id=?",[state,c.id]);
+ res.json({ok:true,estado:state});
+}));
+router.post("/chamadas/:id/sinais",callFail(async(req,res)=>{
+ const c=await authorizedCall(req,res);if(!c)return;
+ const tipo=String(req.body?.tipo||""),conteudo=JSON.stringify(req.body?.conteudo??null);
+ if(!["offer","answer","candidate"].includes(tipo)||conteudo.length>12000)return res.status(400).json({erro:"Sinal inválido"});
+ if(!["ringing","active"].includes(c.estado))return res.status(409).json({erro:"Chamada encerrada"});
+ await q("INSERT INTO chat_interno_sinais(chamada_id,remetente_id,tipo,conteudo) VALUES(?,?,?,?)",[c.id,req.usuario.id,tipo,conteudo]);
+ await q("UPDATE chat_interno_chamadas SET atualizado_em=NOW() WHERE id=?",[c.id]);
+ res.status(201).json({ok:true});
+}));
+router.get("/chamadas/:id/sinais",callFail(async(req,res)=>{
+ const c=await authorizedCall(req,res);if(!c)return;
+ const after=Math.max(0,Number(req.query.after)||0);
+ const signals=await q("SELECT id,tipo,conteudo FROM chat_interno_sinais WHERE chamada_id=? AND remetente_id<>? AND id>? ORDER BY id LIMIT 100",[c.id,req.usuario.id,after]);
+ res.set("Cache-Control","no-store").json({sinais:signals.map(s=>({id:s.id,tipo:s.tipo,conteudo:JSON.parse(s.conteudo)}))});
+}));
+
 export default router;
