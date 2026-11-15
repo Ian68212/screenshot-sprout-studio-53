@@ -2,7 +2,7 @@ name: Build Rodrinox Pro Android APK
 
 on:
   push:
-    branches: [main, mobile-app-download-option]
+    branches: [main, mobile-app-download-option, android-base-aprovada-v1.0.28]
     paths:
       - "android-app/**"
       - ".github/workflows/build-android-apk.yml"
@@ -78,23 +78,23 @@ jobs:
       - name: Rename APK
         run: |
           mkdir -p output
-          cp android-app/app/build/outputs/apk/debug/app-debug.apk output/Rodrinox-Pro-Android.apk
+          cp android-app/app/build/outputs/apk/debug/app-debug.apk output/Rodrinox-Pro-Android-v1.0.29-TESTE.apk
 
       - name: Upload installable APK
         uses: actions/upload-artifact@v4
         with:
-          name: Rodrinox-Pro-APK-Android
-          path: output/Rodrinox-Pro-Android.apk
+          name: Rodrinox-Pro-APK-v1.0.29-TESTE
+          path: output/Rodrinox-Pro-Android-v1.0.29-TESTE.apk
           if-no-files-found: error
           retention-days: 30
 
       - name: Publish public APK download
-        if: github.ref == 'refs/heads/mobile-app-download-option' || github.event_name == 'workflow_dispatch'
+        if: github.ref == 'refs/heads/mobile-app-download-option'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: android-v1.0.${{ github.run_number }}
-          name: Rodrinox Pro Android — versão ${{ github.run_number }}
-          files: output/Rodrinox-Pro-Android.apk
+          tag_name: android-v1.0.29-${{ github.run_number }}
+          name: Rodrinox Pro Android — 1.0.29 TESTE (build ${{ github.run_number }})
+          files: output/Rodrinox-Pro-Android-v1.0.29-TESTE.apk
           make_latest: true
           generate_release_notes: false
         env:
