@@ -71,7 +71,7 @@ async function openRecord(id,redraw=true){
       const body=messageText(m),type=messageType(m),sender=m.user?.name||m.contact?.name||m.origin||"Mensagem";
       const media=mediaMarkup(m);const content=body||(!media?"[Mensagem sem texto]":"");
       const sent=m.origin==='user'||m.isFromMe===true||m.fromMe===true||m.direction==='outbound';
-      return '<div class="ca-msg '+(sent?'ca-msg-out':'ca-msg-in')+'"><small>'+safe(sender)+' · '+safe(messageTime(m))+'</small><p>'+safe(content)+'</p></div>';
+      return '<div class="ca-msg '+(sent?'ca-msg-out':'ca-msg-in')+'"><small>'+safe(sender)+' · '+safe(messageTime(m))+'</small><p>'+safe(content)+'</p>'+media+'</div>';
     }).join(""):'Nenhuma mensagem disponível para este contato.';
     const pending=sentPending.filter(p=>p.contactId===String(contactId));
     if(pending.length)target.innerHTML+=pending.map(p=>'<div class="ca-msg ca-msg-out"><small>Enviada · aguardando atualização do histórico</small><p>'+safe(p.text)+'</p></div>').join('');
