@@ -102,3 +102,16 @@
  .ca-root.ca-mobile-chat .ca-mobile-bottom{display:none!important}
  .ca-root.ca-mobile-chat .ca-contact.ca-mobile-info-open{display:block!important;position:absolute!important;top:64px;right:0;bottom:0;width:min(310px,86vw);z-index:10;box-shadow:-8px 0 30px #0003;overflow:auto!important}
 }
+
+/* Ajustes mobile Rodrinox Pro: menu de ações e isolamento dos botões flutuantes. */
+@media(max-width:760px){
+ #items.ca-root{z-index:2147483000!important}
+ .ca-root .ca-mobile-top{position:relative;z-index:2}
+ .ca-root .ca-mobile-menu{position:absolute;top:56px;right:12px;width:min(270px,85vw);background:white;color:#19344e;border-radius:12px;box-shadow:0 12px 36px #0004;border:1px solid #d9e4ed;padding:7px;z-index:30}
+ .ca-root .ca-mobile-menu[hidden]{display:none!important}
+ .ca-root .ca-mobile-menu button{display:block!important;width:100%;min-height:47px!important;padding:12px 13px!important;text-align:left;background:transparent!important;color:#19344e!important;font-size:14px!important;border:0!important;border-radius:8px!important;cursor:pointer}
+ .ca-root .ca-mobile-menu button:active{background:#eaf2fc!important}
+ .ca-root .ca-refresh{display:none!important}
+ .ca-root .ca-left{padding-top:10px}
+ .ca-root .ca-mobile-bottom{position:relative;z-index:2}
+}
