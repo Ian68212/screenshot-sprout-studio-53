@@ -259,7 +259,7 @@ r.get("/api/atendimento/arquivo/:id", exigir("painel"), wrap(async(req,res)=>{
  if(req.usuario.perfil!=="admin")return res.sendStatus(403);
  const id=String(req.params.id||"");
  if(!/^[a-f0-9-]{36}$/i.test(id))return res.sendStatus(400);
- const base=(process.env.DIGISAC_API_BASE_URL||"").replace(/\\/+$/,""),token=process.env.DIGISAC_API_TOKEN;
+ const base=(process.env.DIGISAC_API_BASE_URL||"").replace(/\/+$/,""),token=process.env.DIGISAC_API_TOKEN;
  if(!base||!token)return res.sendStatus(503);
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),18000);
  try{
@@ -276,7 +276,7 @@ r.get("/api/atendimento/arquivo/:id", exigir("painel"), wrap(async(req,res)=>{
   const upstream=await fetch(url,{signal:controller.signal,redirect:"error"});
   if(!upstream.ok)return res.sendStatus(502);
   const mime=String(upstream.headers.get("content-type")||"application/octet-stream").split(";")[0].trim().toLowerCase();
-  const allowed=/^(image\\/(jpeg|png|webp|gif)|application\\/pdf|text\\/plain|application\\/octet-stream)$/.test(mime);
+  const allowed=/^(image\/(jpeg|png|webp|gif)|application\/pdf|text\/plain|application\/octet-stream)$/.test(mime);
   if(!allowed)return res.sendStatus(415);
   const bytes=Buffer.from(await upstream.arrayBuffer());
   if(bytes.length>16*1024*1024)return res.sendStatus(413);
