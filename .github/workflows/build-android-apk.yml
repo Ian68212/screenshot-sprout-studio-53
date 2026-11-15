@@ -97,7 +97,8 @@ jobs:
           files: output/Rodrinox-Pro-Android.apk
           make_latest: true
           prerelease: false
-          body: |\n            APK de testes 1.0.5-teste. Microfone, notificações push em segundo plano e chamadas recebidas ainda não foram homologados. Pode exigir desinstalação da versão de teste anterior.
+          body: |
+            APK de testes 1.0.5-teste. Microfone, notificações push em segundo plano e chamadas recebidas ainda não foram homologados. Pode exigir desinstalação da versão de teste anterior.
           generate_release_notes: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
