@@ -89,13 +89,15 @@ jobs:
           retention-days: 30
 
       - name: Publish public APK download
-        if: github.event_name == 'workflow_dispatch' && vars.ANDROID_RELEASE_APPROVED == 'true'
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: android-v1.0.5-${{ github.run_number }}
-          name: Rodrinox Pro Android — versão 1.0.5 (build ${{ github.run_number }})
+          name: Rodrinox Pro Android — 1.0.5 TESTE (build ${{ github.run_number }})
           files: output/Rodrinox-Pro-Android.apk
           make_latest: true
+          prerelease: false
+          body: |\n            APK de testes 1.0.5-teste. Microfone, notificações push em segundo plano e chamadas recebidas ainda não foram homologados. Pode exigir desinstalação da versão de teste anterior.
           generate_release_notes: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
