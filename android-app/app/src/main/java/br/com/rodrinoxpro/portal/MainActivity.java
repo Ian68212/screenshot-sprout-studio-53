@@ -1,6 +1,9 @@
 package br.com.rodrinoxpro.portal;
 
 import android.app.Activity;
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.webkit.PermissionRequest;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.graphics.Color;
@@ -33,6 +36,8 @@ import android.widget.Toast;
 public class MainActivity extends Activity {
     private static final String PORTAL_URL = "https://rodrinoxpro.com.br/colaborador/";
     private static final int FILE_CHOOSER_REQUEST = 7102;
+    private static final int MICROPHONE_PERMISSION_REQUEST = 7103;
+    private PermissionRequest pendingMicrophoneRequest;
     private static final long LOAD_TIMEOUT_MS = 25000L;
 
     private FrameLayout root;
@@ -155,6 +160,43 @@ public class MainActivity extends Activity {
 
             webView.setWebChromeClient(new WebChromeClient() {
                 @Override
+                public void onPermissionRequest(PermissionRequest request) {
+                    runOnUiThread(() -> {
+                        Uri origin = request.getOrigin();
+                        boolean trustedOrigin = origin != null
+                            && "https".equalsIgnoreCase(origin.getScheme())
+                            && ("rodrinoxpro.com.br".equalsIgnoreCase(origin.getHost())
+                                || "www.rodrinoxpro.com.br".equalsIgnoreCase(origin.getHost()));
+                        boolean audioRequested = false;
+                        boolean unsupportedResource = false;
+                        for (String resource : request.getResources()) {
+                            if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(resource)) audioRequested = true;
+                            else unsupportedResource = true;
+                        }
+                        if (!trustedOrigin || !audioRequested || unsupportedResource) {
+                            request.deny();
+                            return;
+                        }
+                        if (pendingMicrophoneRequest != null) pendingMicrophoneRequest.deny();
+                        pendingMicrophoneRequest = request;
+                        if (Build.VERSION.SDK_INT >= 23
+                            && checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                            requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, MICROPHONE_PERMISSION_REQUEST);
+                        } else {
+                            pendingMicrophoneRequest = null;
+                            request.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE});
+                        }
+                    });
+                }
+
+                @Override
+                public void onPermissionRequestCanceled(PermissionRequest request) {
+                    runOnUiThread(() -> {
+                        if (pendingMicrophoneRequest == request) pendingMicrophoneRequest = null;
+                    });
+                }
+
+                @Override
                 public void onProgressChanged(WebView view, int newProgress) {
                     if (progress != null) {
                         progress.setProgress(newProgress);
@@ -260,6 +302,21 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == MICROPHONE_PERMISSION_REQUEST && pendingMicrophoneRequest != null) {
+            PermissionRequest request = pendingMicrophoneRequest;
+            pendingMicrophoneRequest = null;
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                request.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE});
+            } else {
+                request.deny();
+                Toast.makeText(this, "Permita o microfone para gravar áudios.", Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+
+    @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == FILE_CHOOSER_REQUEST && filePathCallback != null) {
@@ -296,6 +353,10 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        if (pendingMicrophoneRequest != null) {
+            pendingMicrophoneRequest.deny();
+            pendingMicrophoneRequest = null;
+        }
         handler.removeCallbacks(loadTimeout);
         if (filePathCallback != null) filePathCallback.onReceiveValue(null);
         if (webView != null) {
