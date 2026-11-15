@@ -166,7 +166,7 @@ router.get("/anexos/:messageId",fail(async(req,res)=>{
   res.set("Cache-Control","private, no-store");
   res.set("X-Content-Type-Options","nosniff");
   res.set("Content-Type",file.mime||"application/octet-stream");
-  res.set("Content-Disposition","attachment; filename*=UTF-8''"+encodeURIComponent(file.nome));
+  res.set("Content-Disposition",(String(file.mime).startsWith("audio/")?"inline":"attachment")+"; filename*=UTF-8''"+encodeURIComponent(file.nome));
   await streamDriveFile(file.drive_id,res);
 }));
 router.get("/nao-lidas", fail(async (req,res) => {
