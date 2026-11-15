@@ -3,7 +3,7 @@ import { Apple, ArrowDownToLine, CheckCircle2, Smartphone } from "lucide-react";
 import { pageMeta } from "@/lib/seo";
 
 const androidApk =
-  "https://github.com/Ian68212/screenshot-sprout-studio-53/releases/download/android-v1.0.5-52/Rodrinox-Pro-Android-v1.0.5-TESTE.apk";
+  "https://github.com/Ian68212/screenshot-sprout-studio-53/releases/download/android-v1.0.28/Rodrinox-Pro-Android.apk";
 const collaboratorPortal = "https://rodrinoxpro.com.br/colaborador/";
 
 export const Route = createFileRoute("/aplicativo")({
@@ -50,7 +50,7 @@ function AppDownload() {
               Baixar aplicativo Android
             </a>
             <p className="mt-3 text-xs text-muted-foreground">
-              Versão 1.0.5 TESTE • APK Android • Acesso restrito a usuários autorizados
+              Versão original aprovada v1.0.28 • APK Android • Acesso restrito a usuários autorizados
             </p>
           </article>
 
