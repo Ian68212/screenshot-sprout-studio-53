@@ -108,7 +108,7 @@ button,input{font:inherit}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 /* O app instalado conserva a composição vertical original; o navegador usa o layout corporativo acima. */
 body[data-view="app"]{display:flex;align-items:center;justify-content:center;background:#03162d;overflow:hidden}
-body[data-view="app"] .browser-shell{display:block;position:relative;width:min(100vw,480px);height:auto;min-height:0;aspect-ratio:824/1600;max-height:100dvh;overflow:hidden;background-image:url("/colaborador/assets/login-original.jpeg");background-size:100% 100%;background-repeat:no-repeat;background-position:center}
+body[data-view="app"] .browser-shell{display:block;position:relative;width:min(100vw,480px);height:var(--app-viewport-height,100dvh);min-height:0;aspect-ratio:auto;max-height:none;overflow:hidden;background-image:url("/colaborador/assets/login-original.jpeg");background-size:100% 100%;background-repeat:no-repeat;background-position:center}
 body[data-view="app"] .hero-panel,
 body[data-view="app"] .brand-lockup,
 body[data-view="app"] .welcome,
@@ -120,13 +120,13 @@ body[data-view="app"] .login-panel{position:absolute;inset:0;display:block;paddi
 body[data-view="app"] .login-form{position:absolute;inset:0;display:block}
 body[data-view="app"] .field{position:absolute;left:25.2%;width:65.8%;height:6.15%}
 body[data-view="app"] .field input{position:absolute;inset:0;width:100%;height:100%;padding:0 4px;border:1px solid transparent;border-radius:8px;background:transparent;color:#fff;font:500 clamp(14px,4.8vw,21px)/1.2 Inter,"Segoe UI",Arial,sans-serif;box-shadow:none}
-body[data-view="app"] .field input::placeholder{color:rgba(255,255,255,.68)}
+body[data-view="app"] .field input::placeholder{color:transparent;opacity:0}
 body[data-view="app"] .field input:focus{border-color:rgba(112,198,255,.9);background:rgba(0,20,42,.12)}
 body[data-view="app"] #email-field{top:36.45%}
 body[data-view="app"] #password-field{top:44.1%;width:55.5%}
 body[data-view="app"] .field-icon{display:none}
 body[data-view="app"] #toggle-password{position:absolute;top:44.1%;left:80.1%;right:auto;width:10.8%;height:6.1%;padding:0;transform:none;color:#fff}
-body[data-view="app"] #toggle-password svg{width:100%;height:100%;filter:drop-shadow(0 1px 2px #001)}
+body[data-view="app"] #toggle-password svg{width:24px;height:24px;max-width:75%;max-height:75%;filter:drop-shadow(0 1px 2px #001)}
 body[data-view="app"] .erro{position:absolute;top:50.1%;left:13%;width:74%;min-height:0;color:#ffd0c8;text-align:center;font-size:clamp(10px,2.8vw,13px);text-shadow:0 1px 4px #001;pointer-events:none}
 body[data-view="app"] #submit{position:absolute;left:8.8%;top:52.35%;width:83.6%;height:6.35%;min-height:0;border-radius:30px;background:transparent;box-shadow:none;color:transparent}
 body[data-view="app"] #submit span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
@@ -134,12 +134,23 @@ body[data-view="app"] #submit svg{display:none}
 body[data-view="app"] #forgot-password{position:absolute;left:20%;top:60.15%;width:60%;height:4.5%;padding:0;border:0;background:transparent;color:transparent;font-size:0}
 body[data-view="app"] .login-panel .mobile-install{display:none!important}
 @media(min-width:600px){
- body[data-view="app"] .browser-shell{width:min(calc(100dvh * .515),480px);max-height:calc(100dvh - 36px)}
+ body[data-view="app"] .browser-shell{width:min(calc(var(--app-viewport-height,100dvh) * .515),480px);max-height:none}
 }
 </style>
 </head>
 <body>
 <script>document.body.dataset.view=((navigator.userAgent||"").includes("RodrinoxAndroid/1.0")||window.matchMedia("(display-mode: standalone)").matches||navigator.standalone===true)?"app":"browser";</script>
+<script>
+if (document.body.dataset.view === "app") {
+  // Keep the approved login artwork at its initial size while the Android keyboard opens.
+  let stableHeight = window.innerHeight;
+  const applyHeight = () => document.documentElement.style.setProperty("--app-viewport-height", stableHeight + "px");
+  applyHeight();
+  window.addEventListener("orientationchange", () => {
+    window.setTimeout(() => { stableHeight = window.innerHeight; applyHeight(); }, 350);
+  });
+}
+</script>
 <div class="browser-shell">
   <section class="hero-panel" aria-label="Fachada da Rodrinox Pro"></section>
   <main class="login-panel">
