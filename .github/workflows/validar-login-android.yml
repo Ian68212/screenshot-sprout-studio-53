@@ -1,0 +1,26 @@
+name: Validar login Android aprovado
+
+on:
+  pull_request:
+    paths:
+      - "portal/public/index.html"
+      - "android-app/tests/check_approved_login.py"
+      - ".github/workflows/validar-login-android.yml"
+  push:
+    branches:
+      - correcao-login-android-base-v1.0.28
+    paths:
+      - "portal/public/index.html"
+      - "android-app/tests/check_approved_login.py"
+      - ".github/workflows/validar-login-android.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verificar-login:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validar layout Android da versao 1.0.28
+        run: python3 android-app/tests/check_approved_login.py
