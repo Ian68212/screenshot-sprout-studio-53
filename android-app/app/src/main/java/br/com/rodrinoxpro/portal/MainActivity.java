@@ -366,7 +366,11 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         hideSystemBars();
-        if (webView != null) webView.onResume();
+        if (webView != null) {
+            webView.onResume();
+            String currentUrl = webView.getUrl();
+            if (currentUrl != null && currentUrl.startsWith("https://rodrinoxpro.com.br/colaborador/")) registerPushToken(webView);
+        }
     }
 
     @Override
