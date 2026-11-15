@@ -8,7 +8,7 @@ import { uploadDriveFile, readDriveFile, deleteDriveFile, startResumableDriveUpl
 const router = Router();
 const attachmentUpload = multer({storage:multer.memoryStorage(),limits:{fileSize:10*1024*1024,files:1},fileFilter(_req,file,cb){
   const allowed=/^(application\/(pdf|msword|vnd\.openxmlformats-officedocument\.(wordprocessingml\.document|spreadsheetml\.sheet|presentationml\.presentation)|vnd\.ms-excel|vnd\.ms-powerpoint|zip|x-zip-compressed|octet-stream)|image\/(jpeg|png|webp)|text\/plain)$/;
-  if(!allowed.test(file.mimetype))return cb(Object.assign(new Error("Formato não permitido. Envie PDF, Office, imagem, TXT ou ZIP."),{status:400}));
+  if(!allowed.test(file.mimetype))return cb(Object.assign(new Error("Formato não permitido. Envie PDF, Office, imagem, áudio, TXT ou ZIP."),{status:400}));
   cb(null,true);
 }});
 function safeName(name){return String(name||"documento").replace(/[\r\n\\/"]/g,"_").slice(0,180)||"documento";}
@@ -84,7 +84,7 @@ router.get("/mensagens/:id", fail(async (req,res) => {
   if (!Number.isSafeInteger(outro) || outro<=0 || outro===id) return res.status(400).json({erro:"Conversa inválida"});
   const [p]=await q("SELECT id,nome FROM usuarios WHERE id=? AND ativo=1",[outro]);
   if(!p) return res.status(404).json({erro:"Colaborador indisponível"});
-  const mensagens=await q(`SELECT * FROM (SELECT m.id,m.remetente_id,m.destinatario_id,m.texto,m.criado_em,m.lido_em,a.nome AS anexo_nome,a.tamanho AS anexo_tamanho
+  const mensagens=await q(`SELECT * FROM (SELECT m.id,m.remetente_id,m.destinatario_id,m.texto,m.criado_em,m.lido_em,a.nome AS anexo_nome,a.tamanho AS anexo_tamanho,a.mime AS anexo_mime
     FROM chat_interno_mensagens m LEFT JOIN chat_interno_anexos a ON a.mensagem_id=m.id
     WHERE (m.remetente_id=? AND m.destinatario_id=?) OR (m.remetente_id=? AND m.destinatario_id=?)
     ORDER BY m.id DESC LIMIT 100) x ORDER BY id ASC`,[id,outro,outro,id]);
