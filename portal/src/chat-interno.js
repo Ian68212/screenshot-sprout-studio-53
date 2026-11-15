@@ -1,5 +1,6 @@
 import { Router, raw } from "express";
 import crypto from "node:crypto";
+import { enviarPushSemBloquear } from "./push-notificacoes.js";
 import { q } from "./db.js";
 import { exigir } from "./auth.js";
 import multer from "multer";
@@ -99,6 +100,7 @@ router.post("/mensagens", fail(async (req,res) => {
   if(!p) return res.status(404).json({erro:"Destinatário indisponível"});
   const result=await q("INSERT INTO chat_interno_mensagens (remetente_id,destinatario_id,texto) VALUES (?,?,?)",[id,outro,texto]);
   res.status(201).json({ok:true,id:result.insertId});
+  enviarPushSemBloquear(outro,{type:"message",title:"Chat interno Rodrinox Pro",body:"Você recebeu uma nova mensagem."});
 }));
 router.post("/anexos",attachmentUpload.single("arquivo"),fail(async(req,res)=>{
   const id=req.usuario.id,outro=Number(req.body?.destinatario_id),file=req.file;
@@ -210,6 +212,7 @@ router.post("/chamadas",callFail(async(req,res)=>{
  const id=crypto.randomUUID();
  await q("INSERT INTO chat_interno_chamadas(id,origem_id,destino_id) VALUES(?,?,?)",[id,from,to]);
  res.status(201).json({id,estado:"ringing"});
+ enviarPushSemBloquear(to,{type:"call",title:"Chamada interna Rodrinox Pro",body:"Um colaborador está ligando.",callId:id});
 }));
 router.get("/chamadas/pendentes",callFail(async(req,res)=>{
  await q("UPDATE chat_interno_chamadas SET estado='ended' WHERE estado IN ('ringing','active') AND atualizado_em<NOW()-INTERVAL 2 MINUTE");
