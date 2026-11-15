@@ -42,7 +42,7 @@ const mediaMarkup=m=>{
  const name=String(file.name||file.originalName||file.filename||m.fileName||m.filename||"Arquivo");
  const mime=String(file.mimetype||file.mimeType||file.type||m.mimetype||"").toLowerCase();
  const type=messageType(m);
- const isImage=mime.startsWith("image/")||type==="image"||/\\.(png|jpe?g|webp|gif)(\\?|$)/i.test(name)||/\\.(png|jpe?g|webp|gif)(\\?|$)/i.test(url);
+ const isImage=mime.startsWith("image/")||type==="image"||/\.(png|jpe?g|webp|gif)(\?|$)/i.test(name)||/\.(png|jpe?g|webp|gif)(\?|$)/i.test(url);
  if(!url)return m.fileId||file.id||["image","document","file","audio","video"].includes(type)?'<span class="ca-media-missing">📎 '+safe(name==="Arquivo"?"Arquivo anexado":name)+'</span>':"";
  if(isImage)return '<a href="'+safe(url)+'" target="_blank" rel="noopener noreferrer" title="Abrir imagem"><img src="'+safe(url)+'" alt="'+safe(name)+'" loading="lazy" style="display:block;max-width:min(100%,320px);max-height:320px;object-fit:contain;border-radius:9px;margin-top:6px"></a>';
  return '<a href="'+safe(url)+'" target="_blank" rel="noopener noreferrer" style="display:inline-flex;gap:8px;align-items:center;margin-top:6px;padding:9px;border:1px solid #c6d9e7;border-radius:8px">📄 '+safe(name)+'</a>';
