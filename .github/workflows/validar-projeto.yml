@@ -22,6 +22,14 @@ jobs:
       - run: bun install --no-save
       - run: bun run build
 
+  apk-oficial:
+    name: Proteger APK oficial aprovado
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validar links e impedir releases automaticas
+        run: python3 tests/check_android_release_policy.py
+
   portal:
     name: Testes do Portal do Colaborador
     runs-on: ubuntu-latest
