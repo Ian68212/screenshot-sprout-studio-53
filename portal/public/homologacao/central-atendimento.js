@@ -1,7 +1,7 @@
 "use strict";
 (function(){
 const safe=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-let stagedFiles=[];let showFiles=()=>{};let activeServiceId=null;
+let stagedFiles=[];let showFiles=()=>{};let activeServiceId=null;let attachmentSending=false;
 let selected="meus",status=null,records=[],active=null,loading=false,error="",team=null,assignments=[],currentUser=null,lastSync=null,contactsById=new Map(),digiUserId=null,digiMatchStatus="",ticketDiagnostics="",searchTerm="";
 const rows=p=>Array.isArray(p)?p:Array.isArray(p?.rows)?p.rows:Array.isArray(p?.data)?p.data:Array.isArray(p?.items)?p.items:Array.isArray(p?.results)?p.results:[];
 const nameOf=r=>{const c=contactsById.get(String(r.contactId||r.contact?.id))||r.contact||{};return c.name||c.internalName||r.contactName||c.number||r.customer?.name||r.name||r.internalName||r.number||("Chamado #"+(r.protocol||String(r.id||"").slice(0,8)))};
@@ -29,8 +29,20 @@ const messageText=m=>{
 const messageType=m=>String(m.type||m.event||m.kind||"").toLowerCase();
 const isMessage=m=>{
   const type=messageType(m);
-  if(["ticket","user","contact","call_log","department","transfer","document","status","system"].includes(type))return false;
-  return Boolean(messageText(m))||["message","chat","text","audio","image","video","file"].includes(type);
+  if(["ticket","user","contact","call_log","department","transfer","status","system"].includes(type))return false;
+  return Boolean(messageText(m))||["message","chat","text","audio","image","video","file","document"].includes(type)||Boolean(m.fileId||m.file?.id||m.file?.url);
+};
+const mediaUrl=value=>{try{const u=new URL(String(value||""));return u.protocol==="https:"&&(/(^|\\.)digisac\\.app$/.test(u.hostname)||/(^|\\.)objectstorage\\.[a-z0-9-]+\\.oraclecloud\\.com$/.test(u.hostname))?u.href:""}catch{return ""}};
+const mediaMarkup=m=>{
+ const file=m.file||m.data?.file||m.attachment||m.data?.attachment||{};
+ const raw=file.url||file.downloadUrl||file.publicUrl||file.uri||m.fileUrl||m.mediaUrl||m.url||m.thumbnail?.url||m.preview?.url;
+ const url=mediaUrl(raw);
+ const name=String(file.name||file.originalName||m.fileName||m.filename||"Arquivo");
+ const mime=String(file.mimetype||file.mimeType||m.mimetype||"").toLowerCase();
+ const type=messageType(m);
+ if(!url)return m.fileId||file.id||["image","document","file","audio","video"].includes(type)?'<span class="ca-media-missing">📎 '+safe(name==="Arquivo"?"Arquivo anexado":name)+'</span>':"";
+ if(mime.startsWith("image/")||type==="image"||/\\.(png|jpe?g|webp|gif)(\\?|$)/i.test(url))return '<a href="'+safe(url)+'" target="_blank" rel="noopener noreferrer"><img src="'+safe(url)+'" alt="'+safe(name)+'" loading="lazy" style="display:block;max-width:min(100%,320px);max-height:280px;object-fit:contain;border-radius:9px;margin-top:6px"></a>';
+ return '<a href="'+safe(url)+'" target="_blank" rel="noopener noreferrer" style="display:inline-block;margin-top:6px">📎 '+safe(name)+'</a>';
 };
 const messageTime=m=>{const v=m.sentAt||m.createdAt||m.timestamp||m.date;if(!v)return "";const d=new Date(v);return Number.isNaN(d.getTime())?"":d.toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})};
 async function loadTeam(){try{const [a,b]=await Promise.all([fetch("/colaborador/api/atendimento/rodrinox/atribuicoes",{credentials:"same-origin"}),fetch("/colaborador/api/atendimento/rodrinox/equipe",{credentials:"same-origin"})]);if(a.ok){const d=await a.json();assignments=d.atribuicoes||[];currentUser=d.usuario;}if(b.ok)team=await b.json()}catch(e){console.warn("Equipe indisponível")}}
@@ -57,7 +69,7 @@ async function openRecord(id,redraw=true){
     sentPending=sentPending.filter(p=>p.contactId!==String(contactId)||(!messages.some(m=>(p.id&&String(m.id)===p.id)||(messageText(m)===p.text&&Math.abs(new Date(m.createdAt||m.sentAt||0).getTime()-p.time)<120000))&&Date.now()-p.time<120000));
     target.innerHTML=messages.length?messages.map(m=>{
       const body=messageText(m),type=messageType(m),sender=m.user?.name||m.contact?.name||m.origin||"Mensagem";
-      const content=body||("[Conteúdo "+(type||"multimídia")+" não disponível nesta integração]");
+      const media=mediaMarkup(m);const content=body||(!media?"[Mensagem sem texto]":"");
       const sent=m.origin==='user'||m.isFromMe===true||m.fromMe===true||m.direction==='outbound';
       return '<div class="ca-msg '+(sent?'ca-msg-out':'ca-msg-in')+'"><small>'+safe(sender)+' · '+safe(messageTime(m))+'</small><p>'+safe(content)+'</p></div>';
     }).join(""):'Nenhuma mensagem disponível para este contato.';
@@ -69,7 +81,8 @@ async function openRecord(id,redraw=true){
 }
 
 async function sendAttachments(contactId,caption,textarea,button){
- if(!confirm("Enviar "+stagedFiles.length+" arquivo(s) para este contato via DigiSac?"))return;
+ if(attachmentSending||!stagedFiles.length)return;
+ attachmentSending=true;
  button.disabled=true;button.textContent="Enviando arquivo...";
  try{
   let count=0;
@@ -81,9 +94,9 @@ async function sendAttachments(contactId,caption,textarea,button){
    stagedFiles.splice(stagedFiles.indexOf(file),1);count++;showFiles();
   }
   textarea.value="";await openRecord(active.id,false);
-  alert(count+" arquivo(s) confirmado(s) pela API DigiSac. Confira a entrega no histórico.");
+
  }catch(err){alert("Não foi possível confirmar o envio: "+err.message+" Confira a DigiSac antes de tentar novamente para evitar duplicidade.")}
- finally{button.disabled=false;button.textContent="Enviar"}
+ finally{attachmentSending=false;button.disabled=false;button.textContent="Enviar";if(stagedFiles.length)showFiles()}
 }
 
 async function sendMessage(){
@@ -162,9 +175,8 @@ for (const id of ["caTransfer","caTags","caClose"]) {
   }
 }
 const attachInput=document.getElementById("caAttachmentInput"),dropZone=document.getElementById("caDropZone"),preview=document.getElementById("caAttachmentPreview");
-showFiles=()=>{if(!preview)return;preview.style.display=stagedFiles.length?"block":"none";preview.innerHTML=stagedFiles.length?'<strong>Arquivos selecionados (ainda não enviados)</strong><div style="font-size:12px;margin:6px 0">Envio experimental via DigiSac. Confirme o destinatário antes de enviar.</div>'+stagedFiles.map((f,i)=>'<div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0"><span>'+safe(f.name)+' · '+Math.ceil(f.size/1024)+' KB</span><button type="button" data-ca-remove="'+i+'">Remover</button></div>').join(""):'';
-preview.querySelectorAll("[data-ca-remove]").forEach(b=>b.addEventListener("click",()=>{stagedFiles.splice(Number(b.dataset.caRemove),1);showFiles()}));};
-const addFiles=files=>{if(!active||selected==="contatos"){alert("Selecione um chamado em Meus chats ou Fila antes de anexar.");return}const allowed=/^(image\/(png|jpeg|webp|gif)|application\/pdf|text\/(plain|csv)|application\/(msword|vnd\\.openxmlformats-officedocument\\.wordprocessingml\\.document|vnd\\.ms-excel|vnd\\.openxmlformats-officedocument\\.spreadsheetml\\.sheet))$/i;for(const f of files){if(f.size>15*1024*1024){alert("Arquivo acima do limite provisório de 15 MB: "+f.name);continue}if(!allowed.test(f.type)&&!(/\.(docx?|xlsx?|pdf|txt|csv|png|jpe?g|webp|gif)$/i.test(f.name))){alert("Tipo de arquivo não permitido: "+f.name);continue}stagedFiles.push(f)}showFiles()};
+showFiles=()=>{if(!preview)return;preview.style.display=stagedFiles.length?"block":"none";preview.innerHTML=stagedFiles.length?'<span style="font-size:12px">Enviando '+stagedFiles.length+' arquivo(s)…</span>':'';};
+const addFiles=files=>{if(!active||selected==="contatos"){alert("Selecione um chamado em Meus chats ou Fila antes de anexar.");return}const allowed=/^(image\/(png|jpeg|webp|gif)|application\/pdf|text\/(plain|csv)|application\/(msword|vnd\\.openxmlformats-officedocument\\.wordprocessingml\\.document|vnd\\.ms-excel|vnd\\.openxmlformats-officedocument\\.spreadsheetml\\.sheet))$/i;for(const f of files){if(f.size>15*1024*1024){alert("Arquivo acima do limite provisório de 15 MB: "+f.name);continue}if(!allowed.test(f.type)&&!(/\.(docx?|xlsx?|pdf|txt|csv|png|jpe?g|webp|gif)$/i.test(f.name))){alert("Tipo de arquivo não permitido: "+f.name);continue}stagedFiles.push(f)}showFiles();if(stagedFiles.length&&!attachmentSending)sendMessage()};
 document.getElementById("caAttach")?.addEventListener("click",()=>attachInput?.click());
 attachInput?.addEventListener("change",()=>{addFiles(attachInput.files||[]);attachInput.value=""});
 dropZone?.addEventListener("dragover",e=>{if(!e.dataTransfer?.types.includes("Files"))return;e.preventDefault();dropZone.style.outline="2px dashed #2995d3"});
