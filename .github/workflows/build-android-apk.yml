@@ -1,8 +1,8 @@
-name: Build Rodrinox Pro Android APK
+name: Build Rodrinox Pro Android APK - base oficial + FCM
 
 on:
   push:
-    branches: [main, mobile-app-download-option, android-base-aprovada-v1.0.28]
+    branches: [main, mobile-app-download-option, android-base-aprovada-v1.0.28, fix/android-fcm-sobre-base-oficial-20261116]
     paths:
       - "android-app/**"
       - ".github/workflows/build-android-apk.yml"
@@ -78,12 +78,12 @@ jobs:
       - name: Rename APK
         run: |
           mkdir -p output
-          cp android-app/app/build/outputs/apk/debug/app-debug.apk output/Rodrinox-Pro-Android-v1.0.29-TESTE.apk
+          cp android-app/app/build/outputs/apk/debug/app-debug.apk output/Rodrinox-Pro-Android-v1.0.29-BASE-OFICIAL-TESTE.apk
 
       - name: Upload installable APK
         uses: actions/upload-artifact@v4
         with:
-          name: Rodrinox-Pro-APK-v1.0.29-TESTE
+          name: Rodrinox-Pro-APK-v1.0.29-BASE-OFICIAL-TESTE
           path: output/Rodrinox-Pro-Android-v1.0.29-TESTE.apk
           if-no-files-found: error
           retention-days: 30
