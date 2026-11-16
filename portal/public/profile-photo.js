@@ -46,7 +46,7 @@ const style=document.createElement("style");style.textContent=`
 #rp-global-profile .rp-menu .rp-menu-link{display:flex;align-items:center;gap:12px;width:100%;padding:12px 10px;border:0;border-radius:9px;background:transparent;color:#edf6ff;text-align:left;text-decoration:none;font:600 13px Arial;cursor:pointer}
 #rp-global-profile .rp-menu .rp-menu-link:hover,#rp-global-profile .rp-menu button:hover{background:#244765}
 #rp-global-profile .rp-menu .rp-menu-link>span{display:grid;place-items:center;width:24px;height:24px;color:#ff9a43;font-size:19px}
-#rp-global-profile .rp-menu .rp-wa-icon{color:#39d67a!important}
+#rp-global-profile .rp-menu .rp-wa-icon{color:#39d67a!important}#rp-global-profile .rp-menu .rp-menu-link>span svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 #rp-global-profile .rp-menu .rp-edit{margin-top:5px;border-top:1px solid #ffffff20;border-radius:0;padding-top:13px;color:#c4d8e8}
 #rp-global-profile .rp-menu .rp-logout{color:#ffb2a9}
 @media(max-width:650px){#rp-global-profile.rp-in-header .rp-name{display:block;max-width:92px;font-size:12px}#rp-global-profile.rp-in-header .rp-trigger{padding:3px 7px 3px 4px;gap:6px}#rp-global-profile.rp-in-header .rp-avatar{width:34px;height:34px}#rp-global-profile.rp-in-header .rp-trigger>span:last-child{display:block}}
