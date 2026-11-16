@@ -65,7 +65,7 @@
  `;
  document.head.append(dockStyle);
  const dock=document.createElement("nav");dock.id="rp-attendance-dock";dock.setAttribute("aria-label","Atendimento Rodrinox");
- dock.innerHTML='<button type="button" data-open="whatsapp"><span class="rp-dock-icon rp-wa-icon" aria-hidden="true">◉</span><span>Central de Atendimento</span></button><button type="button" data-open="chat"><span class="rp-dock-icon" aria-hidden="true">☎</span><span>Chat interno</span></button>';
+ dock.innerHTML='<button type="button" data-open="whatsapp"><span class="rp-dock-icon rp-wa-icon" aria-hidden="true">◉</span><span>Central de Atendimento</span></button><button type="button" data-open="chat"><span class="rp-dock-icon" aria-hidden="true">☎</span><span>Chat Interno</span></button>';
  document.body.append(dock);
  dock.addEventListener("click",e=>{const action=e.target.closest("button")?.dataset.open;if(!action)return;const target=action==="chat"?document.getElementById("rp-chat-fab"):document.getElementById("ca-global-alert");if(target){target.click();return}if(action==="whatsapp")location.assign("/colaborador/oficial/?abrir=atendimento");});
  function syncDock(){
