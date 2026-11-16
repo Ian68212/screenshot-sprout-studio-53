@@ -1,6 +1,9 @@
 package br.com.rodrinoxpro.portal;
 
 import android.app.Activity;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import com.google.firebase.messaging.FirebaseMessaging;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.webkit.PermissionRequest;
@@ -37,6 +40,7 @@ public class MainActivity extends Activity {
     private static final String PORTAL_URL = "https://rodrinoxpro.com.br/colaborador/";
     private static final int FILE_CHOOSER_REQUEST = 7102;
     private static final int MICROPHONE_PERMISSION_REQUEST = 7103;
+    private static final int NOTIFICATION_PERMISSION_REQUEST = 7104;
     private PermissionRequest pendingMicrophoneRequest;
     private static final long LOAD_TIMEOUT_MS = 25000L;
 
@@ -58,6 +62,21 @@ public class MainActivity extends Activity {
         setContentView(root);
         hideSystemBars();
         createAndLoadWebView();
+        setupNotifications();
+    }
+
+    private void setupNotifications() {
+        if (Build.VERSION.SDK_INT >= 26) {
+            NotificationChannel channel = new NotificationChannel("rodrinox_mensagens", "Mensagens Rodrinox Pro", NotificationManager.IMPORTANCE_HIGH);
+            channel.setDescription("Avisos do chat interno e atendimentos");
+            getSystemService(NotificationManager.class).createNotificationChannel(channel);
+        }
+        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, NOTIFICATION_PERMISSION_REQUEST);
+        }
+        FirebaseMessaging.getInstance().getToken().addOnSuccessListener(token -> {
+            android.util.Log.i("RodrinoxFCM", "Token FCM gerado; registro no servidor pendente");
+        }).addOnFailureListener(e -> android.util.Log.e("RodrinoxFCM", "Falha ao gerar token FCM", e));
     }
 
     private void createAndLoadWebView() {
