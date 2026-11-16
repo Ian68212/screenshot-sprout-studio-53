@@ -1,0 +1,21 @@
+name: Diagnostico Android FCM
+on:
+  push:
+    branches: [diagnostico-android-fcm-20261116]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inventario:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Identificar estrutura Android sem expor segredos
+        shell: bash
+        run: |
+          echo "Arquivos de configuracao Android:"
+          find . -type f \( -name 'gradlew' -o -name 'build.gradle' -o -name 'build.gradle.kts' -o -name 'AndroidManifest.xml' -o -name 'MainActivity.java' -o -name 'MainActivity.kt' -o -name 'settings.gradle' -o -name 'settings.gradle.kts' \) -not -path './node_modules/*' | head -80
+          echo "Indicadores FCM (nomes de arquivos apenas):"
+          find . -type f \( -iname '*firebase*' -o -iname '*messaging*' -o -name 'google-services.json' \) -not -path './node_modules/*' | sed 's#^#arquivo: #' | head -60
+          echo "Workflows:"
+          find .github/workflows -maxdepth 1 -type f 2>/dev/null | head -40 || true
