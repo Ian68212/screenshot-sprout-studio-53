@@ -1,4 +1,5 @@
 import { Router } from "express";
+import rateLimit from "express-rate-limit";
 import crypto from "node:crypto";
 import { q } from "./db.js";
 import { exigir } from "./auth.js";
@@ -51,11 +52,24 @@ router.get("/status", async (req, res, next) => {
     });
   } catch (error) { next(error); }
 });
+// Teste autenticado e limitado ao próprio usuário. Nunca recebe token ou destinatário arbitrário.
+const limiteTeste = rateLimit({ windowMs: 60_000, limit: 3, standardHeaders: "draft-7", legacyHeaders: false });
+router.post("/teste", limiteTeste, async (req, res, next) => {
+  try {
+    const resultado = await enviarPush(req.usuario.id, {
+      type: "message", title: "Teste Rodrinox Pro", body: "Notificação de teste do aplicativo."
+    });
+    res.set("Cache-Control", "no-store").json({ ok: resultado.sent > 0, ...resultado });
+  } catch (error) { next(error); }
+});
+
 export async function enviarPush(usuarioId,payload) {
+  await schema();
+  const devices=await q("SELECT token FROM dispositivos_push WHERE usuario_id=?",[usuarioId]);
+  if(!devices.length)return {sent:0,reason:"no_registered_devices"};
   const credentials=process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
   const external=process.env.GOOGLE_EXTERNAL_ACCOUNT_JSON;
   if(!credentials && !external && !process.env.GOOGLE_APPLICATION_CREDENTIALS)return {sent:0,reason:"firebase_not_configured"};
-  await schema();
   const {GoogleAuth}=await import("google-auth-library");
   const auth=new GoogleAuth({
     ...(credentials ? {credentials:JSON.parse(credentials)} : external ? {credentials:JSON.parse(external)} : {}),
@@ -64,8 +78,8 @@ export async function enviarPush(usuarioId,payload) {
   const client=await auth.getClient();
   const access=await client.getAccessToken();
   if(!access.token)throw Error("Não foi possível autenticar Firebase");
-  const devices=await q("SELECT token FROM dispositivos_push WHERE usuario_id=?",[usuarioId]);
   let sent=0;
+  let failed=0;
   for(const device of devices){
     const response=await fetch(`https://fcm.googleapis.com/v1/projects/${encodeURIComponent("rodrinox-pro")}/messages:send`,{
       method:"POST",headers:{"Authorization":`Bearer ${access.token}`,"Content-Type":"application/json"},
@@ -76,12 +90,16 @@ export async function enviarPush(usuarioId,payload) {
       },android:{priority:"high"}}})
     });
     if(response.ok)sent++;
-    else if(response.status===404||response.status===400){
+    else {
+      failed++;
+      console.error("[push] FCM rejeitou entrega", {status:response.status, usuarioId});
+      if(response.status===404||response.status===400){
       const error=await response.json().catch(()=>({}));
       if(error.error?.details?.some(d=>d.errorCode==="UNREGISTERED"))await q("DELETE FROM dispositivos_push WHERE token_hash=?",[digest(device.token)]);
+      }
     }
   }
-  return {sent};
+  return {sent,failed};
 }
 export function enviarPushSemBloquear(usuarioId,payload){
   enviarPush(usuarioId,payload).catch(error=>console.error("[push] falha ao enviar notificação:",error.message));
