@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-fcm-test:
@@ -84,10 +84,23 @@ jobs:
           cp "$APK" output/Rodrinox-Pro-Android-v1.0.29-FCM-TESTE.apk
           sha256sum output/Rodrinox-Pro-Android-v1.0.29-FCM-TESTE.apk
 
-      - name: Upload test APK only (no public release)
+      - name: Upload test APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: Rodrinox-Pro-Android-v1.0.29-FCM-TESTE
           path: output/Rodrinox-Pro-Android-v1.0.29-FCM-TESTE.apk
           if-no-files-found: error
           retention-days: 30
+
+      - name: Publish separate public test release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-v1.0.29-fcm-teste
+          name: Rodrinox Pro Android — 1.0.29 FCM (TESTE)
+          files: output/Rodrinox-Pro-Android-v1.0.29-FCM-TESTE.apk
+          make_latest: false
+          prerelease: true
+          body: APK de teste isolado baseado na identidade visual e recursos da versão oficial 1.0.28. Instala em paralelo como aplicativo .teste; não substitui o aplicativo oficial. Destinado à validação de notificações Firebase.
+          generate_release_notes: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
