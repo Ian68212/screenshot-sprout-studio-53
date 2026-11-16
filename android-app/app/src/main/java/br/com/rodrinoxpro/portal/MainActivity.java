@@ -130,8 +130,10 @@ public class MainActivity extends Activity {
                 @Override
                 public void onPageFinished(WebView view, String url) {
                     super.onPageFinished(view, url);
-                    if (url != null && url.startsWith(PORTAL_URL)
-                        && (url.contains("/painel") || url.contains("painel.html"))) {
+                    if (url != null && url.startsWith(PORTAL_URL)) {
+                        // O portal do colaborador pode estar em /oficial ou /homologacao;
+                        // a rota exige sessão e rejeita com 401 antes do login.
+                        // Repetir em toda navegação interna permite registrar após o login.
                         registrarTokenPushNoPortal();
                     }
                 }
@@ -229,7 +231,7 @@ public class MainActivity extends Activity {
                 if (webView == null) return;
                 String tokenJson = JSONObject.quote(token);
                 String script = "(function(){fetch('/colaborador/api/push/registrar',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:"
-                    + tokenJson + "})}).then(function(r){return r.ok;}).catch(function(){return false;});})();";
+                    + tokenJson + "})}).then(function(r){if(!r.ok){console.info('[Rodrinox Push] registro aguardando sessão:',r.status);return;}return r.json();}).then(function(d){if(d&&d.ok)console.info('[Rodrinox Push] dispositivo registrado');}).catch(function(e){console.warn('[Rodrinox Push] falha de registro',e);});})();";
                 webView.evaluateJavascript(script, null);
             });
         });
@@ -329,8 +331,7 @@ public class MainActivity extends Activity {
         if (webView != null) {
             webView.onResume();
             String currentUrl = webView.getUrl();
-            if (currentUrl != null && currentUrl.startsWith(PORTAL_URL)
-                && (currentUrl.contains("/painel") || currentUrl.contains("painel.html"))) {
+            if (currentUrl != null && currentUrl.startsWith(PORTAL_URL)) {
                 registrarTokenPushNoPortal();
             }
         }
