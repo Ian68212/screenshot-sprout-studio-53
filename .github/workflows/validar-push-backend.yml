@@ -1,0 +1,26 @@
+name: Validar backend push isolado
+on:
+  push:
+    branches:
+      - fix/push-backend-isolado-20261116
+  workflow_dispatch:
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verificar sintaxe do backend de push
+        run: node --check portal/src/push-notificacoes.js
+      - name: Verificar sintaxe das chamadas e do servidor
+        run: |
+          node --check portal/src/chat-interno.js
+          node --check portal/src/server.js
+      - name: Verificar que arquivos Android não foram alterados nesta branch
+        run: |
+          if git diff --name-only origin/main...HEAD | grep -E '^android-app/|^\.github/workflows/build-android-apk\.yml$'; then
+            echo 'ERRO: esta branch nao pode modificar Android nem build do APK'
+            exit 1
+          fi
