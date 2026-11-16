@@ -124,17 +124,15 @@ public class MainActivity extends Activity {
                 public void onPageCommitVisible(WebView view, String url) {
                     handler.removeCallbacks(loadTimeout);
                     hideMessage();
-                    solicitarPermissaoNotificacoes();
                 }
 
                 @Override
                 public void onPageFinished(WebView view, String url) {
                     super.onPageFinished(view, url);
                     if (url != null && url.startsWith(PORTAL_URL)) {
-                        // O portal do colaborador pode estar em /oficial ou /homologacao;
-                        // a rota exige sessão e rejeita com 401 antes do login.
-                        // Repetir em toda navegação interna permite registrar após o login.
-                        registrarTokenPushNoPortal();
+                        // Só solicitar permissão e vincular o token depois de confirmar
+                        // que existe uma sessão autenticada no Portal do Colaborador.
+                        prepararNotificacoesSeAutenticado();
                     }
                 }
 
@@ -214,11 +212,35 @@ public class MainActivity extends Activity {
     }
 
 
-    private void solicitarPermissaoNotificacoes() {
-        if (Build.VERSION.SDK_INT >= 33 && !notificationPermissionAsked
-            && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-            notificationPermissionAsked = true;
-            requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, NOTIFICATION_PERMISSION_REQUEST);
+    private void prepararNotificacoesSeAutenticado() {
+        if (webView == null) return;
+        webView.evaluateJavascript(
+            "(function(){return fetch('/colaborador/api/eu',{method:'GET',credentials:'include',cache:'no-store'})" +
+            ".then(function(r){return r.ok;}).catch(function(){return false;});})()",
+            value -> {
+                if (!"true".equals(value)) return;
+                runOnUiThread(() -> {
+                    if (Build.VERSION.SDK_INT >= 33
+                        && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                        if (!notificationPermissionAsked) {
+                            notificationPermissionAsked = true;
+                            requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, NOTIFICATION_PERMISSION_REQUEST);
+                        }
+                        return;
+                    }
+                    registrarTokenPushNoPortal();
+                });
+            }
+        );
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == NOTIFICATION_PERMISSION_REQUEST
+            && grantResults.length > 0
+            && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            registrarTokenPushNoPortal();
         }
     }
 
@@ -230,7 +252,7 @@ public class MainActivity extends Activity {
             runOnUiThread(() -> {
                 if (webView == null) return;
                 String tokenJson = JSONObject.quote(token);
-                String script = "(function(){fetch('/colaborador/api/push/registrar',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:"
+                String script = "(function(){fetch('/colaborador/api/push/registrar',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json','X-Portal':'1'},body:JSON.stringify({token:"
                     + tokenJson + "})}).then(function(r){if(!r.ok){console.info('[Rodrinox Push] registro aguardando sessão:',r.status);return;}return r.json();}).then(function(d){if(d&&d.ok)console.info('[Rodrinox Push] dispositivo registrado');}).catch(function(e){console.warn('[Rodrinox Push] falha de registro',e);});})();";
                 webView.evaluateJavascript(script, null);
             });
@@ -332,7 +354,7 @@ public class MainActivity extends Activity {
             webView.onResume();
             String currentUrl = webView.getUrl();
             if (currentUrl != null && currentUrl.startsWith(PORTAL_URL)) {
-                registrarTokenPushNoPortal();
+                prepararNotificacoesSeAutenticado();
             }
         }
     }
