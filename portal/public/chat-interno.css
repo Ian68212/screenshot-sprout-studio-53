@@ -32,3 +32,25 @@
 .conversation-header #state{flex:0 1 100px;min-width:0;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:0;order:3}
 .conversation-header #uploadProgress{order:4}
 @media(max-width:700px){.conversation-header{gap:8px}.conversation-header #peerPhoto{width:34px;height:34px}.conversation-header #startCall{flex-basis:38px;width:38px;height:38px}.conversation-header #state{max-width:60px;font-size:10px}}
+
+/* Chat dedicado em tela completa: sem iframe, sem barra do portal sobreposta */
+html,body{width:100%;height:100%;height:100dvh;min-height:0;overflow:hidden}
+body{padding:0!important;margin:0!important}
+.app{width:100%;height:100%;height:100dvh;max-height:100dvh;min-height:0;overflow:hidden}
+.contacts,.conversation{min-height:0}
+.contacts header{flex:none}
+.conversation{height:100%;min-height:0}
+.conversation-header{position:relative;z-index:2;flex-wrap:nowrap}
+.conversation-header #peerPhoto{order:0}
+.conversation-header #mobileBack{order:0}
+.conversation-header>div:has(#peer){order:1}
+#composer{flex:none}
+.back{display:inline-flex;align-items:center;gap:7px;padding:9px 13px;border:1px solid #456987;border-radius:9px;background:#153c5b;color:#fff;font-weight:700}
+.back:hover{background:#205274}
+@media(max-width:700px){
+ .contacts,.conversation{height:100dvh;max-height:100dvh}
+ .conversation{width:100%;min-height:0}
+ .conversation-header{min-height:68px;flex:none}
+ .messages{min-height:0}
+ #composer{flex:none}
+}
