@@ -1,6 +1,6 @@
 (()=>{"use strict";if(window.__rpMobileShell)return;window.__rpMobileShell=true;
 const header=document.querySelector(".top");if(!header)return;
-const logo=document.createElement("img");logo.className="rp-mobile-brand";logo.alt="Rodrinox Pro";logo.src="/colaborador/assets/rodrinox-logo-oficial.png";
+const logo=document.createElement("img");logo.className="rp-mobile-brand";logo.alt="Rodrinox Pro";logo.src="/colaborador/assets/Logo%20Horizontal%20Rodrinoxpro%20Solu%C3%A7%C3%B5es%20Inova%C3%A7%C3%A3o%20Resultados%20Branca%20PNG.png";
 const bell=document.createElement("button");bell.id="rp-mobile-bell";bell.type="button";bell.setAttribute("aria-label","Notificações");bell.setAttribute("aria-expanded","false");bell.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><span class="rp-bell-count">0</span>';
 const panel=document.createElement("div");panel.id="rp-mobile-notifications";panel.innerHTML='<button type="button" data-notice="email"><span>E-mail corporativo</span><span class="rp-notice-count" data-count="email">0</span></button><button type="button" data-notice="whatsapp"><span>Central de Atendimento · WhatsApp</span><span class="rp-notice-count" data-count="whatsapp">0</span></button><button type="button" data-notice="chat"><span>Chat interno</span><span class="rp-notice-count" data-count="chat">0</span></button>';
 const menuButton=header.querySelector("#menuToggle");if(menuButton)menuButton.insertAdjacentElement("afterend",logo);else header.prepend(logo);
