@@ -3,14 +3,14 @@
 const chatUrl="/colaborador/chat-interno.html";
 const style=document.createElement("style");style.textContent=`
 #rp-attendance-dock{position:fixed;left:50%;bottom:0;transform:translateX(-50%);z-index:99980;width:min(100%,560px);display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:rgba(5,24,43,.97);border:1px solid #294965;border-bottom:0;border-radius:18px 18px 0 0;box-shadow:0 -8px 28px #0003;backdrop-filter:blur(14px)}
-#rp-attendance-dock button{min-width:0;min-height:48px;border:1px solid #00c96a;border-radius:28px;background:transparent;color:#fff;display:flex;align-items:center;justify-content:center;gap:9px;padding:10px 12px;font:700 13px system-ui,Arial;cursor:pointer}
-#rp-attendance-dock button:last-child{background:#f58212;border:2px solid #f58212;color:#fff}
-#rp-attendance-dock .rp-dock-icon{font-size:19px;line-height:1;display:grid;place-items:center;color:#21d66e}
-#rp-attendance-dock .rp-dock-icon svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#rp-attendance-dock button{min-width:0;min-height:48px;border:2px solid #00d66f;border-radius:42px;background:transparent;color:#fff;display:flex;align-items:center;justify-content:center;gap:12px;padding:12px 18px;font:800 16px system-ui,Arial;cursor:pointer;min-height:70px;box-shadow:inset 0 0 18px #00d66f0a}
+#rp-attendance-dock button:last-child{background:#ff7900;border:2px solid #ff7900;color:#fff;box-shadow:0 5px 16px #ff790033}
+#rp-attendance-dock .rp-dock-icon{font-size:19px;line-height:1;display:grid;place-items:center;color:#fff}#rp-attendance-dock button:first-child .rp-dock-icon{color:#fff;filter:drop-shadow(0 0 2px #00d66f)}#rp-attendance-dock button:last-child .rp-dock-icon{color:#fff}
+#rp-attendance-dock .rp-dock-icon svg{width:34px;height:34px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 #rp-chat-fab,#ca-global-alert{display:none!important}
 body{padding-bottom:78px}body.rp-no-dock{padding-bottom:0!important}body.rp-no-dock #rp-attendance-dock{display:none!important}
 @media(min-width:781px){#rp-attendance-dock{bottom:14px;border:1px solid #294965;border-radius:16px;width:440px;padding:9px}}
-@media(max-width:480px){#rp-attendance-dock{gap:8px;padding:8px 10px calc(8px + env(safe-area-inset-bottom))}#rp-attendance-dock button{min-height:48px;font-size:12px;padding:9px 6px}}
+@media(max-width:480px){#rp-attendance-dock{gap:9px;padding:8px 9px calc(8px + env(safe-area-inset-bottom))}#rp-attendance-dock button{min-height:58px;font-size:14px;padding:9px 7px;gap:8px}#rp-attendance-dock .rp-dock-icon svg{width:29px;height:29px}}
 #menu button[data-tab=chat-interno].rp-chat-nav-alert:after{content:"";display:inline-block;width:10px;height:10px;margin-left:7px;border-radius:50%;background:#ff2934;box-shadow:0 0 0 3px #ff293455;animation:rp-dot-blink .55s steps(2,end) infinite;vertical-align:middle}
 #menu button[data-tab=chat-interno].rp-chat-nav-alert{animation:rp-nav-flash .7s steps(2,end) infinite}
 @keyframes rp-dot-blink{0%,100%{opacity:1}50%{opacity:.08}}@keyframes rp-nav-flash{0%,100%{background:#2b4969}50%{background:#a3222a;color:#fff}}
