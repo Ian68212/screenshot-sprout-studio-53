@@ -43,32 +43,28 @@ jobs:
       - name: Verify isolated FCM source
         run: python3 android-app/tests/check_fcm_isolation.py
 
-      - name: Restore the exact approved launcher artwork
+      - name: Restore exact binary assets from official APK 1.0.28
         run: |
-          python3 -m pip install --quiet Pillow
-          python3 - <<'PY'
-          from PIL import Image
-          from pathlib import Path
-          source = Path("portal/public/assets/app-icon-original.jpeg")
-          if not source.exists():
-              raise SystemExit("Approved original app icon is missing")
-          image = Image.open(source).convert("RGBA")
-          if image.width != image.height:
-              raise SystemExit(f"Original app icon is not square: {image.size}")
-          sizes = {
-              "mipmap-mdpi": 48,
-              "mipmap-hdpi": 72,
-              "mipmap-xhdpi": 96,
-              "mipmap-xxhdpi": 144,
-              "mipmap-xxxhdpi": 192,
-          }
-          for folder, size in sizes.items():
-              target = Path("android-app/app/src/main/res") / folder
-              target.mkdir(parents=True, exist_ok=True)
-              resized = image.resize((size, size), Image.Resampling.LANCZOS)
-              resized.save(target / "ic_launcher.png")
-              resized.save(target / "ic_launcher_round.png")
-          PY
+          set -euo pipefail
+          mkdir -p /tmp/official-1.0.28
+          curl --fail --location --retry 3 \
+            "https://github.com/Ian68212/screenshot-sprout-studio-53/releases/download/android-v1.0.28/Rodrinox-Pro-Android.apk" \
+            -o /tmp/official-1.0.28/official.apk
+          echo "8a750f9af03f46210e6a1bfdba93e79f004b94e56fd153de83f804cc94f17cdd  /tmp/official-1.0.28/official.apk" | sha256sum --check
+          for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+            mkdir -p "android-app/app/src/main/res/mipmap-${density}-v4"
+            unzip -p /tmp/official-1.0.28/official.apk "res/mipmap-${density}-v4/ic_launcher.png" > "android-app/app/src/main/res/mipmap-${density}-v4/ic_launcher.png"
+            unzip -p /tmp/official-1.0.28/official.apk "res/mipmap-${density}-v4/ic_launcher_round.png" > "android-app/app/src/main/res/mipmap-${density}-v4/ic_launcher_round.png"
+          done
+          mkdir -p android-app/app/src/main/assets/official-v1.0.28
+          unzip -p /tmp/official-1.0.28/official.apk assets/rod-logo-vertical.png > android-app/app/src/main/assets/official-v1.0.28/rod-logo-vertical.png
+          unzip -p /tmp/official-1.0.28/official.apk assets/rod-logo-vertical.svg > android-app/app/src/main/assets/official-v1.0.28/rod-logo-vertical.svg
+          unzip -p /tmp/official-1.0.28/official.apk assets/app-icon.webp > android-app/app/src/main/assets/official-v1.0.28/app-icon.webp
+          # Verify every launcher PNG is byte-for-byte identical to the official APK.
+          for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+            unzip -p /tmp/official-1.0.28/official.apk "res/mipmap-${density}-v4/ic_launcher.png" | sha256sum > "/tmp/official-1.0.28/${density}.sha"
+            sha256sum "android-app/app/src/main/res/mipmap-${density}-v4/ic_launcher.png" | diff - "/tmp/official-1.0.28/${density}.sha"
+          done
 
       - name: Build isolated test APK
         working-directory: android-app
