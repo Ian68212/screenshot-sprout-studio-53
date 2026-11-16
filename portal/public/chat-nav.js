@@ -65,7 +65,7 @@
  `;
  document.head.append(dockStyle);
  const dock=document.createElement("nav");dock.id="rp-attendance-dock";dock.setAttribute("aria-label","Atendimento Rodrinox");
- dock.innerHTML='<button type="button" data-open="whatsapp"><span class="rp-dock-icon rp-wa-icon" aria-hidden="true">◉</span><span>Central de Atendimento</span></button><button type="button" data-open="chat"><span class="rp-dock-icon" aria-hidden="true">☎</span><span>Chat interno</span></button>';
+ dock.innerHTML='<button type="button" data-open="whatsapp"><span class="rp-dock-icon rp-wa-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20.2 11.7a8.2 8.2 0 0 1-12.1 7.2L3 20l1.2-4.8a8.2 8.2 0 1 1 16-3.5Z"/><path d="M8.2 7.7c.3-.5.6-.5.9-.5h.5c.2 0 .4.1.5.4l.8 1.8c.1.2.1.4-.1.6l-.6.7c-.2.2-.2.4-.1.6.5.9 1.3 1.7 2.2 2.2.2.1.4.1.6-.1l.7-.8c.2-.2.4-.2.6-.1l1.7.8c.3.1.4.3.4.5v.5c0 .3 0 .6-.5.9-.5.3-1.2.5-2 .3-1.1-.2-2.4-.9-3.7-2.2-1.3-1.3-2-2.6-2.2-3.7-.2-.8 0-1.5.3-2Z"/></svg></span><span>Central de Atendimento</span></button><button type="button" data-open="chat"><span class="rp-dock-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 3h4l2 5-2.5 1.7a15 15 0 0 0 5.8 5.8L16 13l5 2v4c0 1.1-.9 2-2 2C10.2 21 3 13.8 3 5c0-1.1.9-2 2-2Z"/></svg></span><span>Chat Interno</span></button>';
  document.body.append(dock);
  dock.addEventListener("click",e=>{const action=e.target.closest("button")?.dataset.open;if(!action)return;const target=action==="chat"?document.getElementById("rp-chat-fab"):document.getElementById("ca-global-alert");if(target){target.click();return}if(action==="whatsapp")location.assign("/colaborador/oficial/?abrir=atendimento");});
  function syncDock(){
@@ -104,7 +104,8 @@
    if(!r.ok)return;
    const data=await r.json(),n=Math.max(0,Number(data.total)||0);
    document.querySelectorAll(".chat-nav-count").forEach(b=>{b.hidden=!n;b.textContent=n>99?"99+":String(n);b.style.cssText="display:"+(n?"inline-block":"none")+";background:#f28c3d;color:#10243b;border-radius:20px;padding:2px 6px;margin-left:5px;font-size:11px;font-weight:700"});
-   window.dispatchEvent(new CustomEvent("rp-notification-state",{detail:{source:"chat",count:n}}));\n   fab.classList.toggle("rp-has-unread",n>0);document.querySelectorAll("[data-tab=chat-interno]").forEach(b=>b.classList.toggle("rp-chat-nav-alert",n>0));fab.querySelector(".rp-chat-badge").textContent=n>99?"99+":String(n);
+   window.dispatchEvent(new CustomEvent("rp-notification-state",{detail:{source:"chat",count:n}}));
+   fab.classList.toggle("rp-has-unread",n>0);document.querySelectorAll("[data-tab=chat-interno]").forEach(b=>b.classList.toggle("rp-chat-nav-alert",n>0));fab.querySelector(".rp-chat-badge").textContent=n>99?"99+":String(n);
    fab.setAttribute("aria-label",n?"Chat interno: "+n+" mensagens não lidas":"Abrir Chat Interno Rodrinox");
    if(lastCount!==null&&n>lastCount){beep();toast(n);if(document.hidden&&"Notification" in window&&Notification.permission==="granted"){try{new Notification("Rodrinox Pro • Nova mensagem",{body:"Você recebeu uma mensagem no chat interno.",tag:"rp-chat-interno"});}catch{}}}
    lastCount=n;
