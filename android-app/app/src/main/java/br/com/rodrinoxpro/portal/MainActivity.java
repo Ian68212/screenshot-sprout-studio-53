@@ -1,6 +1,9 @@
 package br.com.rodrinoxpro.portal;
 
 import android.app.Activity;
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.content.SharedPreferences;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.graphics.Color;
@@ -29,10 +32,14 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+import com.google.firebase.messaging.FirebaseMessaging;
+import org.json.JSONObject;
 
 public class MainActivity extends Activity {
     private static final String PORTAL_URL = "https://rodrinoxpro.com.br/colaborador/";
     private static final int FILE_CHOOSER_REQUEST = 7102;
+    private static final int NOTIFICATION_PERMISSION_REQUEST = 7201;
+    private boolean notificationPermissionAsked = false;
     private static final long LOAD_TIMEOUT_MS = 25000L;
 
     private FrameLayout root;
@@ -117,6 +124,8 @@ public class MainActivity extends Activity {
                 public void onPageCommitVisible(WebView view, String url) {
                     handler.removeCallbacks(loadTimeout);
                     hideMessage();
+                    solicitarPermissaoNotificacoes();
+                    registrarTokenPushNoPortal();
                 }
 
                 @Override
@@ -192,6 +201,30 @@ public class MainActivity extends Activity {
             showMessage("Falha ao iniciar o aplicativo: " + error.getClass().getSimpleName()
                 + (error.getMessage() == null ? "" : " — " + error.getMessage()), "Tentar novamente");
         }
+    }
+
+
+    private void solicitarPermissaoNotificacoes() {
+        if (Build.VERSION.SDK_INT >= 33 && !notificationPermissionAsked
+            && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            notificationPermissionAsked = true;
+            requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, NOTIFICATION_PERMISSION_REQUEST);
+        }
+    }
+
+    private void registrarTokenPushNoPortal() {
+        if (webView == null) return;
+        FirebaseMessaging.getInstance().getToken().addOnSuccessListener(token -> {
+            if (token == null || token.isEmpty()) return;
+            getSharedPreferences("rodrinox_push", MODE_PRIVATE).edit().putString("fcm_token", token).apply();
+            runOnUiThread(() -> {
+                if (webView == null) return;
+                String tokenJson = JSONObject.quote(token);
+                String script = "(function(){fetch('/colaborador/api/push/registrar',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:"
+                    + tokenJson + "})}).then(function(r){return r.ok;}).catch(function(){return false;});})();";
+                webView.evaluateJavascript(script, null);
+            });
+        });
     }
 
     private void showMessage(String message, String buttonText) {
@@ -285,7 +318,10 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         hideSystemBars();
-        if (webView != null) webView.onResume();
+        if (webView != null) {
+            webView.onResume();
+            registrarTokenPushNoPortal();
+        }
     }
 
     @Override
