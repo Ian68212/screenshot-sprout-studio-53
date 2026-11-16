@@ -1,4 +1,5 @@
 import { Router } from "express";
+import rateLimit from "express-rate-limit";
 import crypto from "node:crypto";
 import { q } from "./db.js";
 import { exigir } from "./auth.js";
@@ -51,6 +52,17 @@ router.get("/status", async (req, res, next) => {
     });
   } catch (error) { next(error); }
 });
+// Teste autenticado e limitado ao próprio usuário. Nunca recebe token ou destinatário arbitrário.
+const limiteTeste = rateLimit({ windowMs: 60_000, limit: 3, standardHeaders: "draft-7", legacyHeaders: false });
+router.post("/teste", limiteTeste, async (req, res, next) => {
+  try {
+    const resultado = await enviarPush(req.usuario.id, {
+      type: "message", title: "Teste Rodrinox Pro", body: "Notificação de teste do aplicativo."
+    });
+    res.set("Cache-Control", "no-store").json({ ok: resultado.sent > 0, ...resultado });
+  } catch (error) { next(error); }
+});
+
 export async function enviarPush(usuarioId,payload) {
   await schema();
   const devices=await q("SELECT token FROM dispositivos_push WHERE usuario_id=?",[usuarioId]);
