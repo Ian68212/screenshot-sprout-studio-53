@@ -125,7 +125,15 @@ public class MainActivity extends Activity {
                     handler.removeCallbacks(loadTimeout);
                     hideMessage();
                     solicitarPermissaoNotificacoes();
-                    registrarTokenPushNoPortal();
+                }
+
+                @Override
+                public void onPageFinished(WebView view, String url) {
+                    super.onPageFinished(view, url);
+                    if (url != null && url.startsWith(PORTAL_URL)
+                        && (url.contains("/painel") || url.contains("painel.html"))) {
+                        registrarTokenPushNoPortal();
+                    }
                 }
 
                 @Override
@@ -320,7 +328,11 @@ public class MainActivity extends Activity {
         hideSystemBars();
         if (webView != null) {
             webView.onResume();
-            registrarTokenPushNoPortal();
+            String currentUrl = webView.getUrl();
+            if (currentUrl != null && currentUrl.startsWith(PORTAL_URL)
+                && (currentUrl.contains("/painel") || currentUrl.contains("painel.html"))) {
+                registrarTokenPushNoPortal();
+            }
         }
     }
 
