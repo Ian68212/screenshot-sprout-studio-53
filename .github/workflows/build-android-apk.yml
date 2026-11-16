@@ -84,6 +84,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Rodrinox-Pro-APK-NAO-APROVADO-TESTE
-          path: output/Rodrinox-Pro-Android-v1.0.5-TESTE.apk
+          path: output/Rodrinox-Pro-Android-NAO-APROVADO-TESTE.apk
           if-no-files-found: error
           retention-days: 30
