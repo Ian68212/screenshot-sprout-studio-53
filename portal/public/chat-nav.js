@@ -65,7 +65,7 @@
  `;
  document.head.append(dockStyle);
  const dock=document.createElement("nav");dock.id="rp-attendance-dock";dock.setAttribute("aria-label","Atendimento Rodrinox");
- dock.innerHTML='<button type="button" data-open="whatsapp"><span class="rp-dock-icon" aria-hidden="true">●</span><span>Central de Atendimento</span></button><button type="button" data-open="chat"><span class="rp-dock-icon" aria-hidden="true">✉</span><span>Chat interno</span></button>';
+ dock.innerHTML='<button type="button" data-open="whatsapp"><span class="rp-dock-icon rp-wa-icon" aria-hidden="true">◉</span><span>Central de Atendimento</span></button><button type="button" data-open="chat"><span class="rp-dock-icon" aria-hidden="true">☎</span><span>Chat interno</span></button>';
  document.body.append(dock);
  dock.addEventListener("click",e=>{const action=e.target.closest("button")?.dataset.open;if(!action)return;const target=action==="chat"?document.getElementById("rp-chat-fab"):document.getElementById("ca-global-alert");if(target){target.click();return}if(action==="whatsapp")location.assign("/colaborador/oficial/?abrir=atendimento");});
  function syncDock(){
@@ -104,7 +104,7 @@
    if(!r.ok)return;
    const data=await r.json(),n=Math.max(0,Number(data.total)||0);
    document.querySelectorAll(".chat-nav-count").forEach(b=>{b.hidden=!n;b.textContent=n>99?"99+":String(n);b.style.cssText="display:"+(n?"inline-block":"none")+";background:#f28c3d;color:#10243b;border-radius:20px;padding:2px 6px;margin-left:5px;font-size:11px;font-weight:700"});
-   fab.classList.toggle("rp-has-unread",n>0);document.querySelectorAll("[data-tab=chat-interno]").forEach(b=>b.classList.toggle("rp-chat-nav-alert",n>0));fab.querySelector(".rp-chat-badge").textContent=n>99?"99+":String(n);
+   window.dispatchEvent(new CustomEvent("rp-notification-state",{detail:{source:"chat",count:n}}));\n   fab.classList.toggle("rp-has-unread",n>0);document.querySelectorAll("[data-tab=chat-interno]").forEach(b=>b.classList.toggle("rp-chat-nav-alert",n>0));fab.querySelector(".rp-chat-badge").textContent=n>99?"99+":String(n);
    fab.setAttribute("aria-label",n?"Chat interno: "+n+" mensagens não lidas":"Abrir Chat Interno Rodrinox");
    if(lastCount!==null&&n>lastCount){beep();toast(n);if(document.hidden&&"Notification" in window&&Notification.permission==="granted"){try{new Notification("Rodrinox Pro • Nova mensagem",{body:"Você recebeu uma mensagem no chat interno.",tag:"rp-chat-interno"});}catch{}}}
    lastCount=n;
