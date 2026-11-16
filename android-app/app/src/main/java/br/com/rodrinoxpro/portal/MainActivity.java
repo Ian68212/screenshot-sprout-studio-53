@@ -18,6 +18,7 @@ import android.view.View;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.webkit.CookieManager;
+import android.webkit.JavascriptInterface;
 import android.webkit.SslErrorHandler;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
@@ -94,6 +95,7 @@ public class MainActivity extends Activity {
             CookieManager cookies = CookieManager.getInstance();
             cookies.setAcceptCookie(true);
             cookies.setAcceptThirdPartyCookies(webView, true);
+            webView.addJavascriptInterface(new PushAuthBridge(), "RodrinoxPushAuth");
 
             webView.setWebViewClient(new WebViewClient() {
                 @Override
@@ -214,23 +216,13 @@ public class MainActivity extends Activity {
 
     private void prepararNotificacoesSeAutenticado() {
         if (webView == null) return;
+        // evaluateJavascript não aguarda Promises. O resultado da autenticação
+        // retorna pelo JavascriptInterface, evitando interpretar Promise como "null".
         webView.evaluateJavascript(
-            "(function(){return fetch('/colaborador/api/eu',{method:'GET',credentials:'include',cache:'no-store'})" +
-            ".then(function(r){return r.ok;}).catch(function(){return false;});})()",
-            value -> {
-                if (!"true".equals(value)) return;
-                runOnUiThread(() -> {
-                    if (Build.VERSION.SDK_INT >= 33
-                        && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                        if (!notificationPermissionAsked) {
-                            notificationPermissionAsked = true;
-                            requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, NOTIFICATION_PERMISSION_REQUEST);
-                        }
-                        return;
-                    }
-                    registrarTokenPushNoPortal();
-                });
-            }
+            "(function(){fetch('/colaborador/api/eu',{method:'GET',credentials:'include',cache:'no-store'})" +
+            ".then(function(r){window.RodrinoxPushAuth.onAuthCheckResult(!!r.ok);})" +
+            ".catch(function(){window.RodrinoxPushAuth.onAuthCheckResult(false);});return true;})()",
+            null
         );
     }
 
@@ -241,6 +233,25 @@ public class MainActivity extends Activity {
             && grantResults.length > 0
             && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             registrarTokenPushNoPortal();
+        }
+    }
+
+    private final class PushAuthBridge {
+        @JavascriptInterface
+        public void onAuthCheckResult(boolean authenticated) {
+            if (!authenticated) return;
+            runOnUiThread(() -> {
+                if (webView == null) return;
+                if (Build.VERSION.SDK_INT >= 33
+                    && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                    if (!notificationPermissionAsked) {
+                        notificationPermissionAsked = true;
+                        requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, NOTIFICATION_PERMISSION_REQUEST);
+                    }
+                    return;
+                }
+                registrarTokenPushNoPortal();
+            });
         }
     }
 
