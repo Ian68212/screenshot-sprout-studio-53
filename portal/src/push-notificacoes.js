@@ -62,3 +62,62 @@ router.get("/status", async (req, res, next) => {
 });
 
 export default router;
+
+
+export async function enviarPush(usuarioId, payload) {
+  const credentialsJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+  const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+  if (!credentialsJson && !credentialsPath) return { sent: 0, reason: "firebase_not_configured" };
+
+  await schema();
+  const { GoogleAuth } = await import("google-auth-library");
+  const auth = new GoogleAuth({
+    ...(credentialsJson ? { credentials: JSON.parse(credentialsJson) } : {}),
+    scopes: ["https://www.googleapis.com/auth/firebase.messaging"]
+  });
+  const client = await auth.getClient();
+  const access = await client.getAccessToken();
+  if (!access.token) throw new Error("Não foi possível autenticar no Firebase.");
+
+  const devices = await q("SELECT token,token_hash FROM dispositivos_push WHERE usuario_id=?", [usuarioId]);
+  let sent = 0;
+  for (const device of devices) {
+    const response = await fetch("https://fcm.googleapis.com/v1/projects/rodrinox-pro/messages:send", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + access.token,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        message: {
+          token: device.token,
+          data: {
+            type: String(payload.type || "message"),
+            title: String(payload.title || "Rodrinox Pro").slice(0, 100),
+            body: String(payload.body || "Você recebeu uma nova atividade.").slice(0, 200),
+            ...(payload.callId ? { callId: String(payload.callId) } : {})
+          },
+          android: { priority: "high" }
+        }
+      })
+    });
+    if (response.ok) {
+      sent++;
+    } else {
+      const error = await response.json().catch(() => ({}));
+      const unregistered = error.error?.details?.some(item => item.errorCode === "UNREGISTERED");
+      if (unregistered) {
+        await q("DELETE FROM dispositivos_push WHERE token_hash=?", [device.token_hash]);
+      } else {
+        console.error("[push] Firebase recusou o envio:", response.status, error.error?.status || "UNKNOWN");
+      }
+    }
+  }
+  return { sent };
+}
+
+export function enviarPushSemBloquear(usuarioId, payload) {
+  enviarPush(usuarioId, payload).catch(error => {
+    console.error("[push] Falha ao enviar notificação:", error.message);
+  });
+}
