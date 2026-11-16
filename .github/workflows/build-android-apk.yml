@@ -2,7 +2,7 @@ name: Build Rodrinox Pro Android APK
 
 on:
   push:
-    branches: [main, mobile-app-download-option, android-base-aprovada-v1.0.28, diagnostico-android-fcm-20261116]
+    branches: [main, mobile-app-download-option, android-base-aprovada-v1.0.28, diagnostico-android-fcm-20261116, fix/android-push-icone-aprovado-20261116]
     paths:
       - "android-app/**"
       - ".github/workflows/build-android-apk.yml"
@@ -45,15 +45,15 @@ jobs:
         with:
           gradle-version: "8.13"
 
-      - name: Prepare exact original app icon
+      - name: Restore exact approved v1.0.28 app icon
         run: |
           python3 -m pip install --quiet Pillow
           python3 - <<'PY'
           from PIL import Image
           from pathlib import Path
-          source = Path("portal/public/assets/app-icon-original.jpeg")
+          source = Path("android-app/app/src/main/assets/app-icon-approved.webp")
           if not source.exists():
-              raise SystemExit("Original app icon not found")
+              raise SystemExit("Approved v1.0.28 app icon not found")
           image = Image.open(source).convert("RGBA")
           if image.width != image.height:
               raise SystemExit(f"App icon must be square; got {image.size}")
