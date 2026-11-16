@@ -1,0 +1,92 @@
+name: Build Rodrinox Pro Android — FCM isolado
+
+on:
+  push:
+    branches:
+      - fcm-v1.0.28-isolada
+    paths:
+      - "android-app/**"
+      - ".github/workflows/build-android-fcm-isolado.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-fcm-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout isolated branch
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: "platform-tools"
+
+      - name: Install Android SDK 36
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.13"
+
+      - name: Verify isolated FCM source
+        run: python3 android-app/tests/check_fcm_isolation.py
+
+      - name: Restore the exact approved launcher artwork
+        run: |
+          python3 -m pip install --quiet Pillow
+          python3 - <<'PY'
+          from PIL import Image
+          from pathlib import Path
+          source = Path("portal/public/assets/app-icon-original.jpeg")
+          if not source.exists():
+              raise SystemExit("Approved original app icon is missing")
+          image = Image.open(source).convert("RGBA")
+          if image.width != image.height:
+              raise SystemExit(f"Original app icon is not square: {image.size}")
+          sizes = {
+              "mipmap-mdpi": 48,
+              "mipmap-hdpi": 72,
+              "mipmap-xhdpi": 96,
+              "mipmap-xxhdpi": 144,
+              "mipmap-xxxhdpi": 192,
+          }
+          for folder, size in sizes.items():
+              target = Path("android-app/app/src/main/res") / folder
+              target.mkdir(parents=True, exist_ok=True)
+              resized = image.resize((size, size), Image.Resampling.LANCZOS)
+              resized.save(target / "ic_launcher.png")
+              resized.save(target / "ic_launcher_round.png")
+          PY
+
+      - name: Build isolated test APK
+        working-directory: android-app
+        run: gradle --no-daemon clean assembleDebug
+
+      - name: Verify APK metadata and checksum
+        run: |
+          APK="android-app/app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$APK"
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$APK" | tee /tmp/apk-badging.txt
+          grep -q "package: name='br.com.rodrinoxpro.portal.teste'" /tmp/apk-badging.txt
+          grep -q "versionName='1.0.29-fcm-teste'" /tmp/apk-badging.txt
+          mkdir -p output
+          cp "$APK" output/Rodrinox-Pro-Android-v1.0.29-FCM-TESTE.apk
+          sha256sum output/Rodrinox-Pro-Android-v1.0.29-FCM-TESTE.apk
+
+      - name: Upload test APK only (no public release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: Rodrinox-Pro-Android-v1.0.29-FCM-TESTE
+          path: output/Rodrinox-Pro-Android-v1.0.29-FCM-TESTE.apk
+          if-no-files-found: error
+          retention-days: 30
