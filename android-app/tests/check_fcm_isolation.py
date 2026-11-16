@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from pathlib import Path
 
-root = Path(__file__).resolve().parents[2]
+root = Path(__file__).resolve().parents[1]
 gradle = (root / "app/build.gradle").read_text(encoding="utf-8")
 manifest = (root / "app/src/main/AndroidManifest.xml").read_text(encoding="utf-8")
 activity = (root / "app/src/main/java/br/com/rodrinoxpro/portal/MainActivity.java").read_text(encoding="utf-8")
