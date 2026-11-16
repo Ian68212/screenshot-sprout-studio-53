@@ -60,11 +60,13 @@ jobs:
           unzip -p /tmp/official-1.0.28/official.apk assets/rod-logo-vertical.png > android-app/app/src/main/assets/official-v1.0.28/rod-logo-vertical.png
           unzip -p /tmp/official-1.0.28/official.apk assets/rod-logo-vertical.svg > android-app/app/src/main/assets/official-v1.0.28/rod-logo-vertical.svg
           unzip -p /tmp/official-1.0.28/official.apk assets/app-icon.webp > android-app/app/src/main/assets/official-v1.0.28/app-icon.webp
-          # Verify every launcher PNG is byte-for-byte identical to the official APK.
+          # Verify both launcher variants byte-for-byte against the official APK.
           for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
-            expected="$(unzip -p /tmp/official-1.0.28/official.apk "res/mipmap-${density}-v4/ic_launcher.png" | sha256sum | cut -d' ' -f1)"
-            actual="$(sha256sum "android-app/app/src/main/res/mipmap-${density}-v4/ic_launcher.png" | cut -d' ' -f1)"
-            test "$expected" = "$actual"
+            for icon in ic_launcher.png ic_launcher_round.png; do
+              expected="$(unzip -p /tmp/official-1.0.28/official.apk "res/mipmap-${density}-v4/${icon}" | sha256sum | cut -d' ' -f1)"
+              actual="$(sha256sum "android-app/app/src/main/res/mipmap-${density}-v4/${icon}" | cut -d' ' -f1)"
+              test "$expected" = "$actual"
+            done
           done
 
       - name: Build isolated test APK
