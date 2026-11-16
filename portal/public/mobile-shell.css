@@ -4,7 +4,7 @@
  .top{position:sticky;top:0;z-index:7000;height:66px!important;min-height:66px;padding:0 12px!important;gap:10px;background:#031a2c!important;border-bottom:1px solid #234b66!important;box-shadow:0 4px 18px #0004}
  .top>span,.top>.top-context,#user{display:none!important}
  .top>#menuToggle{flex:none;width:34px;height:42px;display:grid;place-items:center;font-size:25px!important;color:#fff!important;padding:0}
- .rp-mobile-brand{display:block!important;flex:1;min-width:0;max-width:180px;height:45px;object-fit:contain;object-position:left center;margin-left:2px}
+ .rp-mobile-brand{display:block!important;flex:1;min-width:0;max-width:210px;height:52px;object-fit:contain;object-position:left center;margin-left:2px}
  #rp-mobile-bell{position:relative;display:grid;place-items:center;flex:none;width:38px;height:42px;border:0;background:transparent;color:#fff;padding:4px;cursor:pointer}
  #rp-mobile-bell svg{width:25px;height:25px;stroke:currentColor;fill:none;stroke-width:1.8}
  #rp-mobile-bell .rp-bell-count{position:absolute;top:0;right:-1px;min-width:17px;height:17px;padding:0 4px;border-radius:20px;background:#ff3b32;color:#fff;font:800 10px/17px Arial;text-align:center;display:none}
