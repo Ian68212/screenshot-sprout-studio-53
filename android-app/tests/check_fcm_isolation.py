@@ -23,7 +23,7 @@ checks = {
 # The portal supplies the official WebView layout. FCM must never modify it.
 import subprocess
 changed_portal = subprocess.run(
-    ["git", "diff", "--name-only", "android-v1.0.28...HEAD", "--", "portal/public"],
+    ["git", "diff", "--name-only", "android-v1.0.28", "HEAD", "--", "portal/public"],
     check=True, capture_output=True, text=True
 ).stdout.strip()
 checks["portal public files unchanged from official 1.0.28"] = not changed_portal
