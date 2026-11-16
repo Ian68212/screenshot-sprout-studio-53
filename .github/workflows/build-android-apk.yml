@@ -2,7 +2,7 @@ name: Build Rodrinox Pro Android APK
 
 on:
   push:
-    branches: [main, mobile-app-download-option, android-base-aprovada-v1.0.28]
+    branches: [main, mobile-app-download-option, android-base-aprovada-v1.0.28, diagnostico-android-fcm-20261116]
     paths:
       - "android-app/**"
       - ".github/workflows/build-android-apk.yml"
