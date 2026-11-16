@@ -84,7 +84,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Rodrinox-Pro-APK-v1.0.29-BASE-OFICIAL-TESTE
-          path: output/Rodrinox-Pro-Android-v1.0.29-TESTE.apk
+          path: output/Rodrinox-Pro-Android-v1.0.29-BASE-OFICIAL-TESTE.apk
           if-no-files-found: error
           retention-days: 30
 
@@ -94,7 +94,7 @@ jobs:
         with:
           tag_name: android-v1.0.29-${{ github.run_number }}
           name: Rodrinox Pro Android — 1.0.29 TESTE (build ${{ github.run_number }})
-          files: output/Rodrinox-Pro-Android-v1.0.29-TESTE.apk
+          files: output/Rodrinox-Pro-Android-v1.0.29-BASE-OFICIAL-TESTE.apk
           make_latest: false
           prerelease: true
           body: APK de teste baseado na versão aprovada 1.0.28. Microfone requer validação no aparelho; notificações e chamadas ainda não homologadas.
