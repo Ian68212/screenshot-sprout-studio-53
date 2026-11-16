@@ -27,8 +27,31 @@ const style=document.createElement("style");style.textContent=`
 #rp-global-profile .rp-dialog .rp-cancel{background:#eaf1f7;color:#173b58}
 #rp-global-profile .rp-dialog small{color:#63798c}
 @media(max-width:650px){#rp-global-profile{right:8px;top:7px}.rp-name{display:none}#rp-global-profile .rp-trigger{padding:4px 7px}}
-`;document.head.append(style);
-const root=document.createElement("div");root.id="rp-global-profile";root.innerHTML=`<button class="rp-trigger" type="button" aria-label="Abrir menu do usuário" aria-expanded="false"><span class="rp-avatar">RP</span><span class="rp-name">Meu perfil</span><span aria-hidden="true">⌄</span></button><div class="rp-menu" hidden><button type="button" class="rp-edit">📷 Alterar minha foto</button><button type="button" class="rp-logout">↪ Sair do portal</button></div><dialog class="rp-dialog"><form><h2>Minha foto de perfil</h2><small>Essa foto será utilizada em todos os painéis e no Chat Interno.</small><img class="rp-preview" alt="Foto de perfil"><input type="file" accept="image/jpeg,image/png,image/webp" required><small>JPG, PNG ou WebP · máximo 3 MB</small><p class="rp-feedback" role="status"></p><button type="submit" class="rp-save">Salvar foto</button><button type="button" class="rp-cancel">Cancelar</button></form></dialog>`;
+`;style.textContent+=`
+#rp-global-profile .rp-trigger{position:relative;min-height:40px;border-radius:13px;padding:4px 8px 4px 5px;gap:8px;background:linear-gradient(145deg,#173b5b,#0b263f);border:1px solid #456783;box-shadow:0 4px 14px #0003}
+#rp-global-profile .rp-avatar{width:36px;height:36px;border:2px solid #8bb8d8;box-shadow:0 0 0 2px #ffffff12}
+#rp-global-profile .rp-name{font-size:13px;max-width:125px}
+#rp-global-profile .rp-alert-dot{display:none;width:8px;height:8px;border-radius:50%;background:#ff3b42;box-shadow:0 0 0 4px #ff3b4233}
+#rp-global-profile.rp-has-alert .rp-trigger{border-color:#ff7b24;background:linear-gradient(145deg,#7b3d18,#163754);box-shadow:0 0 0 2px #ff8a2d55,0 0 18px #ff7b2455;animation:rp-profile-alert .8s ease-in-out infinite}
+#rp-global-profile.rp-has-alert .rp-avatar{border-color:#ff9b3e;box-shadow:0 0 0 3px #ff9b3e55}
+#rp-global-profile.rp-has-alert .rp-alert-dot{display:block;animation:rp-profile-dot .7s steps(2,end) infinite}
+@keyframes rp-profile-alert{0%,100%{filter:brightness(1)}50%{filter:brightness(1.35)}}
+@keyframes rp-profile-dot{0%,100%{opacity:1}50%{opacity:.15}}
+#rp-global-profile .rp-menu{min-width:255px;padding:9px;border-radius:15px;background:linear-gradient(160deg,#102e49,#071d32);border:1px solid #42617d;color:#edf6ff}
+#rp-global-profile .rp-menu-user{display:flex;align-items:center;gap:11px;padding:10px 9px 13px;margin-bottom:5px;border-bottom:1px solid #ffffff20}
+#rp-global-profile .rp-menu-avatar{width:43px;height:43px;display:grid;place-items:center;overflow:hidden;border-radius:50%;border:2px solid #79a9cc;background:#254965;font-weight:800}
+#rp-global-profile .rp-menu-avatar img{width:100%;height:100%;object-fit:cover}
+#rp-global-profile .rp-menu-user strong,#rp-global-profile .rp-menu-user small{display:block}
+#rp-global-profile .rp-menu-user small{margin-top:4px;color:#a9c0d4;font-size:11px}
+#rp-global-profile .rp-menu .rp-menu-link{display:flex;align-items:center;gap:12px;width:100%;padding:12px 10px;border:0;border-radius:9px;background:transparent;color:#edf6ff;text-align:left;text-decoration:none;font:600 13px Arial;cursor:pointer}
+#rp-global-profile .rp-menu .rp-menu-link:hover,#rp-global-profile .rp-menu button:hover{background:#244765}
+#rp-global-profile .rp-menu .rp-menu-link>span{display:grid;place-items:center;width:24px;height:24px;color:#ff9a43;font-size:19px}
+#rp-global-profile .rp-menu .rp-wa-icon{color:#39d67a!important}
+#rp-global-profile .rp-menu .rp-edit{margin-top:5px;border-top:1px solid #ffffff20;border-radius:0;padding-top:13px;color:#c4d8e8}
+#rp-global-profile .rp-menu .rp-logout{color:#ffb2a9}
+@media(max-width:650px){#rp-global-profile.rp-in-header .rp-name{display:block;max-width:92px;font-size:12px}#rp-global-profile.rp-in-header .rp-trigger{padding:3px 7px 3px 4px;gap:6px}#rp-global-profile.rp-in-header .rp-avatar{width:34px;height:34px}#rp-global-profile.rp-in-header .rp-trigger>span:last-child{display:block}}
+`;\ndocument.head.append(style);
+const root=document.createElement("div");root.id="rp-global-profile";root.innerHTML=`<button class="rp-trigger" type="button" aria-label="Abrir menu do usuário" aria-expanded="false"><span class="rp-avatar">RP</span><span class="rp-name">Meu perfil</span><span class="rp-alert-dot" aria-hidden="true"></span><span aria-hidden="true">⌄</span></button><div class="rp-menu" hidden><div class="rp-menu-user"><span class="rp-menu-avatar">RP</span><span><strong class="rp-menu-name">Meu perfil</strong><small class="rp-menu-role">Portal Rodrinox Pro</small></span></div><a class="rp-menu-link rp-email" href="/colaborador/homologacao/email-corporativo.html"><span>✉</span>E-mail corporativo</a><button type="button" class="rp-menu-link rp-whatsapp"><span class="rp-wa-icon">◉</span>Central de Atendimento</button><button type="button" class="rp-menu-link rp-chat"><span>☎</span>Chat interno</button><button type="button" class="rp-edit">◎　Meu perfil / Alterar foto</button><button type="button" class="rp-logout">↪　Sair do portal</button></div><dialog class="rp-dialog"><form><h2>Minha foto de perfil</h2><small>Essa foto será utilizada em todos os painéis e no Chat Interno.</small><img class="rp-preview" alt="Foto de perfil"><input type="file" accept="image/jpeg,image/png,image/webp" required><small>JPG, PNG ou WebP · máximo 3 MB</small><p class="rp-feedback" role="status"></p><button type="submit" class="rp-save">Salvar foto</button><button type="button" class="rp-cancel">Cancelar</button></form></dialog>`;
 document.body.append(root);
 function positionProfile(){
  const headers=[...document.querySelectorAll("header")].filter(el=>{
@@ -52,11 +75,11 @@ function positionProfile(){
 }
 positionProfile();
 window.addEventListener("resize",positionProfile);
-const trigger=root.querySelector(".rp-trigger"),menu=root.querySelector(".rp-menu"),avatar=root.querySelector(".rp-avatar"),name=root.querySelector(".rp-name"),dialog=root.querySelector("dialog"),file=root.querySelector("input"),preview=root.querySelector(".rp-preview"),feedback=root.querySelector(".rp-feedback");
+const trigger=root.querySelector(".rp-trigger"),menu=root.querySelector(".rp-menu"),avatar=root.querySelector(".rp-avatar"),name=root.querySelector(".rp-name"),dialog=root.querySelector("dialog"),file=root.querySelector("input"),preview=root.querySelector(".rp-preview"),feedback=root.querySelector(".rp-feedback");\nconst menuAvatar=root.querySelector(".rp-menu-avatar"),menuName=root.querySelector(".rp-menu-name"),menuRole=root.querySelector(".rp-menu-role");\nconst alertState={chat:0,whatsapp:0};\nwindow.addEventListener("rp-notification-state",e=>{const d=e.detail||{};if(d.source in alertState)alertState[d.source]=Math.max(0,Number(d.count)||0);root.classList.toggle("rp-has-alert",alertState.chat+alertState.whatsapp>0);});
 let user=null,photo="";
-function paint(){avatar.replaceChildren();if(photo){const img=document.createElement("img");img.src=photo;img.alt="";img.onerror=()=>{avatar.textContent=(user?.nome||"RP").slice(0,2).toUpperCase()};avatar.append(img);preview.src=photo}else{avatar.textContent=(user?.nome||"RP").split(" ").slice(0,2).map(v=>v[0]||"").join("").toUpperCase();preview.removeAttribute("src")}name.textContent=user?.nome||"Meu perfil";}
+function paint(){const full=user?.nome||"Meu perfil",first=full.trim().split(/\\s+/)[0]||"Meu perfil",initials=full.split(" ").slice(0,2).map(v=>v[0]||"").join("").toUpperCase();avatar.replaceChildren();menuAvatar.replaceChildren();if(photo){const img=document.createElement("img");img.src=photo;img.alt="";img.onerror=()=>{avatar.textContent=initials;menuAvatar.textContent=initials};avatar.append(img);const img2=document.createElement("img");img2.src=photo;img2.alt="";menuAvatar.append(img2);preview.src=photo}else{avatar.textContent=initials;menuAvatar.textContent=initials;preview.removeAttribute("src")}name.textContent=first;menuName.textContent=full;menuRole.textContent=user?.perfil==="admin"?"Administrador":"Colaborador";}
 async function load(){try{const r=await fetch("/colaborador/api/eu",{credentials:"same-origin",cache:"no-store"});if(!r.ok){root.hidden=true;return}user=await r.json();photo=user.foto_url?user.foto_url+"?v="+Date.now():"";paint();}catch{root.hidden=true}}
-trigger.onclick=()=>{menu.hidden=!menu.hidden;trigger.setAttribute("aria-expanded",String(!menu.hidden))};
+trigger.onclick=()=>{menu.hidden=!menu.hidden;trigger.setAttribute("aria-expanded",String(!menu.hidden))};\nroot.querySelector(".rp-email").addEventListener("click",e=>{e.preventDefault();location.assign("/colaborador/homologacao/email-corporativo.html")});\nroot.querySelector(".rp-whatsapp").onclick=()=>{menu.hidden=true;const b=document.getElementById("ca-global-alert");if(b)b.click();else location.assign((location.pathname.includes("/painel/oficial")?"/colaborador/painel/oficial/":"/colaborador/oficial/")+"?abrir=atendimento")};\nroot.querySelector(".rp-chat").onclick=()=>{menu.hidden=true;const b=document.getElementById("rp-chat-fab");if(b)b.click();else location.assign("/colaborador/chat-interno.html?janela=1")};
 document.addEventListener("click",e=>{if(!root.contains(e.target)){menu.hidden=true;trigger.setAttribute("aria-expanded","false")}});
 root.querySelector(".rp-edit").onclick=()=>{menu.hidden=true;feedback.textContent="";file.value="";dialog.showModal()};
 root.querySelector(".rp-cancel").onclick=()=>dialog.close();
