@@ -1,6 +1,8 @@
 package br.com.rodrinoxpro.portal;
 
 import android.app.Activity;
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.graphics.Color;
@@ -29,10 +31,13 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+import org.json.JSONObject;
+import com.google.firebase.messaging.FirebaseMessaging;
 
 public class MainActivity extends Activity {
     private static final String PORTAL_URL = "https://rodrinoxpro.com.br/colaborador/";
     private static final int FILE_CHOOSER_REQUEST = 7102;
+    private static final int NOTIFICATION_PERMISSION_REQUEST = 7104;
     private static final long LOAD_TIMEOUT_MS = 25000L;
 
     private FrameLayout root;
@@ -53,6 +58,13 @@ public class MainActivity extends Activity {
         setContentView(root);
         hideSystemBars();
         createAndLoadWebView();
+        requestNotificationPermission();
+    }
+
+    private void requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, NOTIFICATION_PERMISSION_REQUEST);
+        }
     }
 
     private void createAndLoadWebView() {
@@ -111,6 +123,12 @@ public class MainActivity extends Activity {
                 public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
                     handler.removeCallbacks(loadTimeout);
                     handler.postDelayed(loadTimeout, LOAD_TIMEOUT_MS);
+                }
+
+                @Override
+                public void onPageFinished(WebView view, String url) {
+                    super.onPageFinished(view, url);
+                    if (url != null && url.startsWith("https://rodrinoxpro.com.br/colaborador/")) registerPushToken(view);
                 }
 
                 @Override
@@ -192,6 +210,15 @@ public class MainActivity extends Activity {
             showMessage("Falha ao iniciar o aplicativo: " + error.getClass().getSimpleName()
                 + (error.getMessage() == null ? "" : " — " + error.getMessage()), "Tentar novamente");
         }
+    }
+
+    private void registerPushToken(WebView view) {
+        FirebaseMessaging.getInstance().getToken().addOnSuccessListener(token -> {
+            if (token == null || !token.matches("[A-Za-z0-9_:-]{40,4096}") || view != webView) return;
+            String quotedToken = JSONObject.quote(token);
+            String js = "fetch('/colaborador/api/push/registrar',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-Portal':'1'},body:JSON.stringify({token:" + quotedToken + "})}).catch(()=>{});";
+            if (view == webView) view.evaluateJavascript(js, null);
+        });
     }
 
     private void showMessage(String message, String buttonText) {
@@ -285,7 +312,11 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         hideSystemBars();
-        if (webView != null) webView.onResume();
+        if (webView != null) {
+            webView.onResume();
+            String currentUrl = webView.getUrl();
+            if (currentUrl != null && currentUrl.startsWith("https://rodrinoxpro.com.br/colaborador/")) registerPushToken(webView);
+        }
     }
 
     @Override
