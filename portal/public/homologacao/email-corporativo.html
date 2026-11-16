@@ -87,19 +87,29 @@ const folderAside=document.querySelector(".folders");
 const navLink=document.createElement("button");navLink.className="mobile-nav-link";navLink.textContent="⌂ Voltar ao portal";navLink.onclick=()=>document.querySelector("[data-portal-return]")?.click();folderAside.append(navLink);
 const attendanceLink=document.createElement("button");attendanceLink.className="mobile-nav-link";attendanceLink.textContent="☏ Atendimento";attendanceLink.onclick=()=>{close();document.body.classList.add("mobile-attendance-open")};folderAside.append(attendanceLink);
 function findWidget(needle){
- const candidates=[...document.querySelectorAll("button,a,[role=button],div")].filter(e=>e.children.length<4&&e.textContent?.trim().toLowerCase().includes(needle));
- for(const e of candidates){let node=e;for(let i=0;i<5&&node&&node!==document.body;i++,node=node.parentElement){if(getComputedStyle(node).position==="fixed")return {button:e,wrapper:node}}}
+ const candidates=[...document.querySelectorAll("button,a,[role=button]")].filter(e=>e.textContent?.trim().toLowerCase().includes(needle)&&!e.closest("#mobileAttendanceSheet,.folders"));
+ for(const e of candidates){let node=e;for(let i=0;i<6&&node&&node!==document.body;i++,node=node.parentElement){if(getComputedStyle(node).position==="fixed")return {button:e,wrapper:node}}}
  return null;
 }
+const widgets={whatsapp:null,chat:null};
 function adjustWidgets(){
  if(!mobile())return;
- for(const needle of ["central de atendimento - whatsapp","chat interno"]){
-  const w=findWidget(needle);if(w&&w.wrapper!==document.querySelector(".mobile-attendance-sheet"))w.wrapper.classList.add("mobile-widget-hidden");
+ for(const [key,needle] of [["whatsapp","central de atendimento"],["chat","chat interno"]]){
+  const w=findWidget(needle);
+  if(w){widgets[key]=w;w.wrapper.classList.add("mobile-widget-hidden")}
  }
 }
-document.getElementById("mobileOpenWhatsapp").onclick=()=>{document.body.classList.remove("mobile-attendance-open");findWidget("central de atendimento - whatsapp")?.button.click()};
-document.getElementById("mobileOpenChat").onclick=()=>{document.body.classList.remove("mobile-attendance-open");findWidget("chat interno")?.button.click()};
-new MutationObserver(adjustWidgets).observe(document.body,{childList:true,subtree:true});adjustWidgets();
+function openWidget(key){
+ document.body.classList.remove("mobile-attendance-open");
+ const w=widgets[key];
+ if(w?.button?.isConnected){w.button.click();return}
+ adjustWidgets();widgets[key]?.button?.click();
+}
+document.getElementById("mobileOpenWhatsapp").onclick=()=>openWidget("whatsapp");
+document.getElementById("mobileOpenChat").onclick=()=>openWidget("chat");
+const widgetObserver=new MutationObserver(()=>{widgetObserver.disconnect();adjustWidgets();widgetObserver.observe(document.body,{childList:true,subtree:true})});
+widgetObserver.observe(document.body,{childList:true,subtree:true});
+adjustWidgets();
 window.addEventListener("resize",()=>{if(!mobile()){close();document.body.classList.remove("mobile-reading")}});
 })();
 </script></body></html>
