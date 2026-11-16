@@ -14,6 +14,7 @@ import { PERFIS, podeVerFerramenta } from "./permissions.js";
 import { siteRouter } from "./site-cms.js";
 import { mediaRouter } from "./site-media.js";
 import { publicSiteRouter } from "./public-site.js";
+import pushNotificacoesRouter from "./push-notificacoes.js";
 
 const BASE = process.env.BASE_PATH || "/colaborador";
 const dir = path.dirname(fileURLToPath(import.meta.url));
@@ -131,6 +132,9 @@ r.use((req, res, next) => {
   if (req.method !== "GET" && req.method !== "OPTIONS" && req.get("X-Portal") !== "1") return res.status(403).json({ erro: "Requisição inválida" });
   next();
 });
+
+// Cadastro autenticado de dispositivos Firebase; protegido também pelo cabeçalho anti-CSRF.
+r.use("/api/push", pushNotificacoesRouter);
 
 // CMS administrativo e biblioteca privada de imagens (exigem sessão/permissão).
 r.use("/api/site", siteRouter);
