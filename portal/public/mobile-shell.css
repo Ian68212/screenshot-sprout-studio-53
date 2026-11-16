@@ -31,7 +31,7 @@
  #rp-attendance-dock button:first-child{background:transparent!important;border:2px solid #00c96a!important;color:#fff!important}
  #rp-attendance-dock button:first-child .rp-dock-icon{color:#21d66e!important}
  #rp-attendance-dock button:last-child{background:#f58212!important;border:2px solid #f58212!important;color:#fff!important}
- #rp-attendance-dock .rp-dock-icon{font-size:20px!important}
+ #rp-attendance-dock .rp-dock-icon{font-size:20px!important;display:grid;place-items:center}\n #rp-attendance-dock .rp-dock-icon svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
  #rp-chat-fab,#ca-global-alert{display:none!important}
  .side{z-index:8000!important}
 }
