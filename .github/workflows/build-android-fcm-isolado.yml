@@ -62,8 +62,9 @@ jobs:
           unzip -p /tmp/official-1.0.28/official.apk assets/app-icon.webp > android-app/app/src/main/assets/official-v1.0.28/app-icon.webp
           # Verify every launcher PNG is byte-for-byte identical to the official APK.
           for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
-            unzip -p /tmp/official-1.0.28/official.apk "res/mipmap-${density}-v4/ic_launcher.png" | sha256sum > "/tmp/official-1.0.28/${density}.sha"
-            sha256sum "android-app/app/src/main/res/mipmap-${density}-v4/ic_launcher.png" | diff - "/tmp/official-1.0.28/${density}.sha"
+            expected="$(unzip -p /tmp/official-1.0.28/official.apk "res/mipmap-${density}-v4/ic_launcher.png" | sha256sum | cut -d' ' -f1)"
+            actual="$(sha256sum "android-app/app/src/main/res/mipmap-${density}-v4/ic_launcher.png" | cut -d' ' -f1)"
+            test "$expected" = "$actual"
           done
 
       - name: Build isolated test APK
