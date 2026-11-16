@@ -6,6 +6,7 @@ on:
       - main
       - feature/modulo-rh-recrutamento
       - recuperacao-painel-admin-2026-11-09
+      - feature/firebase-push-v1.0.28-main
   pull_request:
     branches:
       - main
