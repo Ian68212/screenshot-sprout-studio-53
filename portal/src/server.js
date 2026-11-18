@@ -25,7 +25,7 @@ import { PERFIS, podeVerFerramenta } from "./permissions.js";
 import { siteRouter } from "./site-cms.js";
 import { mediaRouter } from "./site-media.js";
 import { publicSiteRouter } from "./public-site.js";
-import menuPermissoesRouter from "./menu-permissoes.js";
+import menuPermissoesRouter, { exigirAtendimento } from "./menu-permissoes.js";
 import emailCorporativoRouter, { conectarCaixaIndividualNoLogin } from "./email-corporativo.js";
 import { profilePhotoRouter, ensureProfilePhotoSchema } from "./profile-photo.js";
 
@@ -244,6 +244,9 @@ r.use("/api/chat-interno", chatInternoRouter);
 r.use("/api/propostas-comerciais", propostasComerciaisRouter);
 r.use("/api/push", pushNotificacoesRouter);
 r.use("/api/gestao-arquivos", gestaoArquivosRouter);
+
+// Exigir permissão real no servidor, inclusive em chamadas diretas à API.
+r.use("/api/atendimento", exigir("painel"), exigirAtendimento);
 
 // Estado da integração de atendimento: nunca expõe token, URL interna ou credenciais.
 // Disponível somente a usuários autenticados do portal.
