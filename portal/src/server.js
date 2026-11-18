@@ -1,3 +1,4 @@
+import propostasComerciaisRouter from "./propostas-comerciais.js";
 import { tasksRouter } from "./tasks-official.js";
 import { taskAttachmentsRouter } from "./task-attachments.js";
 import { googleDriveRouter } from "./google-drive-oauth.js";
@@ -240,6 +241,7 @@ r.post("/api/logout", wrap(async (req, res) => {
 r.get("/api/eu", exigir("painel"), wrap(async (req, res) => { await ensureProfilePhotoSchema(); const [u]=await q("SELECT foto_url FROM usuarios WHERE id=?",[req.usuario.id]); res.json({...req.usuario,foto_url:u?.foto_url||null}); }));
 r.use("/api/perfil", profilePhotoRouter);
 r.use("/api/chat-interno", chatInternoRouter);
+r.use("/api/propostas-comerciais", propostasComerciaisRouter);
 r.use("/api/push", pushNotificacoesRouter);
 r.use("/api/gestao-arquivos", gestaoArquivosRouter);
 
