@@ -27,8 +27,8 @@ function target(u, scope) {
   if (scope === "cargo") return u.cargo_id == null ? null : String(u.cargo_id);
   return String(u.id);
 }
-function resolve(u, rows) {
-  const visible = Object.fromEntries(MENU_KEYS.map(k => [k, !ADMIN_KEYS.has(k) || u.perfil === "admin"]));
+export function resolve(u, rows) {
+  const visible = Object.fromEntries(MENU_KEYS.map(k => [k, k === "atendimento" ? u.perfil === "admin" : (!ADMIN_KEYS.has(k) || u.perfil === "admin")]));
   // Mais específico prevalece: perfil < setor < cargo < usuário.
   for (const scope of ["perfil","setor","cargo","usuario"]) {
     const alvo = target(u, scope);
@@ -38,6 +38,16 @@ function resolve(u, rows) {
   // Administradores sempre conservam acesso ao menu e à central de controle.
   if (u.perfil === "admin") visible["admin.permissoes"] = true;
   return visible;
+}
+export async function podeAcessarAtendimento(usuario) {
+  if (!usuario?.ativo) return false;
+  await schema();
+  const rows = await q("SELECT escopo,alvo,botao,permitido FROM menu_permissoes WHERE botao='atendimento'");
+  return resolve(usuario, rows).atendimento === true;
+}
+export async function exigirAtendimento(req,res,next) {
+  try { if (!await podeAcessarAtendimento(req.usuario)) return res.status(403).json({erro:"Central de Atendimento não autorizada para este colaborador."}); next(); }
+  catch(e) { next(e); }
 }
 router.get("/minhas", exigir("painel"), async (req,res,next) => {
   try { await schema(); const rows = await q("SELECT escopo,alvo,botao,permitido FROM menu_permissoes"); res.set("Cache-Control","no-store").json({ inicio:true, botoes:resolve(req.usuario,rows) }); }
