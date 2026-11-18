@@ -54,3 +54,39 @@ body{padding:0!important;margin:0!important}
  .messages{min-height:0}
  #composer{flex:none}
 }
+
+/* Janela compacta no navegador: contatos OU conversa, nunca ambos espremidos.
+   Aplicado somente ao iframe ?compact=1; mobile e pagina completa intactos. */
+body.compact-chat{overflow:hidden!important}
+body.compact-chat .app{display:block;width:100%;height:100dvh;max-height:100dvh;overflow:hidden}
+body.compact-chat .contacts,body.compact-chat .conversation{width:100%;height:100dvh;max-height:100dvh;min-height:0}
+body.compact-chat .contacts{display:flex;border-right:0}
+body.compact-chat .conversation{display:none}
+body.compact-chat .app.chat-open .contacts{display:none}
+body.compact-chat .app.chat-open .conversation{display:flex}
+body.compact-chat .contacts header{padding:13px 16px 12px;flex:none}
+body.compact-chat .contacts .back{display:none}
+body.compact-chat .contacts h1{font-size:17px;margin:2px 0 3px}
+body.compact-chat .contacts p{font-size:11px;margin:0 0 12px}
+body.compact-chat #search{padding:10px 12px;font-size:13px}
+body.compact-chat .people{min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain}
+body.compact-chat .person{padding:11px 14px;gap:10px;align-items:center}
+body.compact-chat .person .avatar{width:38px;height:38px}
+body.compact-chat .person-name{font-size:12px}
+body.compact-chat .person small{font-size:10px;margin-top:3px}
+body.compact-chat #mobileBack{display:block;flex:0 0 auto}
+body.compact-chat .conversation-header{height:65px;min-height:65px;gap:8px;padding:9px 12px}
+body.compact-chat .conversation-header #peerPhoto{width:34px;height:34px}
+body.compact-chat .conversation-header strong{font-size:13px}
+body.compact-chat .conversation-header small{font-size:10px;margin-top:3px}
+body.compact-chat .conversation-header #startCall{width:34px;height:34px;flex-basis:34px;font-size:16px}
+body.compact-chat .conversation-header #state{max-width:48px;font-size:10px}
+body.compact-chat .messages{min-height:0;overflow-y:auto;overflow-x:hidden;padding:14px 12px;gap:9px}
+body.compact-chat .bubble{max-width:88%;font-size:13px;padding:9px 11px}
+body.compact-chat #composer{padding:9px 10px;gap:7px;align-items:center}
+body.compact-chat #message{min-height:39px;padding:9px;font-size:13px}
+body.compact-chat #attach{min-width:36px;font-size:17px}
+body.compact-chat #recordVoice{flex:none}
+body.compact-chat #send{padding:0 10px;font-size:12px}
+body.compact-chat .voice-preview{padding:8px}
+body.compact-chat .call-panel{position:absolute}
