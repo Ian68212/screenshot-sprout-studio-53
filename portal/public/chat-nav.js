@@ -14,9 +14,9 @@ const style=document.createElement("style");style.textContent=`
 #rp-attendance-dock .rp-dock-unread{animation:rp-dock-pulse 1.4s ease-in-out infinite}
 @keyframes rp-dock-pulse{0%,100%{box-shadow:0 0 0 0 #ff293400}50%{box-shadow:0 0 0 4px #ff293455}}
 #rp-chat-fab,#ca-global-alert{display:none!important}
-body.rp-no-dock #rp-attendance-dock{display:none!important}
+body.rp-no-dock #rp-attendance-dock{display:grid!important}
 @media(min-width:781px){body{padding-bottom:0!important}}
-@media(max-width:780px){#rp-attendance-dock{right:10px;bottom:calc(10px + env(safe-area-inset-bottom));width:min(320px,calc(100vw - 20px))}#rp-attendance-dock button{min-height:45px;font-size:11px;padding:7px 6px}#rp-attendance-dock .rp-dock-icon svg{width:21px;height:21px}body:not(.rp-no-dock){padding-bottom:70px}}
+@media(max-width:780px){#rp-attendance-dock{right:10px;bottom:calc(10px + env(safe-area-inset-bottom));width:min(320px,calc(100vw - 20px))}#rp-attendance-dock button{min-height:45px;font-size:11px;padding:7px 6px}#rp-attendance-dock .rp-dock-icon svg{width:21px;height:21px}body{padding-bottom:70px}}
 #menu button[data-tab=chat-interno].rp-chat-nav-alert:after{content:"";display:inline-block;width:10px;height:10px;margin-left:7px;border-radius:50%;background:#ff2934;box-shadow:0 0 0 3px #ff293455;animation:rp-dot-blink .55s steps(2,end) infinite;vertical-align:middle}
 #menu button[data-tab=chat-interno].rp-chat-nav-alert{animation:rp-nav-flash .7s steps(2,end) infinite}
 @keyframes rp-dot-blink{0%,100%{opacity:1}50%{opacity:.08}}@keyframes rp-nav-flash{0%,100%{background:#2b4969}50%{background:#a3222a;color:#fff}}
@@ -26,7 +26,7 @@ dock.innerHTML='<button type="button" data-open="whatsapp"><span class="rp-dock-
 document.body.append(dock);
 const chatDockButton=dock.querySelector('[data-open="chat"]');const chatDockCount=document.createElement("span");chatDockCount.className="rp-dock-count";chatDockCount.hidden=true;chatDockCount.setAttribute("aria-label","Mensagens não lidas");chatDockButton.append(chatDockCount);
 dock.addEventListener("click",e=>{const action=e.target.closest("button")?.dataset.open;if(action==="chat"){location.assign(chatUrl);return}if(action==="whatsapp"){const target=document.getElementById("ca-global-alert");if(target)target.click();else location.assign((location.pathname.includes("/painel/")?"/colaborador/painel/oficial/":"/colaborador/oficial/")+"?abrir=atendimento")}});
-function syncDock(){const path=location.pathname.toLowerCase(),section=(document.getElementById("sectionTitle")?.textContent||"").trim().toLowerCase(),active=document.querySelector('nav [data-tab="atendimento"].active');const excluded=/email-corporativo|chat-interno/.test(path)||!!active||section==="central de atendimento"||section==="atendimento";document.body.classList.toggle("rp-no-dock",excluded)}
+function syncDock(){const path=location.pathname.toLowerCase(),section=(document.getElementById("sectionTitle")?.textContent||"").trim().toLowerCase(),active=document.querySelector('nav [data-tab="atendimento"].active');const excluded=false;document.body.classList.toggle("rp-no-dock",excluded)}
 new MutationObserver(syncDock).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:["class","hidden"]});syncDock();
 document.addEventListener("click",e=>{const b=e.target.closest('button[data-tab="chat-interno"]');if(!b)return;e.preventDefault();e.stopImmediatePropagation();location.assign(chatUrl)},true);
 let previous=null,busy=false;
