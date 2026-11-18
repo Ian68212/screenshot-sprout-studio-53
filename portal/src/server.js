@@ -251,8 +251,8 @@ r.get("/api/atendimento/status", exigir("painel"), (req, res) => {
   res.setHeader("Cache-Control", "no-store");
   res.json({
     configurada: Boolean(process.env.DIGISAC_API_TOKEN && process.env.DIGISAC_API_BASE_URL),
-    ativa: false,
-    modo: "homologacao",
+    ativa: Boolean(process.env.DIGISAC_API_TOKEN && process.env.DIGISAC_API_BASE_URL),
+    modo: "oficial",
     usuario: { id: req.usuario.id, perfil: req.usuario.perfil }
   });
 });
@@ -261,7 +261,7 @@ r.get("/api/atendimento/status", exigir("painel"), (req, res) => {
 // A URL assinada vem do histórico DigiSac, nunca de um host arbitrário.
 r.get("/api/atendimento/midia", exigir("painel"), wrap(async(req,res)=>{
  res.setHeader("Cache-Control","private, no-store");
- if(req.usuario.perfil!=="admin")return res.sendStatus(403);
+ if(!req.usuario?.ativo)return res.sendStatus(403);
  let url;
  try{url=new URL(String(req.query.url||""));}catch{return res.sendStatus(400);}
  if(url.protocol!=="https:"||url.username||url.password||
@@ -288,7 +288,7 @@ r.get("/api/atendimento/midia", exigir("painel"), wrap(async(req,res)=>{
 // Mídia DigiSac: proxy autenticado evita links assinados expirados no navegador.
 r.get("/api/atendimento/arquivo/:id", exigir("painel"), wrap(async(req,res)=>{
  res.setHeader("Cache-Control","private, no-store");
- if(req.usuario.perfil!=="admin")return res.sendStatus(403);
+ if(!req.usuario?.ativo)return res.sendStatus(403);
  const id=String(req.params.id||"");
  if(!/^[a-f0-9-]{36}$/i.test(id))return res.sendStatus(400);
  const base=(process.env.DIGISAC_API_BASE_URL||"").replace(/\/+$/,""),token=process.env.DIGISAC_API_TOKEN;
@@ -326,7 +326,7 @@ r.get("/api/atendimento/arquivo/:id", exigir("painel"), wrap(async(req,res)=>{
 const digiPaths = Object.freeze({contacts:"contacts",tickets:"tickets",messages:"messages",departments:"departments",users:"users",tags:"tags","ticket-topics":"ticket-topics"});
 r.get("/api/atendimento/consultar/:recurso", exigir("painel"), wrap(async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
-  if (req.usuario.perfil !== "admin") return res.status(403).json({erro:"Acesso não autorizado para consultar a DigiSac."});
+  if (!req.usuario?.ativo) return res.status(403).json({erro:"Acesso não autorizado para consultar a DigiSac."});
   const endpoint = digiPaths[req.params.recurso];
   if (!endpoint) return res.status(404).json({erro:"Consulta não disponível."});
   const base = (process.env.DIGISAC_API_BASE_URL || "").replace(/\/+$/, "");
@@ -375,15 +375,15 @@ async function chamarDigiSac(endpoint, method="GET", body) {
  try{const options={method,headers:{Authorization:"Bearer "+token,Accept:"application/json"},signal:controller.signal,redirect:"error"};if(body!==undefined){options.headers["Content-Type"]="application/json";options.body=JSON.stringify(body)}const upstream=await fetch(url,options),raw=await upstream.text();let payload={};try{payload=raw?JSON.parse(raw):{}}catch{payload={mensagem:raw.slice(0,300)}}if(!upstream.ok)throw Object.assign(new Error(payload?.message||payload?.error||"DigiSac recusou a operação."),{status:upstream.status});return payload}catch(err){if(err.name==="AbortError")throw Object.assign(new Error("Tempo limite ao comunicar com a DigiSac."),{status:504});throw err}finally{clearTimeout(timeout)}
 }
 
-r.get("/api/atendimento/contato/:id",exigir("painel"),wrap(async(req,res)=>{res.setHeader("Cache-Control","no-store");if(req.usuario.perfil!=="admin")return res.status(403).json({erro:"Acesso restrito ao administrador."});const id=String(req.params.id||"");if(!/^[a-f0-9-]{36}$/i.test(id))return res.status(400).json({erro:"Contato inválido."});try{res.json(await chamarDigiSac("/contacts/"+encodeURIComponent(id)+"?include[0]=tags"))}catch(e){res.status(e.status||502).json({erro:e.message||"Falha ao consultar contato."})}}));
-r.post("/api/atendimento/transferir",exigir("painel"),wrap(async(req,res)=>{res.setHeader("Cache-Control","no-store");if(req.usuario.perfil!=="admin")return res.status(403).json({erro:"Somente administradores podem transferir atendimentos."});const {contactId,departmentId,userId,byUserId,comments=""}=req.body||{};if(!/^[a-f0-9-]{36}$/i.test(String(contactId||""))||!/^[a-f0-9-]{36}$/i.test(String(departmentId||""))||!(userId==null||userId===""||/^[a-f0-9-]{36}$/i.test(String(userId)))||(byUserId&&!/^[a-f0-9-]{36}$/i.test(String(byUserId))))return res.status(400).json({erro:"Selecione um setor e um atendente válido."});if(typeof comments!=="string"||comments.length>500)return res.status(400).json({erro:"Comentário inválido."});try{const data=await chamarDigiSac("/contacts/"+encodeURIComponent(contactId)+"/ticket/transfer","POST",{departmentId,...(userId?{userId}:{}),comments:comments.trim(),...(byUserId?{byUserId}:{})});await auditar(req.usuario.id,"digisac_transferencia",JSON.stringify({contactId,departmentId,userId:userId||null}),req.ip);res.json({ok:true,data})}catch(e){res.status(e.status||502).json({erro:e.message||"Não foi possível transferir o atendimento."})}}));
-r.post("/api/atendimento/etiquetas",exigir("painel"),wrap(async(req,res)=>{res.setHeader("Cache-Control","no-store");if(req.usuario.perfil!=="admin")return res.status(403).json({erro:"Somente administradores podem alterar etiquetas."});const {contactId,tagIds,byUserId}=req.body||{};if(!/^[a-f0-9-]{36}$/i.test(String(contactId||""))||!Array.isArray(tagIds)||tagIds.length>50||!tagIds.every(x=>/^[a-f0-9-]{36}$/i.test(String(x)))||(byUserId&&!/^[a-f0-9-]{36}$/i.test(String(byUserId))))return res.status(400).json({erro:"Contato ou etiquetas inválidos."});try{const data=await chamarDigiSac("/contacts/"+encodeURIComponent(contactId),"PUT",{tagIds});await auditar(req.usuario.id,"digisac_etiquetas",JSON.stringify({contactId,tagIds}),req.ip);res.json({ok:true,data})}catch(e){res.status(e.status||502).json({erro:e.message||"Não foi possível atualizar as etiquetas."})}}));
-r.post("/api/atendimento/finalizar",exigir("painel"),wrap(async(req,res)=>{res.setHeader("Cache-Control","no-store");if(req.usuario.perfil!=="admin")return res.status(403).json({erro:"Somente administradores podem finalizar atendimentos."});const {contactId,ticketTopicIds=[],byUserId,comments=""}=req.body||{};if(!/^[a-f0-9-]{36}$/i.test(String(contactId||""))||!Array.isArray(ticketTopicIds)||ticketTopicIds.length>10||!ticketTopicIds.every(x=>/^[a-f0-9-]{36}$/i.test(String(x)))||(byUserId&&!/^[a-f0-9-]{36}$/i.test(String(byUserId))))return res.status(400).json({erro:"Contato ou assunto inválido."});if(typeof comments!=="string"||comments.length>500)return res.status(400).json({erro:"Comentário inválido."});try{const data=await chamarDigiSac("/contacts/"+encodeURIComponent(contactId)+"/ticket/close","POST",{ticketTopicIds,comments:comments.trim(),...(byUserId?{byUserId}:{})});await auditar(req.usuario.id,"digisac_atendimento_finalizado",JSON.stringify({contactId,ticketTopicIds}),req.ip);res.json({ok:true,data})}catch(e){res.status(e.status||502).json({erro:e.message||"Não foi possível finalizar o atendimento."})}}));
+r.get("/api/atendimento/contato/:id",exigir("painel"),wrap(async(req,res)=>{res.setHeader("Cache-Control","no-store");if(!req.usuario?.ativo)return res.status(403).json({erro:"Acesso restrito ao administrador."});const id=String(req.params.id||"");if(!/^[a-f0-9-]{36}$/i.test(id))return res.status(400).json({erro:"Contato inválido."});try{res.json(await chamarDigiSac("/contacts/"+encodeURIComponent(id)+"?include[0]=tags"))}catch(e){res.status(e.status||502).json({erro:e.message||"Falha ao consultar contato."})}}));
+r.post("/api/atendimento/transferir",exigir("painel"),wrap(async(req,res)=>{res.setHeader("Cache-Control","no-store");if(!req.usuario?.ativo)return res.status(403).json({erro:"Somente administradores podem transferir atendimentos."});const {contactId,departmentId,userId,byUserId,comments=""}=req.body||{};if(!/^[a-f0-9-]{36}$/i.test(String(contactId||""))||!/^[a-f0-9-]{36}$/i.test(String(departmentId||""))||!(userId==null||userId===""||/^[a-f0-9-]{36}$/i.test(String(userId)))||(byUserId&&!/^[a-f0-9-]{36}$/i.test(String(byUserId))))return res.status(400).json({erro:"Selecione um setor e um atendente válido."});if(typeof comments!=="string"||comments.length>500)return res.status(400).json({erro:"Comentário inválido."});try{const data=await chamarDigiSac("/contacts/"+encodeURIComponent(contactId)+"/ticket/transfer","POST",{departmentId,...(userId?{userId}:{}),comments:comments.trim(),...(byUserId?{byUserId}:{})});await auditar(req.usuario.id,"digisac_transferencia",JSON.stringify({contactId,departmentId,userId:userId||null}),req.ip);res.json({ok:true,data})}catch(e){res.status(e.status||502).json({erro:e.message||"Não foi possível transferir o atendimento."})}}));
+r.post("/api/atendimento/etiquetas",exigir("painel"),wrap(async(req,res)=>{res.setHeader("Cache-Control","no-store");if(!req.usuario?.ativo)return res.status(403).json({erro:"Somente administradores podem alterar etiquetas."});const {contactId,tagIds,byUserId}=req.body||{};if(!/^[a-f0-9-]{36}$/i.test(String(contactId||""))||!Array.isArray(tagIds)||tagIds.length>50||!tagIds.every(x=>/^[a-f0-9-]{36}$/i.test(String(x)))||(byUserId&&!/^[a-f0-9-]{36}$/i.test(String(byUserId))))return res.status(400).json({erro:"Contato ou etiquetas inválidos."});try{const data=await chamarDigiSac("/contacts/"+encodeURIComponent(contactId),"PUT",{tagIds});await auditar(req.usuario.id,"digisac_etiquetas",JSON.stringify({contactId,tagIds}),req.ip);res.json({ok:true,data})}catch(e){res.status(e.status||502).json({erro:e.message||"Não foi possível atualizar as etiquetas."})}}));
+r.post("/api/atendimento/finalizar",exigir("painel"),wrap(async(req,res)=>{res.setHeader("Cache-Control","no-store");if(!req.usuario?.ativo)return res.status(403).json({erro:"Somente administradores podem finalizar atendimentos."});const {contactId,ticketTopicIds=[],byUserId,comments=""}=req.body||{};if(!/^[a-f0-9-]{36}$/i.test(String(contactId||""))||!Array.isArray(ticketTopicIds)||ticketTopicIds.length>10||!ticketTopicIds.every(x=>/^[a-f0-9-]{36}$/i.test(String(x)))||(byUserId&&!/^[a-f0-9-]{36}$/i.test(String(byUserId))))return res.status(400).json({erro:"Contato ou assunto inválido."});if(typeof comments!=="string"||comments.length>500)return res.status(400).json({erro:"Comentário inválido."});try{const data=await chamarDigiSac("/contacts/"+encodeURIComponent(contactId)+"/ticket/close","POST",{ticketTopicIds,comments:comments.trim(),...(byUserId?{byUserId}:{})});await auditar(req.usuario.id,"digisac_atendimento_finalizado",JSON.stringify({contactId,ticketTopicIds}),req.ip);res.json({ok:true,data})}catch(e){res.status(e.status||502).json({erro:e.message||"Não foi possível finalizar o atendimento."})}}));
 
 // Envio controlado: somente administrador autenticado, contato de chamado aberto e confirmação explícita.
 r.post("/api/atendimento/enviar", exigir("painel"), wrap(async (req,res)=>{
   res.setHeader("Cache-Control","no-store");
-  if(req.usuario.perfil!=="admin")return res.status(403).json({erro:"Envio permitido somente ao administrador nesta fase."});
+  if(!req.usuario?.ativo)return res.status(403).json({erro:"Envio permitido somente ao administrador nesta fase."});
   const {contactId,userId,text:message}=req.body||{};
   if(!/^[a-f0-9-]{36}$/i.test(String(contactId||""))||!/^[a-f0-9-]{36}$/i.test(String(userId||"")))return res.status(400).json({erro:"Contato ou atendente inválido."});
   if(typeof message!=="string"||!message.trim()||message.length>2000)return res.status(400).json({erro:"Digite uma mensagem de até 2.000 caracteres."});
@@ -408,7 +408,7 @@ r.post("/api/atendimento/enviar", exigir("painel"), wrap(async (req,res)=>{
 const digiMediaUpload=multer({storage:multer.memoryStorage(),limits:{fileSize:15*1024*1024,files:1}});
 r.post("/api/atendimento/enviar-anexo",exigir("painel"),(req,res,next)=>digiMediaUpload.single("arquivo")(req,res,err=>err?res.status(400).json({erro:err.code==="LIMIT_FILE_SIZE"?"Arquivo acima de 15 MB.":"Falha ao receber arquivo."}):next()),wrap(async(req,res)=>{
  res.setHeader("Cache-Control","no-store");
- if(req.usuario.perfil!=="admin")return res.status(403).json({erro:"Acesso não autorizado."});
+ if(!req.usuario?.ativo)return res.status(403).json({erro:"Acesso não autorizado."});
  const {contactId,userId,text:caption=""}=req.body||{};
  if(!/^[a-f0-9-]{36}$/i.test(String(contactId||""))||!/^[a-f0-9-]{36}$/i.test(String(userId||"")))return res.status(400).json({erro:"Contato ou atendente inválido."});
  if(!req.file)return res.status(400).json({erro:"Selecione um arquivo."});
@@ -450,7 +450,7 @@ r.post("/api/atendimento/enviar-anexo",exigir("painel"),(req,res,next)=>digiMedi
 // Diagnóstico de esquema sem conteúdo pessoal, para mapear os campos da API DigiSac.
 r.get("/api/atendimento/diagnostico", exigir("painel"), wrap(async (req,res)=>{
   res.setHeader("Cache-Control","no-store");
-  if(req.usuario.perfil!=="admin")return res.status(403).json({erro:"Acesso restrito."});
+  if(!req.usuario?.ativo)return res.status(403).json({erro:"Acesso restrito."});
   const base=(process.env.DIGISAC_API_BASE_URL||"").replace(/\/+$/,"");
   const token=process.env.DIGISAC_API_TOKEN;
   if(!base||!token)return res.status(503).json({erro:"Integração não configurada."});
