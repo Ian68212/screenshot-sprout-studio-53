@@ -22,7 +22,7 @@
   button.type = "button";
   button.innerHTML = '<span class="rp-mail-dot"></span><span>E-mail corporativo</span><span class="rp-mail-count" id="rp-email-count">0</span>';
   button.addEventListener("click", () => { window.location.href = new URL("email-corporativo.html", window.location.href).href; });
-  document.body.append(button);
+  // O contador fica integrado ao perfil global; nao exibir botao duplicado.
 
   const toast = document.createElement("div");
   toast.id = "rp-email-toast";
@@ -42,7 +42,7 @@
       if (!response.ok) return;
       const data = await response.json();
       const count = Number(data.naoLidas || 0);
-      document.getElementById("rp-email-count").textContent = count > 99 ? "99+" : String(count);
+      const legacyCount=document.getElementById("rp-email-count");if(legacyCount)legacyCount.textContent = count > 99 ? "99+" : String(count);
       button.classList.toggle("has-unread", count > 0);
       button.title = count ? count + " e-mail(s) não lido(s)" : "Nenhum e-mail não lido";
       if (lastCount !== null && count > lastCount) {
