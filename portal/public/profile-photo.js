@@ -87,7 +87,7 @@ async function load(){try{const r=await fetch("/colaborador/api/eu",{credentials
 trigger.onclick=()=>{menu.hidden=!menu.hidden;trigger.setAttribute("aria-expanded",String(!menu.hidden))};
 root.querySelector(".rp-email").addEventListener("click",e=>{e.preventDefault();location.assign("/colaborador/homologacao/email-corporativo.html")});
 root.querySelector(".rp-whatsapp").onclick=()=>{menu.hidden=true;const b=document.getElementById("ca-global-alert");if(b)b.click();else location.assign((location.pathname.includes("/painel/oficial")?"/colaborador/painel/oficial/":"/colaborador/oficial/")+"?abrir=atendimento")};
-root.querySelector(".rp-chat").onclick=()=>{menu.hidden=true;const b=document.getElementById("rp-chat-fab");if(b)b.click();else location.assign("/colaborador/chat-interno.html")};
+root.querySelector(".rp-chat").onclick=()=>{menu.hidden=true;window.dispatchEvent(new Event("rp-open-internal-chat"));if(!window.__rpChatNavReady)location.assign("/colaborador/chat-interno.html")};
 document.addEventListener("click",e=>{if(!root.contains(e.target)){menu.hidden=true;trigger.setAttribute("aria-expanded","false")}});
 root.querySelector(".rp-edit").onclick=()=>{menu.hidden=true;feedback.textContent="";file.value="";dialog.showModal()};
 root.querySelector(".rp-cancel").onclick=()=>dialog.close();
