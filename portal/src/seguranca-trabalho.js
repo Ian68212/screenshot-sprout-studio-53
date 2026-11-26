@@ -1,5 +1,8 @@
 import express from "express";
 import crypto from "node:crypto";
+import multer from "multer";
+import path from "node:path";
+import {uploadDriveFile,readDriveFile,deleteDriveFile} from "./drive-storage.js";
 import { q } from "./db.js";
 import { exigir } from "./auth.js";
 const router=express.Router();
@@ -20,6 +23,7 @@ router.post("/",wrap(async(req,res)=>{
 if(!manager(req.usuario))return res.sendStatus(403);
 const {titulo,categoria,corpo}=req.body||{};
 if(typeof titulo!=="string"||!titulo.trim()||titulo.length>200||typeof categoria!=="string"||categoria.length>80||typeof corpo!=="string"||!corpo.trim()||corpo.length>50000)return res.sendStatus(400);
+try{if(JSON.parse(corpo)?.tipo==="sst-anexo-v1")return res.sendStatus(400);}catch{}
 const result=await q("INSERT INTO sst_documentos(titulo,categoria,corpo,autor_id) VALUES(?,?,?,?)",[titulo,categoria,corpo,req.usuario.id]);res.status(201).json({id:result.insertId});
 }));
 router.post("/:id/solicitar",wrap(async(req,res)=>{
@@ -36,5 +40,19 @@ if(!d)return res.sendStatus(404);
 const instante=new Date();const evidencia=crypto.createHash("sha256").update(JSON.stringify([d.id,d.titulo,d.categoria,d.corpo,req.usuario.id,instante.toISOString()])).digest("hex");
 const result=await q("UPDATE sst_assinaturas SET assinado_em=?,evidencia=? WHERE documento_id=? AND usuario_id=? AND assinado_em IS NULL",[instante,evidencia,d.id,req.usuario.id]);
 if(!result.affectedRows)return res.sendStatus(409);res.json({ok:true,evidencia});
+}));
+const upload=multer({storage:multer.memoryStorage(),limits:{fileSize:25*1024*1024,files:1,fields:2,fieldSize:1024},fileFilter:(_r,f,cb)=>cb(null,/\.(pdf|docx?|xlsx?|png|jpe?g|webp|txt|csv)$/i.test(f.originalname))}).single("arquivo");
+router.post("/upload",(req,res,next)=>{if(!manager(req.usuario))return res.sendStatus(403);upload(req,res,err=>{if(err)return res.status(400).json({erro:"Arquivo inválido ou acima de 25 MB"});next();});},wrap(async(req,res)=>{
+const titulo=String(req.body.titulo||"").trim(),categoria=String(req.body.categoria||"").trim();
+if(!req.file||!titulo||titulo.length>200||!categoria||categoria.length>80)return res.status(400).json({erro:"Informe arquivo, título e categoria"});
+const name=path.basename(req.file.originalname).slice(0,200),hash=crypto.createHash("sha256").update(req.file.buffer).digest("hex");
+const id=await uploadDriveFile({category:"Segurança do Trabalho",name,mime:"application/octet-stream",buffer:req.file.buffer});
+try{const result=await q("INSERT INTO sst_documentos(titulo,categoria,corpo,autor_id) VALUES(?,?,?,?)",[titulo,categoria,JSON.stringify({tipo:"sst-anexo-v1",id,name,hash}),req.usuario.id]);res.status(201).json({id:result.insertId});}catch(e){await deleteDriveFile(id).catch(()=>{});throw e;}
+}));
+router.get("/:id/arquivo",wrap(async(req,res)=>{
+const [d]=await q(manager(req.usuario)?"SELECT corpo FROM sst_documentos WHERE id=?":"SELECT d.corpo FROM sst_documentos d JOIN sst_assinaturas a ON a.documento_id=d.id WHERE d.id=? AND a.usuario_id=?",manager(req.usuario)?[req.params.id]:[req.params.id,req.usuario.id]);
+let a;try{a=JSON.parse(d?.corpo||"");}catch{}if(a?.tipo!=="sst-anexo-v1"||!/^[A-Za-z0-9_-]{10,}$/.test(a.id))return res.sendStatus(404);
+const bytes=await readDriveFile(a.id);if(crypto.createHash("sha256").update(bytes).digest("hex")!==a.hash)return res.sendStatus(409);
+res.attachment(a.name);res.type("application/octet-stream");res.send(bytes);
 }));
 export default router;
