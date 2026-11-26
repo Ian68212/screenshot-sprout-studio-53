@@ -138,6 +138,7 @@ if (publicDir) {
     const html = fs.readFileSync(path.join(adminSource, "index.html"), "utf8")
       .replaceAll("PAINEL ADMINISTRATIVO · HOMOLOGAÇÃO", "PAINEL ADMINISTRATIVO · OFICIAL")
       .replaceAll("AMBIENTE DE HOMOLOGAÇÃO", "AMBIENTE OFICIAL")
+      .replaceAll('/colaborador/homologacao/#email', '/colaborador/oficial/#email')
       .replaceAll("/colaborador/painel.html", "/colaborador/oficial/");
     res.type("html").send(html);
   });
