@@ -37,22 +37,26 @@ const [u]=await q("SELECT id FROM usuarios WHERE email=? AND ativo=1",[String(re
 if(!d||!u)return res.sendStatus(404);
 await q("INSERT IGNORE INTO sst_assinaturas(documento_id,usuario_id) VALUES(?,?)",[d.id,u.id]);res.json({ok:true});
 }));
-const provasUpload=multer({storage:multer.memoryStorage(),limits:{fileSize:2*1024*1024,files:2,fields:2,fieldSize:512}}).fields([{name:"foto",maxCount:1},{name:"assinatura",maxCount:1}]);
+const provasUpload=multer({storage:multer.memoryStorage(),limits:{fileSize:2*1024*1024,files:2,fields:3,fieldSize:512}}).fields([{name:"foto",maxCount:1},{name:"assinatura",maxCount:1}]);
 router.post("/:id/assinar",rateLimit({windowMs:15*60000,limit:5,standardHeaders:true,legacyHeaders:false,keyGenerator:req=>String(req.usuario.id)}),provasUpload,wrap(async(req,res)=>{
 if(req.body?.aceito!=="true")return res.sendStatus(400);
 const foto=req.files?.foto?.[0]?.buffer, assinatura=req.files?.assinatura?.[0]?.buffer;
 const png=b=>b?.length>8&&b.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10]));
 const jpeg=b=>b?.length>3&&b[0]===255&&b[1]===216&&b[2]===255;
 if(!jpeg(foto)||!png(assinatura))return res.status(400).json({erro:"Foto e assinatura obrigatórias"});
-const provas=JSON.stringify({foto:foto.toString("base64"),assinatura:assinatura.toString("base64"),autenticacao:"sessao individual e senha Hostinger",usuario:req.usuario.id,nome:req.usuario.nome,ip:req.ip});
-const [d]=await q("SELECT d.* FROM sst_documentos d JOIN sst_assinaturas a ON a.documento_id=d.id WHERE d.id=? AND a.usuario_id=? AND a.assinado_em IS NULL",[req.params.id,req.usuario.id]);
+const presencial=!!req.body.email;
+if(presencial&&!manager(req.usuario))return res.sendStatus(403);
+const [signer]=await q("SELECT id,nome,email FROM usuarios WHERE ativo=1 AND email=?",[presencial?String(req.body.email).trim().toLowerCase():req.usuario.email]);
+if(!signer)return res.sendStatus(404);
+const provas=JSON.stringify({modalidade:presencial?"presencial":"portal",gestor:presencial?req.usuario.id:null,foto:foto.toString("base64"),assinatura:assinatura.toString("base64"),autenticacao:"senha Hostinger confirmada",usuario:signer.id,nome:signer.nome,ip:req.ip});
+const [d]=await q("SELECT d.* FROM sst_documentos d JOIN sst_assinaturas a ON a.documento_id=d.id WHERE d.id=? AND a.usuario_id=? AND a.assinado_em IS NULL",[req.params.id,signer.id]);
 if(!d)return res.sendStatus(404);
 const senha=req.body?.senha;
 if(typeof senha!=="string"||!senha||senha.length>512)return res.status(400).json({erro:"Confirme sua senha"});
-let validada;try{validada=await validarSenhaHostinger(req.usuario.email,senha);}catch{return res.status(503).json({erro:"Autenticação indisponível"});}
+let validada;try{validada=await validarSenhaHostinger(signer.email,senha);}catch{return res.status(503).json({erro:"Autenticação indisponível"});}
 if(!validada)return res.status(401).json({erro:"Senha incorreta"});
-const instante=new Date();const evidencia=crypto.createHash("sha256").update(JSON.stringify([d.id,d.titulo,d.categoria,d.corpo,req.usuario.id,instante.toISOString(),crypto.createHash("sha256").update(provas).digest("hex")])).digest("hex");
-const result=await q("UPDATE sst_assinaturas SET assinado_em=?,evidencia=?,provas=? WHERE documento_id=? AND usuario_id=? AND assinado_em IS NULL",[instante,evidencia,provas,d.id,req.usuario.id]);
+const instante=new Date();const evidencia=crypto.createHash("sha256").update(JSON.stringify([d.id,d.titulo,d.categoria,d.corpo,signer.id,instante.toISOString(),crypto.createHash("sha256").update(provas).digest("hex")])).digest("hex");
+const result=await q("UPDATE sst_assinaturas SET assinado_em=?,evidencia=?,provas=? WHERE documento_id=? AND usuario_id=? AND assinado_em IS NULL",[instante,evidencia,provas,d.id,signer.id]);
 if(!result.affectedRows)return res.sendStatus(409);res.json({ok:true,evidencia});
 }));
 const upload=multer({storage:multer.memoryStorage(),limits:{fileSize:25*1024*1024,files:1,fields:2,fieldSize:1024},fileFilter:(_r,f,cb)=>cb(null,/\.(pdf|docx?|xlsx?|png|jpe?g|webp|txt|csv)$/i.test(f.originalname))}).single("arquivo");
