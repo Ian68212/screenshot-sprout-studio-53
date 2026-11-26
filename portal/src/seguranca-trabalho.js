@@ -12,6 +12,8 @@ let schema;
 function init(){return schema??=(async()=>{
 await q("CREATE TABLE IF NOT EXISTS sst_documentos (id BIGINT AUTO_INCREMENT PRIMARY KEY, titulo VARCHAR(200) NOT NULL, categoria VARCHAR(80) NOT NULL, corpo TEXT NOT NULL, autor_id BIGINT NOT NULL, criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
 await q("CREATE TABLE IF NOT EXISTS sst_assinaturas (documento_id BIGINT NOT NULL, usuario_id BIGINT NOT NULL, assinado_em DATETIME NULL, evidencia CHAR(64) NULL, PRIMARY KEY(documento_id,usuario_id))");
+const cols=await q("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='sst_assinaturas' AND COLUMN_NAME='provas'");
+if(!cols.length){try{await q("ALTER TABLE sst_assinaturas ADD COLUMN provas MEDIUMBLOB NULL");}catch(e){if(e.code!=="ER_DUP_FIELDNAME")throw e;}}
 })().catch(e=>{schema=null;throw e;});}
 router.use(exigir("painel"),wrap(async(req,res,next)=>{await init();res.set("Cache-Control","private, no-store");next();}));
 router.get("/",wrap(async(req,res)=>{
@@ -33,12 +35,18 @@ const [u]=await q("SELECT id FROM usuarios WHERE email=? AND ativo=1",[String(re
 if(!d||!u)return res.sendStatus(404);
 await q("INSERT IGNORE INTO sst_assinaturas(documento_id,usuario_id) VALUES(?,?)",[d.id,u.id]);res.json({ok:true});
 }));
-router.post("/:id/assinar",wrap(async(req,res)=>{
-if(req.body?.aceito!==true)return res.sendStatus(400);
+const provasUpload=multer({storage:multer.memoryStorage(),limits:{fileSize:2*1024*1024,files:2,fields:1,fieldSize:32}}).fields([{name:"foto",maxCount:1},{name:"assinatura",maxCount:1}]);
+router.post("/:id/assinar",provasUpload,wrap(async(req,res)=>{
+if(req.body?.aceito!=="true")return res.sendStatus(400);
+const foto=req.files?.foto?.[0]?.buffer, assinatura=req.files?.assinatura?.[0]?.buffer;
+const png=b=>b?.length>8&&b.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10]));
+const jpeg=b=>b?.length>3&&b[0]===255&&b[1]===216&&b[2]===255;
+if(!jpeg(foto)||!png(assinatura))return res.status(400).json({erro:"Foto e assinatura obrigatórias"});
+const provas=JSON.stringify({foto:foto.toString("base64"),assinatura:assinatura.toString("base64"),autenticacao:"sessao individual"});
 const [d]=await q("SELECT d.* FROM sst_documentos d JOIN sst_assinaturas a ON a.documento_id=d.id WHERE d.id=? AND a.usuario_id=? AND a.assinado_em IS NULL",[req.params.id,req.usuario.id]);
 if(!d)return res.sendStatus(404);
-const instante=new Date();const evidencia=crypto.createHash("sha256").update(JSON.stringify([d.id,d.titulo,d.categoria,d.corpo,req.usuario.id,instante.toISOString()])).digest("hex");
-const result=await q("UPDATE sst_assinaturas SET assinado_em=?,evidencia=? WHERE documento_id=? AND usuario_id=? AND assinado_em IS NULL",[instante,evidencia,d.id,req.usuario.id]);
+const instante=new Date();const evidencia=crypto.createHash("sha256").update(JSON.stringify([d.id,d.titulo,d.categoria,d.corpo,req.usuario.id,instante.toISOString(),crypto.createHash("sha256").update(provas).digest("hex")])).digest("hex");
+const result=await q("UPDATE sst_assinaturas SET assinado_em=?,evidencia=?,provas=? WHERE documento_id=? AND usuario_id=? AND assinado_em IS NULL",[instante,evidencia,provas,d.id,req.usuario.id]);
 if(!result.affectedRows)return res.sendStatus(409);res.json({ok:true,evidencia});
 }));
 const upload=multer({storage:multer.memoryStorage(),limits:{fileSize:25*1024*1024,files:1,fields:2,fieldSize:1024},fileFilter:(_r,f,cb)=>cb(null,/\.(pdf|docx?|xlsx?|png|jpe?g|webp|txt|csv)$/i.test(f.originalname))}).single("arquivo");
