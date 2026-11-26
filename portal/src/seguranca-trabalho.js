@@ -18,6 +18,7 @@ const cols=await q("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TAB
 if(!cols.length){try{await q("ALTER TABLE sst_assinaturas ADD COLUMN provas MEDIUMBLOB NULL");}catch(e){if(e.code!=="ER_DUP_FIELDNAME")throw e;}}
 })().catch(e=>{schema=null;throw e;});}
 router.use(exigir("painel"),wrap(async(req,res,next)=>{await init();res.set("Cache-Control","private, no-store");next();}));
+router.get("/minhas",wrap(async(req,res)=>{res.json(await q("SELECT d.*,a.assinado_em,u.nome autor_nome FROM sst_documentos d JOIN sst_assinaturas a ON a.documento_id=d.id LEFT JOIN usuarios u ON u.id=d.autor_id WHERE a.usuario_id=? ORDER BY a.assinado_em IS NOT NULL,d.id DESC",[req.usuario.id]));}));
 router.get("/",wrap(async(req,res)=>{
 const admin=manager(req.usuario);
 const documentos=await q(admin?"SELECT d.*, u.nome autor_nome, (SELECT COUNT(*) FROM sst_assinaturas a WHERE a.documento_id=d.id AND a.assinado_em IS NULL) pendentes FROM sst_documentos d LEFT JOIN usuarios u ON u.id=d.autor_id ORDER BY id DESC":"SELECT d.*,u.nome autor_nome,a.assinado_em FROM sst_documentos d LEFT JOIN usuarios u ON u.id=d.autor_id JOIN sst_assinaturas a ON a.documento_id=d.id WHERE a.usuario_id=? ORDER BY d.id DESC",admin?[]:[req.usuario.id]);
