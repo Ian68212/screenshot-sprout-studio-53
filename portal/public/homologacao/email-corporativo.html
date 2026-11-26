@@ -83,11 +83,11 @@ html,body{height:100%}body{overflow:hidden}.shell{height:100dvh;min-height:0}.la
 /* Keep the portal navigation dark and give incoming messages a light reading surface. */
 .reader{background:#f4f7fb;color:#182d42;color-scheme:light}
 .reader .empty{color:#49647b}
-.readerhead{background:#fff;border-bottom:1px solid #dbe5ee;padding:20px 24px}
-.readerhead h2{font-size:clamp(18px,2vw,24px);overflow-wrap:anywhere}
+.readerhead{position:static;background:#fff;border-bottom:1px solid #dbe5ee;padding:16px 20px}
+.readerhead h2{font-size:clamp(17px,1.5vw,22px);line-height:1.28;margin-bottom:8px;overflow-wrap:anywhere}
 .readerhead .meta{color:#49647b;line-height:1.55;overflow-wrap:anywhere}
-.readeractions{gap:8px}
-.readeractions .btn{background:#edf3f9;color:#173a58;border:1px solid #cbdbe9}
+.readeractions{gap:6px;margin-top:10px}
+.readeractions .btn{background:#edf3f9;color:#173a58;border:1px solid #cbdbe9;padding:6px 9px;min-height:32px;font-size:12px;border-radius:7px}
 .readeractions .btn:hover{background:#dae9f6}
 .reader .body{background:#fff;color:#182d42;padding:20px 24px;overflow-wrap:anywhere}
 .reader .body.html-message{padding:0;display:flex;flex:1 0 320px}
@@ -97,7 +97,7 @@ html,body{height:100%}body{overflow:hidden}.shell{height:100dvh;min-height:0}.la
 .reader .attachments .section{flex-basis:100%;margin:0}
 .reader .attachments .attachmentLink{display:inline-block;max-width:100%;overflow-wrap:anywhere;padding:6px 10px;border:1px solid #d5e2ee;border-radius:7px;background:#f7fafd;font-size:12px;text-decoration:none}
 .reader .attachments .attachmentLink:hover{background:#eaf2fa}
-.reader .attachments:not(:empty){padding-block:12px}
+.reader .attachments:not(:empty){padding-block:10px;border-bottom:1px solid #edf2f7}
 .reader .attachments .section,.reader .attachmentLink{color:#173a58}
 .mail.unread .subject{font-weight:800}
 .mail-read-status.is-unread::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:#ff7279;margin-right:5px;vertical-align:middle}
@@ -120,7 +120,7 @@ html,body{height:100%}body{overflow:hidden}.shell{height:100dvh;min-height:0}.la
 .portal-embedded .mail-read-status{bottom:8px;background:#edf4fa;color:#395d7d;border-color:#b5cadb}
 .portal-embedded .mail-read-status.is-unread{background:#dceafd;color:#184d78;border-color:#a5c3df}
 .portal-embedded #embeddedCompose{background:#223f59;border-color:#ad754f;color:#ffe4ce;font-weight:650}
-.portal-embedded .layout{grid-template-columns:174px clamp(290px,28%,410px) minmax(0,1fr)}
+.portal-embedded .layout{grid-template-columns:clamp(145px,13%,174px) clamp(255px,25%,365px) minmax(0,1fr)}
 .portal-embedded .folders{display:flex;flex-direction:column;gap:7px;background:#122d47;padding:13px 10px}
 .portal-embedded .folders .section,.portal-embedded .folder-heading{font-size:10px;letter-spacing:.1em;color:#bdcfe2}
 .portal-embedded .folder{border-radius:7px;margin:1px 0;padding:8px 9px;overflow-wrap:anywhere}

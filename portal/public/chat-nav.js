@@ -28,8 +28,13 @@ body.rp-no-dock #rp-attendance-dock{display:grid!important}
 #sidebarAttendance{flex:none;padding:0 0 8px}
 #sidebarAttendance #rp-attendance-dock{position:static;grid-template-columns:1fr;gap:4px;width:100%;padding:0 4px;border:0;background:none;box-shadow:none;backdrop-filter:none}
 #sidebarAttendance #rp-attendance-dock button{min-height:34px;justify-content:flex-start;padding:5px 9px;border:1px solid #35516c;border-radius:7px;background:#193650;color:#f5f9ff;font-size:12px;text-align:left}
-#sidebarAttendance #rp-attendance-dock button:hover{background:#254762}
-#sidebarAttendance #rp-attendance-dock .rp-dock-icon svg{width:17px;height:17px}
+#sidebarAttendance #rp-attendance-dock [data-open="whatsapp"]{--accent:#81ddb5;--border:#3e7667;--surface:#153c3b;--highlight:#214d48}
+#sidebarAttendance #rp-attendance-dock [data-open="chat"]{--accent:#ffc18c;--border:#865a42;--surface:#3b302d;--highlight:#4f3c31}
+#sidebarAttendance #rp-attendance-dock button{background:var(--surface);border-color:var(--border)}
+#sidebarAttendance #rp-attendance-dock button:is(:hover,:focus-visible,[aria-expanded="true"]){background:var(--highlight)}
+#sidebarAttendance #rp-attendance-dock button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+#sidebarAttendance #rp-attendance-dock .rp-dock-icon{color:var(--accent)}
+#sidebarAttendance #rp-attendance-dock .rp-dock-icon svg{width:17px;height:17px;stroke:currentColor}
 #sidebarAttendance #rp-attendance-dock .rp-dock-count{position:static;margin-left:auto}
 .side:has(#sidebarAttendance #rp-attendance-dock) #menu [data-tab="chat-interno"],
 .side:has(#sidebarAttendance #rp-attendance-dock) #menu [data-tab="atendimento"]{display:none}
