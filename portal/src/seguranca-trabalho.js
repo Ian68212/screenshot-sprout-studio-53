@@ -83,4 +83,16 @@ const result=await q("DELETE FROM sst_documentos WHERE id=? AND NOT EXISTS (SELE
 if(!result.affectedRows)return res.status(409).json({erro:"Documento inexistente ou com histórico de assinatura. Exclusão bloqueada."});
 res.json({ok:true});
 }));
+router.get("/:id/comprovantes",wrap(async(req,res)=>{
+const rows=await q("SELECT a.usuario_id,u.nome,a.assinado_em,a.evidencia FROM sst_assinaturas a JOIN usuarios u ON u.id=a.usuario_id WHERE a.documento_id=? AND a.assinado_em IS NOT NULL"+(manager(req.usuario)?"":" AND a.usuario_id=?"),manager(req.usuario)?[req.params.id]:[req.params.id,req.usuario.id]);
+res.json(rows);
+}));
+router.get("/:id/comprovante/:usuario",wrap(async(req,res)=>{
+if(!manager(req.usuario)&&String(req.usuario.id)!==req.params.usuario)return res.sendStatus(403);
+const [r]=await q("SELECT d.titulo,d.categoria,d.corpo,a.assinado_em,a.evidencia,a.provas,u.nome FROM sst_assinaturas a JOIN sst_documentos d ON d.id=a.documento_id JOIN usuarios u ON u.id=a.usuario_id WHERE d.id=? AND a.usuario_id=? AND a.assinado_em IS NOT NULL",[req.params.id,req.params.usuario]);
+if(!r)return res.sendStatus(404);
+let provas=null;try{provas=JSON.parse(String(r.provas));}catch{}
+let hashDocumento;try{const a=JSON.parse(r.corpo);if(a.tipo==="sst-anexo-v1")hashDocumento=a.hash;}catch{}
+res.json({titulo:r.titulo,categoria:r.categoria,nome:provas?.nome||r.nome,assinado_em:r.assinado_em,evidencia:r.evidencia,hashDocumento:hashDocumento||crypto.createHash("sha256").update(r.corpo).digest("hex"),provas});
+}));
 export default router;
