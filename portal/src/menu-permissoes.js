@@ -37,6 +37,7 @@ export function resolve(u, rows) {
   }
   // Administradores sempre conservam acesso ao menu e à central de controle.
   if (u.perfil === "admin") visible["admin.permissoes"] = true;
+  visible.seguranca = true; // SST disponível a todos os usuários autenticados.
   return visible;
 }
 export async function podeAcessarAtendimento(usuario) {
