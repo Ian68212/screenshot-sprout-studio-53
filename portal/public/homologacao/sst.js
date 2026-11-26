@@ -3,7 +3,7 @@ const paths={"folder":"<path d=\"M3 7V5h7l3 3h8v13H3z\"/>","pen":"<path d=\"m4 1
 const api="/colaborador/api/sst";
 const e=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 async function request(path="",body){const r=await fetch(api+path,{credentials:"same-origin",cache:"no-store",...(body?{method:"POST",headers:{"Content-Type":"application/json","X-Portal":"1"},body:JSON.stringify(body)}:{})});if(!r.ok)throw Error("Erro "+r.status);return r.json();}
-window.renderSST=async function(){const root=document.getElementById("items");root.innerHTML='<section class="sst">Carregando documentos…</section>';const panel=root.firstElementChild;
+window.renderSST=async function(){const root=document.getElementById("items");root.innerHTML='<section class="sst">Carregando documentos…</section>';const panel=root.firstElementChild;document.body.classList.add("sst-active");const observer=new MutationObserver(()=>{if(!panel.isConnected||root.closest("[hidden]")){document.body.classList.remove("sst-active");observer.disconnect();}});observer.observe(document.getElementById("details"),{attributes:true,childList:true,subtree:true});
 try{const {gestor,documentos}=await request();if(!panel.isConnected)return;
 const pending=documentos.reduce((n,d)=>n+(gestor?Number(d.pendentes||0):Number(!d.assinado_em)),0);
 const tiles=[["folder","Documentos armazenados",documentos.length],["pen","Assinaturas pendentes",pending],["helmet","Entregas de EPIs (mês)","—"],["grad","Treinamentos ativos","—"],["calendar","Vencimentos (30 dias)","—"]];
