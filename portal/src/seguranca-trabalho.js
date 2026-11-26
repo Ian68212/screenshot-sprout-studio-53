@@ -20,7 +20,7 @@ if(!cols.length){try{await q("ALTER TABLE sst_assinaturas ADD COLUMN provas MEDI
 router.use(exigir("painel"),wrap(async(req,res,next)=>{await init();res.set("Cache-Control","private, no-store");next();}));
 router.get("/",wrap(async(req,res)=>{
 const admin=manager(req.usuario);
-const documentos=await q(admin?"SELECT d.*, (SELECT COUNT(*) FROM sst_assinaturas a WHERE a.documento_id=d.id AND a.assinado_em IS NULL) pendentes FROM sst_documentos d ORDER BY id DESC":"SELECT d.*,a.assinado_em FROM sst_documentos d JOIN sst_assinaturas a ON a.documento_id=d.id WHERE a.usuario_id=? ORDER BY d.id DESC",admin?[]:[req.usuario.id]);
+const documentos=await q(admin?"SELECT d.*, u.nome autor_nome, (SELECT COUNT(*) FROM sst_assinaturas a WHERE a.documento_id=d.id AND a.assinado_em IS NULL) pendentes FROM sst_documentos d LEFT JOIN usuarios u ON u.id=d.autor_id ORDER BY id DESC":"SELECT d.*,u.nome autor_nome,a.assinado_em FROM sst_documentos d LEFT JOIN usuarios u ON u.id=d.autor_id JOIN sst_assinaturas a ON a.documento_id=d.id WHERE a.usuario_id=? ORDER BY d.id DESC",admin?[]:[req.usuario.id]);
 res.json({gestor:admin,documentos});
 }));
 router.post("/",wrap(async(req,res)=>{
@@ -71,7 +71,9 @@ router.get("/:id/arquivo",wrap(async(req,res)=>{
 const [d]=await q(manager(req.usuario)?"SELECT corpo FROM sst_documentos WHERE id=?":"SELECT d.corpo FROM sst_documentos d JOIN sst_assinaturas a ON a.documento_id=d.id WHERE d.id=? AND a.usuario_id=?",manager(req.usuario)?[req.params.id]:[req.params.id,req.usuario.id]);
 let a;try{a=JSON.parse(d?.corpo||"");}catch{}if(a?.tipo!=="sst-anexo-v1"||!/^[A-Za-z0-9_-]{10,}$/.test(a.id))return res.sendStatus(404);
 const bytes=await readDriveFile(a.id);if(crypto.createHash("sha256").update(bytes).digest("hex")!==a.hash)return res.sendStatus(409);
-res.attachment(a.name);res.type("application/octet-stream");res.send(bytes);
+const types={".pdf":"application/pdf",".png":"image/png",".jpg":"image/jpeg",".jpeg":"image/jpeg",".webp":"image/webp",".txt":"text/plain",".csv":"text/plain"};
+const mime=types[path.extname(a.name).toLowerCase()];
+if(req.query.visualizar==="1"&&mime){res.type(mime);res.set("Content-Disposition","inline");res.set("X-Content-Type-Options","nosniff");}else{res.attachment(a.name);res.type("application/octet-stream");}res.send(bytes);
 }));
 router.get("/colaboradores",wrap(async(req,res)=>{
 if(!manager(req.usuario))return res.sendStatus(403);
@@ -79,8 +81,8 @@ res.json(await q("SELECT nome,email FROM usuarios WHERE ativo=1 ORDER BY nome"))
 }));
 router.post("/:id/excluir",wrap(async(req,res)=>{
 if(!manager(req.usuario))return res.sendStatus(403);
-const result=await q("DELETE FROM sst_documentos WHERE id=? AND NOT EXISTS (SELECT 1 FROM sst_assinaturas WHERE documento_id=?)",[req.params.id,req.params.id]);
-if(!result.affectedRows)return res.status(409).json({erro:"Documento inexistente ou com histórico de assinatura. Exclusão bloqueada."});
+const result=await q("DELETE d,a FROM sst_documentos d LEFT JOIN sst_assinaturas a ON a.documento_id=d.id WHERE d.id=? AND NOT EXISTS (SELECT 1 FROM (SELECT documento_id,assinado_em FROM sst_assinaturas) x WHERE x.documento_id=? AND x.assinado_em IS NOT NULL)",[req.params.id,req.params.id]);
+if(!result.affectedRows)return res.status(409).json({erro:"Documento inexistente ou já assinado. Exclusão bloqueada."});
 res.json({ok:true});
 }));
 router.get("/:id/comprovantes",wrap(async(req,res)=>{
