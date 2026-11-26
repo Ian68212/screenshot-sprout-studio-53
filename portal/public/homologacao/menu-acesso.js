@@ -7,6 +7,9 @@ window.aplicarPermissoesMenu=async function(){
     const r=await fetch("/colaborador/api/menu/minhas",{credentials:"same-origin",cache:"no-store",headers:{"Accept":"application/json"}});
     if(!r.ok)throw Error("Permissões indisponíveis");
     const result=await r.json();
+    document.querySelectorAll("#portalAdminMenu [data-menu-permissao]").forEach(link=>{
+      link.hidden=!result.botoes?.[link.dataset.menuPermissao];
+    });
     buttons.forEach(b=>{b.hidden=b.dataset.tab!=="inicio"&&!result.botoes?.[b.dataset.tab]});
     const selected=document.querySelector("#menu button[data-tab].active");
     if(selected?.hidden)document.querySelector('#menu button[data-tab="inicio"]')?.click();
