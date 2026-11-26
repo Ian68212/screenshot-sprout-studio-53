@@ -5,7 +5,7 @@ import rateLimit from "express-rate-limit";
 import { validarSenhaHostinger } from "./hostinger-auth.js";
 import path from "node:path";
 import {uploadDriveFile,readDriveFile,deleteDriveFile} from "./drive-storage.js";
-import { q } from "./db.js";
+import { q, auditar } from "./db.js";
 import { exigir } from "./auth.js";
 const router=express.Router();
 const manager=u=>u.perfil==="admin"||String(u.email).toLowerCase()==="eduardo.lazaretti@rodrinoxpro.com.br";
@@ -82,9 +82,16 @@ res.json(await q("SELECT nome,email FROM usuarios WHERE ativo=1 ORDER BY nome"))
 }));
 router.post("/:id/excluir",wrap(async(req,res)=>{
 if(!manager(req.usuario))return res.sendStatus(403);
-const result=await q("DELETE d,a FROM sst_documentos d LEFT JOIN sst_assinaturas a ON a.documento_id=d.id WHERE d.id=? AND NOT EXISTS (SELECT 1 FROM (SELECT documento_id,assinado_em FROM sst_assinaturas) x WHERE x.documento_id=? AND x.assinado_em IS NOT NULL)",[req.params.id,req.params.id]);
-if(!result.affectedRows)return res.status(409).json({erro:"Documento inexistente ou já assinado. Exclusão bloqueada."});
-res.json({ok:true});
+const permanente=req.body?.permanente===true;
+if(permanente&&(req.usuario.perfil!=="admin"||req.body?.confirmacao!=="EXCLUIR"))return res.status(403).json({erro:"Exclusão permanente exige administrador e confirmação."});
+const [doc]=await q("SELECT id,titulo,corpo FROM sst_documentos WHERE id=?",[req.params.id]);
+if(!doc)return res.status(404).json({erro:"Documento inexistente."});
+const result=await q("DELETE d,a FROM sst_documentos d LEFT JOIN sst_assinaturas a ON a.documento_id=d.id WHERE d.id=?"+(permanente?"":" AND NOT EXISTS (SELECT 1 FROM (SELECT documento_id,assinado_em FROM sst_assinaturas) x WHERE x.documento_id=d.id AND x.assinado_em IS NOT NULL)"),[doc.id]);
+if(!result.affectedRows)return res.status(409).json({erro:"Documento já assinado. Solicite a exclusão permanente ao administrador."});
+await auditar(req.usuario.id,"sst_exclusao",JSON.stringify({documento:doc.id,titulo:doc.titulo,permanente}),req.ip);
+let anexo;try{anexo=JSON.parse(doc.corpo);}catch{}
+let arquivoRemovido=true;if(anexo?.tipo==="sst-anexo-v1"){try{await deleteDriveFile(anexo.id);}catch{arquivoRemovido=false;}}
+res.json({ok:true,arquivoRemovido});
 }));
 router.get("/:id/comprovantes",wrap(async(req,res)=>{
 const rows=await q("SELECT a.usuario_id,u.nome,a.assinado_em,a.evidencia FROM sst_assinaturas a JOIN usuarios u ON u.id=a.usuario_id WHERE a.documento_id=? AND a.assinado_em IS NOT NULL"+(manager(req.usuario)?"":" AND a.usuario_id=?"),manager(req.usuario)?[req.params.id]:[req.params.id,req.usuario.id]);
