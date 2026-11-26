@@ -94,7 +94,17 @@ document.addEventListener("keydown", event => {
 });
 window.addEventListener("hashchange", openPortalModule);
 openPortalModule();
-(async()=>{try{const me=await read("eu");if(window.aplicarPermissoesMenu)await window.aplicarPermissoesMenu();gePerfil=me.perfil;if(document.querySelector('nav button[data-tab="gestao-empresarial"].active'))openTab("gestao-empresarial");$("user").textContent=me.nome||"Colaborador";$("firstName").textContent=(me.nome||"Colaborador").split(" ")[0];$("adminLink").hidden=me.perfil!=="admin";$("siteLink").hidden=me.perfil!=="admin";const items=await read("ferramentas");data=Array.isArray(items)?items:[];for(const [id,cat] of [["recent","comunicados"],["featured","treinamentos"]]){const arr=data.filter(x=>x.categoria===cat).slice(0,3);$(id).innerHTML=arr.length?arr.map(x=>{const url=recursoUrl(x);const image=x.imagem_url&&(/^https:\/\//i.test(x.imagem_url)||/^\/colaborador\/api\/site\/midias\/\d+\/arquivo$/.test(x.imagem_url))?x.imagem_url:null;const thumb=image?'<img class="resource-thumb" src="'+esc(image)+'" alt="Imagem do curso '+esc(x.nome)+'" loading="lazy">':'';return '<div class="recentItem '+(id==="featured"?"training-item":"")+'">'+thumb+'<div class="resource-info"><strong>'+esc(x.nome)+'</strong>'+(url?' <a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">Abrir ↗</a>':' <span>Sem link cadastrado</span>')+'</div></div>';}).join(""):'<p class="empty">Nenhum item disponível ainda.</p>';}}catch(e){$("recent").textContent="Não foi possível consultar os recursos.";$("featured").textContent="Verifique sua sessão e tente novamente.";console.error(e);}})();
+function configureAdminMenu(user) {
+  if (user.perfil !== "admin") return;
+  const menu = $("portalAdminMenu");
+  const environment = location.pathname.includes("/homologacao/") ? "homologacao" : "oficial";
+  for (const link of menu.querySelectorAll("[data-admin-destino]")) {
+    link.href = "/colaborador/painel/" + environment + "/" + link.dataset.adminDestino;
+  }
+  menu.hidden = false;
+}
+
+(async()=>{try{const me=await read("eu");if(window.aplicarPermissoesMenu)await window.aplicarPermissoesMenu();configureAdminMenu(me);gePerfil=me.perfil;if(document.querySelector('nav button[data-tab="gestao-empresarial"].active'))openTab("gestao-empresarial");$("user").textContent=me.nome||"Colaborador";$("firstName").textContent=(me.nome||"Colaborador").split(" ")[0];$("adminLink").hidden=me.perfil!=="admin";$("siteLink").hidden=me.perfil!=="admin";const items=await read("ferramentas");data=Array.isArray(items)?items:[];for(const [id,cat] of [["recent","comunicados"],["featured","treinamentos"]]){const arr=data.filter(x=>x.categoria===cat).slice(0,3);$(id).innerHTML=arr.length?arr.map(x=>{const url=recursoUrl(x);const image=x.imagem_url&&(/^https:\/\//i.test(x.imagem_url)||/^\/colaborador\/api\/site\/midias\/\d+\/arquivo$/.test(x.imagem_url))?x.imagem_url:null;const thumb=image?'<img class="resource-thumb" src="'+esc(image)+'" alt="Imagem do curso '+esc(x.nome)+'" loading="lazy">':'';return '<div class="recentItem '+(id==="featured"?"training-item":"")+'">'+thumb+'<div class="resource-info"><strong>'+esc(x.nome)+'</strong>'+(url?' <a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">Abrir ↗</a>':' <span>Sem link cadastrado</span>')+'</div></div>';}).join(""):'<p class="empty">Nenhum item disponível ainda.</p>';}}catch(e){$("recent").textContent="Não foi possível consultar os recursos.";$("featured").textContent="Verifique sua sessão e tente novamente.";console.error(e);}})();
 
 /* Ícones vetoriais locais: sem dependência de biblioteca externa. */
 const pictos={
