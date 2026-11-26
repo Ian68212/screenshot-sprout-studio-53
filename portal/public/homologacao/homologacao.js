@@ -50,7 +50,7 @@ function closePortalModule() {
   portalModule.hidden = true;
   work.classList.remove("module-open");
   moduleFrame.removeAttribute("src");
-  document.querySelector("#menu a[aria-current]")?.removeAttribute("aria-current");
+  document.querySelector(".portal-sidebar a[aria-current]")?.removeAttribute("aria-current");
   if (Object.hasOwn(moduleRoutes, location.hash.slice(1))) {
     history.pushState(null, "", location.pathname + location.search);
   }
@@ -69,13 +69,13 @@ function openPortalModule() {
   moduleFrame.title = route.title;
   if (moduleFrame.getAttribute("src") !== route.url) moduleFrame.src = route.url;
   for (const button of document.querySelectorAll("#menu button")) button.classList.remove("active");
-  for (const link of document.querySelectorAll("#menu a[data-module]")) {
+  for (const link of document.querySelectorAll(".portal-sidebar a[data-module]")) {
     if (link.dataset.module === key) link.setAttribute("aria-current", "page");
     else link.removeAttribute("aria-current");
   }
 }
 
-document.querySelector("#menu").addEventListener("click", event => {
+sidebar.addEventListener("click", event => {
   if (event.target.closest("a[data-module]")) setPortalMenu(false);
 });
 document.addEventListener("click", e => {
