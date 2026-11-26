@@ -270,12 +270,20 @@ body{font-family:Inter,"Segoe UI",Arial,Helvetica,sans-serif;-webkit-font-smooth
 .sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
 
 /* The same portal navigation remains in view while a module is open. */
-.shell > .side{width:230px;height:100dvh;display:flex;flex-direction:column;overflow:visible;padding:10px 10px 8px;max-height:100dvh}
+.shell > .side{width:232px;background:linear-gradient(180deg,#102a43 0%,#091f34 45%,#081b2e);border-right:1px solid #27435d;height:100dvh;display:flex;flex-direction:column;overflow:visible;padding:10px 10px 8px;max-height:100dvh}
 .side > .brand{flex:none;min-height:62px;padding:3px 8px}
 .side > .brand .brand-logo{width:168px;height:52px}
-#sidebarProfile{flex:none;position:relative;z-index:3;margin:6px 2px 8px}
+#sidebarProfile{flex:none;position:relative;z-index:3;margin:8px 2px 12px}
 #sidebarProfile #rp-global-profile.rp-in-sidebar{position:relative;inset:auto;z-index:auto;pointer-events:auto}
-#sidebarProfile #rp-global-profile .rp-trigger{width:100%;min-height:44px;box-shadow:none;text-align:left}
+#sidebarProfile #rp-global-profile .rp-trigger{
+ width:100%;min-height:58px;padding:9px;gap:8px;box-shadow:none;text-align:left;
+ border:1px solid #35516c;border-radius:10px;background:#193650;color:#f5f9ff;
+}
+#sidebarProfile #rp-global-profile .rp-trigger:hover,
+#sidebarProfile #rp-global-profile .rp-trigger[aria-expanded="true"]{background:#254762;border-color:#6484a0}
+#sidebarProfile #rp-global-profile.rp-has-alert .rp-trigger{border-color:#ff9a4c}
+#sidebarProfile #rp-global-profile .rp-email-bell{order:2;border:0;padding:0;font-size:12px;color:#d6e8fa}
+#sidebarProfile #rp-global-profile .rp-trigger > span:last-child{order:3;color:#b8cfe2}
 #sidebarProfile #rp-global-profile .rp-avatar{width:30px;height:30px}
 #sidebarProfile #rp-global-profile .rp-sst-identity{display:flex;flex:1;min-width:0;flex-direction:column;line-height:1.18;gap:3px;text-align:left}
 #sidebarProfile #rp-global-profile .rp-sst-identity strong{font-size:12px;overflow-wrap:anywhere}
@@ -284,7 +292,10 @@ body{font-family:Inter,"Segoe UI",Arial,Helvetica,sans-serif;-webkit-font-smooth
 #sidebarProfile #rp-global-profile .rp-menu{right:auto;left:0;min-width:0;width:max(100%,205px)}
 .side #menu{flex:1;min-height:0;overflow:auto;padding:4px 0;scrollbar-width:thin}
 .side #menu :is(button,a){margin:0 0 2px;min-height:32px;padding:6px 8px;width:100%;border-radius:7px;font-size:12.5px;line-height:1.3;text-align:left}
-.side #menu a{display:block;color:#edf5fc}
+.side #menu a{display:block;color:#e1ebf6}
+.side #menu :is(button,a):hover{background:#203c55;color:white}
+.side #menu :is(button,a):focus-visible{outline:2px solid #8bc6ff;outline-offset:-2px}
+.side .adminlinks{border-top:1px solid #ffffff1a}
 .side #menu :is(.active,[aria-current="page"]){background:#244866;box-shadow:inset 3px 0 #f58a32;color:#fff}
 .side .adminlinks{flex:none;margin:0;padding:7px 4px 0}
 .work.module-open{height:100dvh;display:flex;flex-direction:column;overflow:hidden;padding-bottom:0}
