@@ -5,7 +5,7 @@ import rateLimit from "express-rate-limit";
 import { validarSenhaHostinger } from "./hostinger-auth.js";
 import path from "node:path";
 import {uploadDriveFile,readDriveFile,deleteDriveFile} from "./drive-storage.js";
-import { q, auditar } from "./db.js";
+import { q, auditar, pool } from "./db.js";
 import { exigir } from "./auth.js";
 const router=express.Router();
 const manager=u=>u.perfil==="admin"||String(u.email).toLowerCase()==="eduardo.lazaretti@rodrinoxpro.com.br";
@@ -14,10 +14,22 @@ let schema;
 function init(){return schema??=(async()=>{
 await q("CREATE TABLE IF NOT EXISTS sst_documentos (id BIGINT AUTO_INCREMENT PRIMARY KEY, titulo VARCHAR(200) NOT NULL, categoria VARCHAR(80) NOT NULL, corpo TEXT NOT NULL, autor_id BIGINT NOT NULL, criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
 await q("CREATE TABLE IF NOT EXISTS sst_assinaturas (documento_id BIGINT NOT NULL, usuario_id BIGINT NOT NULL, assinado_em DATETIME NULL, evidencia CHAR(64) NULL, PRIMARY KEY(documento_id,usuario_id))");
+await q("CREATE TABLE IF NOT EXISTS sst_epi_catalogo (id BIGINT AUTO_INCREMENT PRIMARY KEY, nome VARCHAR(160) NOT NULL, ca VARCHAR(40) NOT NULL DEFAULT '', UNIQUE KEY produto(nome,ca))");
 const cols=await q("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='sst_assinaturas' AND COLUMN_NAME='provas'");
 if(!cols.length){try{await q("ALTER TABLE sst_assinaturas ADD COLUMN provas MEDIUMBLOB NULL");}catch(e){if(e.code!=="ER_DUP_FIELDNAME")throw e;}}
 })().catch(e=>{schema=null;throw e;});}
 router.use(exigir("painel"),wrap(async(req,res,next)=>{await init();res.set("Cache-Control","private, no-store");next();}));
+router.get("/epi/catalogo",wrap(async(req,res)=>{if(!manager(req.usuario))return res.sendStatus(403);res.json(await q("SELECT id,nome,ca FROM sst_epi_catalogo ORDER BY nome"));}));
+router.get("/epi/historico",wrap(async(req,res)=>{if(!manager(req.usuario))return res.sendStatus(403);res.json(await q("SELECT d.id,d.titulo,d.corpo,d.criado_em,u.nome colaborador,a.assinado_em FROM sst_documentos d JOIN sst_assinaturas a ON a.documento_id=d.id JOIN usuarios u ON u.id=a.usuario_id WHERE d.categoria='Entrega de EPI' ORDER BY d.id DESC"));}));
+router.post("/epi/entregar",wrap(async(req,res)=>{
+if(!manager(req.usuario))return res.sendStatus(403);
+const {email,itens,observacoes}=req.body||{};
+if(!Array.isArray(itens)||!itens.length||itens.length>50||typeof observacoes!=="string"||observacoes.length>2000)return res.sendStatus(400);
+const [u]=await q("SELECT id,nome,email FROM usuarios WHERE email=? AND ativo=1",[String(email||"").trim().toLowerCase()]);if(!u)return res.sendStatus(404);
+const produtos=[];for(const item of itens){const nome=String(item.nome||"").trim(),ca=String(item.ca||"").trim(),quantidade=Number(item.quantidade),motivo=String(item.motivo||"");if(!nome||nome.length>160||ca.length>40||!Number.isInteger(quantidade)||quantidade<1||quantidade>10000||!["Primeira entrega","Reposição","Troca"].includes(motivo))return res.status(400).json({erro:"Material inválido"});produtos.push({nome,ca,quantidade,motivo,cadastrar:item.cadastrar===true});}
+const agora=new Date();const corpo=["TERMO DE RECEBIMENTO DE EPI","Colaborador: "+u.nome+" ("+u.email+")","Responsável: "+req.usuario.nome,"Data e hora: "+agora.toLocaleString("pt-BR",{timeZone:"America/Sao_Paulo"})+" (Brasília)","Materiais entregues:",...produtos.map(p=>p.quantidade+" x "+p.nome+(p.ca?" | CA "+p.ca:"")+" | "+p.motivo),"Observações: "+observacoes,"Confirmo o recebimento dos materiais relacionados acima."].join("\n");
+const conn=await pool.getConnection();let id;try{await conn.beginTransaction();for(const p of produtos)if(p.cadastrar)await conn.execute("INSERT IGNORE INTO sst_epi_catalogo(nome,ca) VALUES(?,?)",[p.nome,p.ca]);const [r]=await conn.execute("INSERT INTO sst_documentos(titulo,categoria,corpo,autor_id) VALUES(?,?,?,?)",[("Entrega de EPI - "+u.nome).slice(0,200),"Entrega de EPI",corpo,req.usuario.id]);id=r.insertId;await conn.execute("INSERT INTO sst_assinaturas(documento_id,usuario_id) VALUES(?,?)",[id,u.id]);await conn.commit();}catch(err){await conn.rollback();throw err;}finally{conn.release();}res.status(201).json({id,titulo:"Entrega de EPI - "+u.nome,corpo,email:u.email});
+}));
 router.get("/minhas",wrap(async(req,res)=>{res.json(await q("SELECT d.*,a.assinado_em,u.nome autor_nome FROM sst_documentos d JOIN sst_assinaturas a ON a.documento_id=d.id LEFT JOIN usuarios u ON u.id=d.autor_id WHERE a.usuario_id=? ORDER BY a.assinado_em IS NOT NULL,d.id DESC",[req.usuario.id]));}));
 router.get("/",wrap(async(req,res)=>{
 const admin=manager(req.usuario);
