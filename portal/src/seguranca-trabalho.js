@@ -22,7 +22,7 @@ router.get("/minhas",wrap(async(req,res)=>{res.json(await q("SELECT d.*,a.assina
 router.get("/",wrap(async(req,res)=>{
 const admin=manager(req.usuario);
 const documentos=await q(admin?"SELECT d.*, u.nome autor_nome, (SELECT COUNT(*) FROM sst_assinaturas a WHERE a.documento_id=d.id AND a.assinado_em IS NULL) pendentes FROM sst_documentos d LEFT JOIN usuarios u ON u.id=d.autor_id ORDER BY id DESC":"SELECT d.*,u.nome autor_nome,a.assinado_em FROM sst_documentos d LEFT JOIN usuarios u ON u.id=d.autor_id JOIN sst_assinaturas a ON a.documento_id=d.id WHERE a.usuario_id=? ORDER BY d.id DESC",admin?[]:[req.usuario.id]);
-res.json({gestor:admin,documentos});
+res.json({gestor:admin,administrador:req.usuario.perfil==="admin",documentos});
 }));
 router.post("/",wrap(async(req,res)=>{
 if(!manager(req.usuario))return res.sendStatus(403);
