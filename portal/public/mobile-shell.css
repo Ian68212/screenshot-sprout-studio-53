@@ -21,15 +21,15 @@
  #rp-mobile-notifications button{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 10px;border:0;border-radius:9px;background:transparent;color:#edf6ff;text-align:left;font:600 13px Arial}
  #rp-mobile-notifications button:active,#rp-mobile-notifications button:hover{background:#244765}
  #rp-mobile-notifications .rp-notice-count{min-width:22px;padding:3px 7px;border-radius:20px;background:#f18d37;color:#10283d;text-align:center;font-weight:800}
- body{padding-bottom:82px!important}
+ body:not(:has(#sidebarAttendance)){padding-bottom:82px!important}
  body.rp-no-dock{padding-bottom:0!important}
- #rp-attendance-dock{left:0!important;right:0!important;bottom:0!important;transform:none!important;width:100%!important;max-width:none!important;display:grid!important;grid-template-columns:1fr 1fr!important;gap:10px!important;padding:9px 7px calc(9px + env(safe-area-inset-bottom))!important;border:0!important;border-top:1px solid #1c4561!important;border-radius:0!important;background:rgba(2,20,36,.97)!important;box-shadow:0 -7px 24px #0005!important;backdrop-filter:blur(14px)}
- #rp-attendance-dock button{min-height:58px!important;border-radius:42px!important;font-size:14px!important;font-weight:800!important;gap:9px!important;padding:9px 7px!important}
- #rp-attendance-dock button:first-child{background:transparent!important;border:2px solid #00c96a!important;color:#fff!important}
- #rp-attendance-dock button:first-child .rp-dock-icon{color:#fff!important;filter:drop-shadow(0 0 2px #00d66f)}
- #rp-attendance-dock button:last-child{background:#ff7900!important;border:2px solid #ff7900!important;color:#fff!important}#rp-attendance-dock button:last-child .rp-dock-icon{color:#fff!important}
- #rp-attendance-dock .rp-dock-icon{font-size:20px!important;display:grid;place-items:center;color:#fff!important}
- #rp-attendance-dock .rp-dock-icon svg{width:30px;height:30px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+ body > #rp-attendance-dock{left:0!important;right:0!important;bottom:0!important;transform:none!important;width:100%!important;max-width:none!important;display:grid!important;grid-template-columns:1fr 1fr!important;gap:10px!important;padding:9px 7px calc(9px + env(safe-area-inset-bottom))!important;border:0!important;border-top:1px solid #1c4561!important;border-radius:0!important;background:rgba(2,20,36,.97)!important;box-shadow:0 -7px 24px #0005!important;backdrop-filter:blur(14px)}
+ body > #rp-attendance-dock button{min-height:58px!important;border-radius:42px!important;font-size:14px!important;font-weight:800!important;gap:9px!important;padding:9px 7px!important}
+ body > #rp-attendance-dock button:first-child{background:transparent!important;border:2px solid #00c96a!important;color:#fff!important}
+ body > #rp-attendance-dock button:first-child .rp-dock-icon{color:#fff!important;filter:drop-shadow(0 0 2px #00d66f)}
+ body > #rp-attendance-dock button:last-child{background:#ff7900!important;border:2px solid #ff7900!important;color:#fff!important}body > #rp-attendance-dock button:last-child .rp-dock-icon{color:#fff!important}
+ body > #rp-attendance-dock .rp-dock-icon{font-size:20px!important;display:grid;place-items:center;color:#fff!important}
+ body > #rp-attendance-dock .rp-dock-icon svg{width:30px;height:30px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
  #rp-chat-fab,#ca-global-alert{display:none!important}
  .side{z-index:8000!important}
 }
