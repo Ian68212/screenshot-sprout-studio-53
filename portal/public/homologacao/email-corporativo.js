@@ -19,6 +19,7 @@ function syncEmbeddedFolders() {
   picker.value = folder;
 }
 if (document.body.classList.contains("portal-embedded")) {
+  document.querySelector(".toolbar").append(el("sideEmail").closest(".account"));
   el("embeddedCompose").hidden = false;
   el("embeddedCompose").onclick = () => el("compose").click();
   el("embeddedFolder").hidden = false;
