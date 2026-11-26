@@ -19,3 +19,10 @@
   #adminWorkspace .mp-wrap{max-height:none!important;overflow:visible!important}
   #adminWorkspace .mp-list{max-height:55dvh!important;min-height:220px!important;overflow-y:auto!important}
 }
+
+/* Keep profile and communication shortcuts above the independently scrolling menu. */
+.shell > .side:has(#sidebarProfile){overflow:hidden!important}
+.side:has(#sidebarProfile) > .brand{flex:none;min-height:62px;padding:4px 12px}
+.side:has(#sidebarProfile) > .brand .brand-logo{width:168px;height:52px}
+.side:has(#sidebarProfile) > #menu{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain}
+.side:has(#sidebarProfile) > #sidebarProfile{margin-inline:12px}
