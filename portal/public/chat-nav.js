@@ -1,5 +1,5 @@
 "use strict";
-(()=>{if(window.__rpChatNavReady)return;window.__rpChatNavReady=true;
+(()=>{if(document.body.classList.contains("portal-embedded"))return;if(window.__rpChatNavReady)return;window.__rpChatNavReady=true;
 const chatUrl="/colaborador/chat-interno.html";
 const style=document.createElement("style");style.textContent=`
 #rp-attendance-dock{position:fixed;right:18px;left:auto;bottom:16px;transform:none;z-index:99980;width:min(350px,calc(100vw - 36px));display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:7px;background:rgba(5,24,43,.96);border:1px solid #294965;border-radius:15px;box-shadow:0 5px 22px #0005;backdrop-filter:blur(14px)}
