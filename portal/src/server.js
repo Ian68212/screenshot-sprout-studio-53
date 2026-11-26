@@ -1,3 +1,4 @@
+import sstRouter from "./seguranca-trabalho.js";
 import propostasComerciaisRouter from "./propostas-comerciais.js";
 import { tasksRouter } from "./tasks-official.js";
 import { taskAttachmentsRouter } from "./task-attachments.js";
@@ -244,6 +245,7 @@ r.use("/api/chat-interno", chatInternoRouter);
 r.use("/api/propostas-comerciais", propostasComerciaisRouter);
 r.use("/api/push", pushNotificacoesRouter);
 r.use("/api/gestao-arquivos", gestaoArquivosRouter);
+r.use("/api/sst", sstRouter);
 
 // Exigir permissão real no servidor, inclusive em chamadas diretas à API.
 r.use("/api/atendimento", exigir("painel"), exigirAtendimento);
