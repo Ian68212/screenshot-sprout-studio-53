@@ -55,4 +55,14 @@ let a;try{a=JSON.parse(d?.corpo||"");}catch{}if(a?.tipo!=="sst-anexo-v1"||!/^[A-
 const bytes=await readDriveFile(a.id);if(crypto.createHash("sha256").update(bytes).digest("hex")!==a.hash)return res.sendStatus(409);
 res.attachment(a.name);res.type("application/octet-stream");res.send(bytes);
 }));
+router.get("/colaboradores",wrap(async(req,res)=>{
+if(!manager(req.usuario))return res.sendStatus(403);
+res.json(await q("SELECT nome,email FROM usuarios WHERE ativo=1 ORDER BY nome"));
+}));
+router.post("/:id/excluir",wrap(async(req,res)=>{
+if(!manager(req.usuario))return res.sendStatus(403);
+const result=await q("DELETE FROM sst_documentos WHERE id=? AND NOT EXISTS (SELECT 1 FROM sst_assinaturas WHERE documento_id=?)",[req.params.id,req.params.id]);
+if(!result.affectedRows)return res.status(409).json({erro:"Documento inexistente ou com histórico de assinatura. Exclusão bloqueada."});
+res.json({ok:true});
+}));
 export default router;
