@@ -26,3 +26,28 @@
 .ge-restricted p{color:#b5c9dc;line-height:1.6}
 @media(max-width:1150px){.ge-layout{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:740px){.ge-layout,.ge-section{grid-template-columns:1fr}.ge-heading h3{font-size:23px}.ge-tile{min-height:unset}}
+
+#items.ge-area{max-width:none;width:100%;min-width:0}
+#ge-live{width:100%;min-width:0}
+#ge-live .ge-heading{margin-bottom:16px}
+#ge-live .ge-layout{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;border-bottom:1px solid #34516a;padding-bottom:10px}
+#ge-live .ge-tile{min-height:0;padding:11px 15px;border-radius:7px;color:#eaf2fa;cursor:pointer;text-align:left;font:inherit;background:#17334c}
+#ge-live .ge-tile h4{margin:0;font-size:13px;color:inherit}
+#ge-live .ge-tile p{display:none}
+#ge-live .ge-tile:hover,#ge-live .ge-tile[aria-pressed="true"]{background:#244862;border-color:#ff912f;color:#fff}
+#ge-live .ge-panel{padding:18px;border-radius:10px;min-width:0}
+#ge-live .ge-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0}
+#ge-live input,#ge-live .ge-toolbar button{font:inherit;font-size:13px;border:1px solid #42607b;border-radius:7px;padding:10px 12px;background:#0c2238;color:#eaf2fa}
+#ge-live input{flex:1;min-width:180px}
+#ge-live .ge-toolbar button{cursor:pointer;background:#23435e}
+#ge-live .ge-toolbar button:hover{border-color:#ff912f}
+#ge-live #ge-results{max-height:55vh;overflow:auto;border:1px solid #34516a;border-radius:8px}
+#ge-live .ge-data-table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px;text-align:left}
+#ge-live .ge-data-table th{position:sticky;top:0;background:#203f59;color:#dceafa;font-weight:600;z-index:1;white-space:nowrap}
+#ge-live .ge-data-table td,#ge-live .ge-data-table th{padding:12px 15px;border-bottom:1px solid #29465e;text-align:left}
+#ge-live .ge-data-table tbody tr:nth-child(even){background:#15324c}
+#ge-live .ge-data-table tbody tr:hover{background:#21445f}
+#ge-live .ge-money{text-align:right!important;white-space:nowrap;font-variant-numeric:tabular-nums}
+#ge-live .ge-empty{padding:24px;color:#a7bfd4;text-align:center}
+#ge-live #ge-message{color:#a7bfd4;font-size:13px}
+@media(max-width:740px){#ge-live .ge-tile{flex:1 1 42%}#ge-live .ge-panel{padding:10px}#ge-live .ge-data-table td,#ge-live .ge-data-table th{padding:10px}}
