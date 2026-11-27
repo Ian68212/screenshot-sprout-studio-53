@@ -11,3 +11,11 @@ export function autorDigiSac(identidade, autorLegado) {
   }
   return identidade.corporativa ? identidade.id : autorLegado;
 }
+
+export function assinarMensagemDigiSac(texto, usuario, identidade, habilitada = process.env.DIGISAC_PORTAL_SIGNATURE === "true") {
+  const mensagem = texto.trim();
+  if (!habilitada || !identidade.corporativa) return mensagem;
+
+  const nome = String(usuario?.nome ?? "").trim().split(/\s+/, 1)[0];
+  return nome ? (mensagem ? nome + ":\n" + mensagem : nome + ":") : mensagem;
+}

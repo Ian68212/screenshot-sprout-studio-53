@@ -9,7 +9,7 @@ import pushNotificacoesRouter from "./push-notificacoes.js";
 import gestaoArquivosRouter from "./gestao-arquivos.js";
 import { accessProfilesRouter } from "./access-profiles.js";
 import atendimentoRodrinoxRouter, { atribuirAtendimento } from "./atendimento-rodrinox.js";
-import { autorDigiSac, identidadeDigiSac } from "./digisac-identidade.js";
+import { assinarMensagemDigiSac, autorDigiSac, identidadeDigiSac } from "./digisac-identidade.js";
 import whatsappMetaRouter from "./whatsapp-meta.js";
 import "dotenv/config";
 import path from "node:path";
@@ -456,7 +456,7 @@ r.post("/api/atendimento/enviar", exigir("painel"), wrap(async (req,res)=>{
   if(url.protocol!=="https:"||url.hostname!=="rodrinoxpro.digisac.app"||!url.pathname.startsWith("/api/v1/"))return res.status(503).json({erro:"Destino DigiSac inválido."});
   const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),12000);
   try{
-    const upstream=await fetch(url,{method:"POST",headers:{Authorization:"Bearer "+token,Accept:"application/json","Content-Type":"application/json"},body:JSON.stringify({text:message.trim(),type:"chat",contactId,userId,origin:"user"}),signal:controller.signal,redirect:"error"});
+    const upstream=await fetch(url,{method:"POST",headers:{Authorization:"Bearer "+token,Accept:"application/json","Content-Type":"application/json"},body:JSON.stringify({text:assinarMensagemDigiSac(message,req.usuario,req.identidadeDigiSac),type:"chat",contactId,userId,origin:"user"}),signal:controller.signal,redirect:"error"});
     if(!upstream.ok)return res.status(502).json({erro:"DigiSac não confirmou o envio.",codigo:upstream.status});
     const raw=await upstream.text();
     let result={};try{result=JSON.parse(raw)}catch{}
@@ -504,7 +504,7 @@ r.post("/api/atendimento/enviar-anexo",exigir("painel"),(req,res,next)=>digiMedi
   if(signedUrl.protocol!=="https:"||!signedUrl.hostname.endsWith(".objectstorage.sa-vinhedo-1.oraclecloud.com"))return res.status(502).json({erro:"Destino do armazenamento não permitido.",etapa:"upload"});
   const uploaded=await fetch(signedUrl,{method:"PUT",headers:{"Content-Type":mimetype},body:req.file.buffer,signal:controller.signal,redirect:"error"});
   if(!uploaded.ok)return res.status(502).json({erro:"Armazenamento recusou o arquivo. Nenhuma mensagem foi enviada.",etapa:"upload",codigo:uploaded.status});
-  const payload={type:"chat",contactId,fileId,isComment:false,itemIndex:0,sendAsDocument,text:caption.trim(),userId,origin:"user"};
+  const payload={type:"chat",contactId,fileId,isComment:false,itemIndex:0,sendAsDocument,text:assinarMensagemDigiSac(caption,req.usuario,req.identidadeDigiSac),userId,origin:"user"};
   const sent=await fetch(messageUrl,{method:"POST",headers:apiHeaders,body:JSON.stringify(payload),signal:controller.signal,redirect:"error"});
   if(!sent.ok)return await fail(sent,"mensagem");
   const result=await sent.json().catch(()=>({}));
