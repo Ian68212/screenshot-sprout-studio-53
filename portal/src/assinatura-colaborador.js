@@ -39,12 +39,12 @@ export function modeloAssinatura(dados) {
   };
   const site = "www.rodrinoxpro.com.br";
   const contatos = [email, emailExtra, site, telefone, whatsapp].filter(Boolean);
-  const linha = value => value ? `<div style="margin-bottom:3px">${escapar(value)}</div>` : "";
-  const html = `<table role="presentation" cellpadding="0" cellspacing="0" bgcolor="#081429" style="width:100%;max-width:680px;margin-top:16px;color:#fff;background:#081429;border-top:2px solid #248ce3;border-bottom:3px solid #f26a1b;font:13px Arial,sans-serif;table-layout:fixed">
+  const linha = value => value ? `<div style="margin-top:4px">${escapar(value)}</div>` : "";
+  const html = `<table role="presentation" cellpadding="0" cellspacing="0" bgcolor="#09162a" style="width:100%;max-width:760px;margin-top:12px;color:#fff;background:#09162a;background-image:linear-gradient(120deg,#112747,#09162a 55%,#101f36);border-top:2px solid #3495ec;border-bottom:3px solid #f26a1b;font:13px/1.45 Arial,sans-serif;table-layout:fixed">
   <tr>
-    <td style="width:25%;padding:12px;border-right:2px solid #248ce3"><img src="https://rodrinoxpro.com.br/colaborador/assets/logo-horizontal-oficial-colorida.png" alt="Rodrinoxpro" width="135" style="display:block;width:100%;max-width:135px;height:auto"></td>
-    <td style="width:36%;padding:12px;border-right:2px solid #f26a1b;overflow-wrap:anywhere;word-break:break-word"><strong style="font-size:18px;color:#fff">${escapar(nome)}</strong><div style="padding-top:5px;color:#dbe9fa">${linha(cargo)}${linha(setor)}</div></td>
-    <td style="padding:12px;color:#dbe9fa;overflow-wrap:anywhere;word-break:break-word">${contatos.map(linha).join("")}</td>
+    <td valign="middle" align="center" style="width:28%;padding:16px 10px;border-right:1px solid #479ce9"><img src="https://rodrinoxpro.com.br/colaborador/assets/logo-horizontal-oficial-colorida.png" alt="Rodrinoxpro" width="168" style="display:block;width:100%;max-width:168px;height:auto;margin:0 auto"></td>
+    <td valign="middle" style="width:30%;padding:16px 12px;border-right:1px solid #ed833e;overflow-wrap:anywhere;word-wrap:break-word"><strong style="display:block;font-size:19px;line-height:1.18;color:#fff">${escapar(nome)}</strong><div style="margin-top:6px;color:#dbe9fa">${cargo ? `<strong style="color:#fff">${escapar(cargo)}</strong>` : ""}${linha(setor)}</div></td>
+    <td valign="middle" style="width:42%;padding:16px 12px;color:#dbe9fa;overflow-wrap:anywhere;word-wrap:break-word">${contatos.map(linha).join("")}</td>
   </tr></table>`;
   return { html, texto: [nome, cargo, setor, ...contatos].filter(Boolean).join("\n") };
 }
