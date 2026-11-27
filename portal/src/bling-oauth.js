@@ -69,7 +69,7 @@ blingRouter.get("/consulta/:resource",admin,wrap(async(req,res)=>{
  if(!Object.hasOwn(resources,req.params.resource))return res.sendStatus(404);
  const page=Number(req.query.pagina??1),limit=Number(req.query.limite??20);
  if(!Number.isSafeInteger(page)||page<1||!Number.isSafeInteger(limit)||limit<1||limit>100)return res.sendStatus(400);
- const url=new URL("https://www.bling.com.br/Api/v3/"+resources[req.params.resource]);
+ const url=new URL("https://api.bling.com.br/Api/v3/"+resources[req.params.resource]);
  if(req.params.resource==="estoques"){
  const ids=String(req.query.ids??"").split(",");
  if(ids.length>50||ids.some(id=>!/^\d{1,18}$/.test(id)))return res.status(400).json({erro:"Informe ids de produtos separados por vírgula."});
@@ -77,8 +77,8 @@ blingRouter.get("/consulta/:resource",admin,wrap(async(req,res)=>{
  }else{url.searchParams.set("pagina",String(page));url.searchParams.set("limite",String(limit))}
  let token;
  try{token=await accessToken()}catch{return res.status(503).json({erro:"Não foi possível obter acesso ao Bling. Verifique a autorização."})}
- const response=await fetch(url,{headers:{Authorization:"Bearer "+token,Accept:"application/json"},signal:AbortSignal.timeout(15000)});
- if(!response.ok)return res.status(response.status===429?429:502).json({erro:"Consulta Bling não concluída.",statusBling:response.status});
+ const response=await fetch(url,{headers:{Authorization:"Bearer "+token,Accept:"application/json"},redirect:"error",signal:AbortSignal.timeout(15000)});
+ if(!response.ok){const body=await response.json().catch(()=>null);const type=body?.error?.type;return res.status(response.status===429?429:502).json({erro:"Consulta Bling não concluída.",statusBling:response.status,tipoBling:typeof type==="string"&&/^[a-zA-Z_]{1,80}$/.test(type)?type:null});}
  const data=await response.json();
  res.json({data:data.data??[],pagina:page,limite:limit});
 }));
