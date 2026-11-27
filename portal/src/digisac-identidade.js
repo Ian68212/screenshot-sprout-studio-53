@@ -28,6 +28,11 @@ export function classificarChamadoCorporativo(chamado, atribuicao, usuarioId) {
   // O MySQL registra a atribuição com precisão de segundos.
   const atribuicaoAtual = atribuicao?.usuario_id &&
     Number.isFinite(criadoEm) && atribuidoEm >= Math.floor(criadoEm / 1000) * 1000;
-  if (!atribuicaoAtual) return "fila";
+  if (!atribuicaoAtual) {
+    const responsavelDigiSac = chamado.userId || chamado.assignedUserId || chamado.attendantId ||
+      chamado.operatorId || chamado.agentId || chamado.responsibleId || chamado.assignedToId ||
+      chamado.user?.id || chamado.assignedUser?.id || chamado.currentTicketTransfer?.userId;
+    return responsavelDigiSac ? "atribuido" : "fila";
+  }
   return String(atribuicao.usuario_id) === String(usuarioId) ? "meus" : "atribuido";
 }

@@ -34,11 +34,20 @@ test("assina textos e anexos com o primeiro nome da sessão quando habilitado", 
 });
 
 test("a fila corporativa ignora o responsável do protocolo anterior", () => {
-  const novo = { createdAt: "2026-11-27T22:58:47.379Z", userId: corporativo };
+  const novo = { createdAt: "2026-11-27T22:58:47.379Z", userId: null };
   const anterior = { usuario_id: 9, atualizado_em: "2026-11-27T22:58:46.000Z" };
   assert.equal(classificarChamadoCorporativo(novo, anterior, 9), "fila");
   assert.equal(classificarChamadoCorporativo(novo, undefined, 9), "fila");
   const assumido = { usuario_id: 9, atualizado_em: "2026-11-27T22:58:47.000Z" };
   assert.equal(classificarChamadoCorporativo(novo, assumido, 9), "meus");
   assert.equal(classificarChamadoCorporativo(novo, assumido, 10), "atribuido");
+});
+
+
+test("a fila corporativa exclui chamados já atribuídos na DigiSac", () => {
+  const chamado = { createdAt: "2026-11-27T22:58:47.379Z", userId: individual };
+  assert.equal(classificarChamadoCorporativo(chamado, undefined, 9), "atribuido");
+  assert.equal(classificarChamadoCorporativo({
+    ...chamado, userId: null, currentTicketTransfer: { userId: individual }
+  }, undefined, 9), "atribuido");
 });
