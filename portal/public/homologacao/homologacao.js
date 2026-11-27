@@ -82,7 +82,8 @@ document.addEventListener("click", e => {
   const button = e.target.closest("[data-tab]");
   if (button && !button.hidden) {
     e.preventDefault();
-    openTab(button.dataset.tab);
+    const fecharCentral = button.dataset.tab === "atendimento" && !$("details").hidden && $("items").querySelector(".ca-layout");
+    openTab(fecharCentral ? "inicio" : button.dataset.tab);
   }
 });
 portalMenuToggle.addEventListener("click", () => setPortalMenu(!sidebar.classList.contains("open")));
