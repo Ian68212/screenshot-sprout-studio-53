@@ -55,18 +55,19 @@ export function modeloAssinatura(dados) {
   );
   const contatos = [email, emailExtra, site, telefone, whatsapp].filter(Boolean);
   const contatosHtml = [
-    [email, "✉", "#42b4ff"], [emailExtra, "✉", "#42b4ff"], [site, "↗", "#42b4ff"],
+    [email, "✉", "#42b4ff"], [emailExtra, "✉", "#42b4ff"], [site, "◎", "#42b4ff"],
     [telefone, "☎", "#42b4ff"], [whatsapp, "☎", "#38dc87"],
   ].filter(([valor]) => valor).map(([valor, icone, cor]) =>
-    `<div style="margin-top:5px"><span style="display:inline-block;width:20px;color:${cor};font-size:15px" aria-hidden="true">${icone}</span><span style="padding-left:7px;border-left:1px solid #41668a">${escapar(valor)}</span></div>`
+    `<tr><td width="22" valign="middle" style="padding:2px 0;color:${cor};font-size:17px" aria-hidden="true">${icone}</td><td style="padding:2px 0 2px 10px;background:linear-gradient(#58a2d5,#58a2d5) left center/1px 70% no-repeat;overflow-wrap:anywhere">${escapar(valor)}</td></tr>`
   ).join("");
   const temIdentificacao = Boolean(nome || cargo || setor);
   const linha = value => value ? `<div style="margin-top:4px">${escapar(value)}</div>` : "";
-  const html = `<table role="presentation" cellpadding="0" cellspacing="0" bgcolor="#060e20" style="width:100%;max-width:760px;margin-top:12px;color:#fff;background:#060e20;background-image:linear-gradient(120deg,#030711,#0b172e 53%,#040914);border-top:2px solid #3495ec;border-bottom:3px solid #f26a1b;font:13px/1.45 Arial,sans-serif;table-layout:fixed">
+  const divisoria = "background-image:linear-gradient(180deg,transparent,#118cf1 25%,#ff7619 52%,#175d9f 82%,transparent);background-position:right center;background-size:2px 78%;background-repeat:no-repeat";
+  const html = `<table role="presentation" cellpadding="0" cellspacing="0" bgcolor="#060e20" style="width:100%;max-width:760px;margin-top:12px;color:#fff;background:#060e20;background-image:linear-gradient(135deg,transparent 34%,#ff6a0a 35%,transparent 38%,#1158a6 48%,transparent 51%) top left/64px 64px no-repeat,linear-gradient(315deg,transparent 34%,#1687ef 35%,transparent 38%,#ff6a0a 48%,transparent 51%) bottom right/64px 64px no-repeat,radial-gradient(ellipse at 21% 48%,#102e57 0%,transparent 40%),linear-gradient(105deg,#02050c,#071227 55%,#02050e);border-top:1px solid #3495ec;border-bottom:2px solid #f26a1b;font:13px/1.45 Arial,sans-serif;table-layout:fixed">
   <tr>
-    <td valign="middle" align="center" style="width:31%;padding:20px 12px;border-right:1px solid #479ce9"><img src="https://rodrinoxpro.com.br/colaborador/assets/logo-horizontal-oficial-colorida.png" alt="Rodrinoxpro" width="168" style="display:block;width:100%;max-width:168px;height:auto;margin:0 auto"></td>
-    ${temIdentificacao ? `<td valign="middle" style="width:29%;padding:20px 12px;border-right:1px solid #ed833e;overflow-wrap:anywhere;word-wrap:break-word"><strong style="display:block;font-size:22px;line-height:1.18;color:#fff">${escapar(nome)}</strong><div style="margin-top:6px;color:#dbe9fa">${cargo ? `<strong style="color:#fff">${escapar(cargo)}</strong>` : ""}${linha(setor)}</div></td>` : ""}
-    ${contatos.length ? `<td valign="middle" style="width:40%;padding:16px 12px;color:#dbe9fa;overflow-wrap:anywhere;word-wrap:break-word">${contatosHtml}</td>` : ""}
+    <td valign="middle" align="center" style="width:39%;padding:26px 18px;${temIdentificacao || contatos.length ? divisoria : ""}"><img src="https://rodrinoxpro.com.br/colaborador/assets/logo-horizontal-oficial-colorida.png" alt="Rodrinoxpro" width="242" style="display:block;width:100%;max-width:242px;height:auto;margin:0 auto;filter:drop-shadow(0 0 9px #1674bf)"></td>
+    ${temIdentificacao ? `<td valign="middle" style="width:32%;padding:20px 12px;${contatos.length ? divisoria : ""};overflow-wrap:anywhere;word-wrap:break-word"><strong style="display:block;font-size:25px;line-height:1.08;letter-spacing:-.025em;color:#fff">${escapar(nome)}</strong><div style="margin-top:6px;color:#dbe9fa">${cargo ? `<strong style="color:#fff">${escapar(cargo)}</strong>` : ""}${linha(setor)}</div></td>` : ""}
+    ${contatos.length ? `<td valign="middle" style="width:29%;padding:13px 12px;color:#dbe9fa;overflow-wrap:anywhere;word-wrap:break-word"><table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;table-layout:fixed;font:12px/1.4 Arial,sans-serif;color:#eef6ff">${contatosHtml}</table></td>` : ""}
   </tr></table>`;
   return { html, texto: [nome, cargo, setor, ...contatos].filter(Boolean).join("\n") };
 }
