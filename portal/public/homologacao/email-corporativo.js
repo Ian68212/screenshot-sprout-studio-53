@@ -81,11 +81,11 @@ function renderMessageBody(message) {
   }
 
   const frame = document.createElement("iframe");
-  // Keep the sender's HTML isolated from the portal and block remote resources.
+  // Keep sender HTML isolated, allowing only embedded images and HTTPS images.
   frame.setAttribute("sandbox", "allow-popups allow-popups-to-escape-sandbox");
   frame.referrerPolicy = "no-referrer";
   frame.title = "Conteúdo do e-mail";
-  const policy = "default-src 'none'; img-src data:; style-src 'unsafe-inline'; form-action 'none'; base-uri 'none'";
+  const policy = "default-src 'none'; img-src data: https:; style-src 'unsafe-inline'; form-action 'none'; base-uri 'none'";
   const template = document.createElement("template");
   template.innerHTML = message.html;
   const content = template.content;
@@ -99,7 +99,7 @@ function renderMessageBody(message) {
     link.rel = "noopener noreferrer";
   }
 
-  frame.srcdoc = '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
+  frame.srcdoc = '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer">' +
     '<meta http-equiv="Content-Security-Policy" content="' + policy + '">' +
     '<style>body{font:15px/1.6 Arial,sans-serif;color:#172b40;background:#fff;margin:0;padding:16px;overflow-wrap:anywhere}img{max-width:100%;height:auto}pre{white-space:pre-wrap}</style>' +
     '<body>' + template.innerHTML;
