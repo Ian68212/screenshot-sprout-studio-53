@@ -43,4 +43,20 @@
 <div class="campo-modal"><label>Cargo</label><select name="cargo_id" class="selCargo"><option value="">Nenhum</option></select></div>
 <p class="erro" id="erroEditarUsuario"></p>
 <div class="botoes-modal"><button type="button" class="sec" id="cancelarEdicao">Cancelar</button><button type="submit">Salvar alterações</button></div>
-</form></dialog></main><script src="/colaborador/app.js"></script><script src="/colaborador/admin.js?v=access-profile-registration-20261111"></script><script src="/colaborador/profile-photo.js?v=perfil-compacto" defer></script><script src="/colaborador/chat-nav.js?v=atalho-email" defer></script><script src="/colaborador/atendimento-alerta.js?v=1" defer></script><script src="/colaborador/portal-return.js?v=1" defer></script></body></html>
+</form></dialog><dialog id="assinaturaColaborador" class="modal-usuario" aria-labelledby="tituloAssinatura">
+<form id="formAssinaturaColaborador">
+<h2 id="tituloAssinatura">Assinatura de e-mail</h2>
+<div id="previaAssinaturaColaborador"></div>
+<p id="orientacaoAssinatura">Deixe um campo vazio para usar o dado do cadastro ou omitir um contato adicional.</p>
+<div class="row">
+<label>Nome na assinatura<input name="nome" maxlength="160"></label>
+<label>Cargo<input name="cargo" maxlength="120"></label>
+<label>Setor<input name="setor" maxlength="120"></label>
+<label>E-mail<input name="email" type="email" maxlength="254"></label>
+<label>E-mail adicional<input name="emailExtra" type="email" maxlength="254"></label>
+<label>Telefone<input name="telefone" type="tel" maxlength="40"></label>
+<label>WhatsApp<input name="whatsapp" type="tel" maxlength="40"></label>
+</div>
+<p id="erroAssinaturaColaborador" role="status"></p>
+<div class="botoes-modal"><button type="button" class="sec" id="fecharAssinatura">Fechar</button><button type="submit">Salvar modelo</button></div>
+</form></dialog></main><script src="/colaborador/app.js"></script><script src="/colaborador/admin.js?v=assinatura-colaborador"></script><script src="/colaborador/profile-photo.js?v=perfil-compacto" defer></script><script src="/colaborador/chat-nav.js?v=atalho-email" defer></script><script src="/colaborador/atendimento-alerta.js?v=1" defer></script><script src="/colaborador/portal-return.js?v=1" defer></script></body></html>

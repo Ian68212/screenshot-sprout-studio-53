@@ -22,6 +22,7 @@ async function carregar() {
   tu.innerHTML = us.map((u) => `<tr><td>${u.foto_url ? `<img src="${esc(u.foto_url)}?v=${Date.now()}" alt="" style="width:38px;height:38px;object-fit:cover;border-radius:50%">` : `<span style="display:inline-grid;place-items:center;width:38px;height:38px;border-radius:50%;background:#eaf2f8;color:#173b58;font-weight:700">${esc((u.nome||"R").split(/\s+/).slice(0,2).map(x=>x[0]||"").join("").toUpperCase())}</span>`}</td><td>${esc(u.nome)}</td><td>${esc(u.email)}</td><td>${esc(u.perfil)}</td><td>${esc(u.setor || "—")}</td><td>${esc(u.cargo || "—")}</td>
     <td>${u.ativo ? "Ativo" : "Inativo"}</td><td class="acoes-usuario">
       <button class="sec" data-acao="editar" data-id="${u.id}">Editar</button>
+      <button class="sec" data-acao="assinatura" data-id="${u.id}">Visualizar assinatura de e-mail</button>
       <button class="sec" data-acao="status" data-id="${u.id}" data-ativo="${u.ativo ? 0 : 1}">${u.ativo ? "Desativar" : "Ativar"}</button>
       <button class="perigo" data-acao="excluir" data-id="${u.id}" data-nome="${esc(u.nome)}">Excluir</button>
     </td></tr>`).join("");
@@ -137,6 +138,10 @@ const enviar = (f, url, erroEl, montar = form) => f.addEventListener("submit", a
       const b = e.target.closest("button[data-id]"); if (!b) return;
       const id = b.dataset.id;
       try {
+        if (b.dataset.acao === "assinatura") {
+          await abrirAssinaturaColaborador(id);
+          return;
+        }
         if (b.dataset.acao === "editar") {
           const usuarios = await api("admin/usuarios");
           const u = usuarios.find((item) => String(item.id) === String(id));
@@ -197,3 +202,50 @@ const enviar = (f, url, erroEl, montar = form) => f.addEventListener("submit", a
   document.getElementById("cancelarEdicao")?.addEventListener("click", () => document.getElementById("editarUsuario").close());
   await auditoria().catch(() => (location.href = "painel.html"));
 })();
+
+
+async function abrirAssinaturaColaborador(id) {
+  const dialog = document.getElementById("assinaturaColaborador");
+  const form = document.getElementById("formAssinaturaColaborador");
+  const preview = document.getElementById("previaAssinaturaColaborador");
+  const status = document.getElementById("erroAssinaturaColaborador");
+  const submit = form.querySelector('button[type="submit"]');
+  const endpoint = "email-corporativo/admin/assinaturas/" + encodeURIComponent(id);
+
+  function preencher(dados) {
+    preview.innerHTML = dados.html;
+    if (dados.imagem) {
+      const image = new Image();
+      image.src = dados.imagem;
+      image.alt = "Assinatura atualmente usada";
+      image.style.maxWidth = "100%";
+      preview.replaceChildren(image);
+    }
+    for (const input of form.querySelectorAll("input")) {
+      input.value = dados.personalizados[input.name] || "";
+      input.placeholder = dados.cadastro[input.name] || "";
+    }
+    document.getElementById("orientacaoAssinatura").textContent = dados.imagem
+      ? "Esta caixa usa uma imagem personalizada. Salvar o modelo ativa o carimbo com os dados abaixo."
+      : "Deixe um campo vazio para usar o dado do cadastro ou omitir um contato adicional.";
+  }
+
+  preencher(await api(endpoint));
+  status.textContent = "";
+  document.getElementById("fecharAssinatura").onclick = () => dialog.close();
+  form.onsubmit = async event => {
+    event.preventDefault();
+    submit.disabled = true;
+    status.textContent = "";
+    try {
+      await api(endpoint, { method: "PUT", body: Object.fromEntries(new FormData(form)) });
+      preencher(await api(endpoint));
+      status.textContent = "Assinatura salva.";
+    } catch (error) {
+      status.textContent = error.message;
+    } finally {
+      submit.disabled = false;
+    }
+  };
+  dialog.showModal();
+}
