@@ -21,3 +21,13 @@ export function assinarMensagemDigiSac(texto, usuario, identidade, habilitada = 
   const assinatura = "*" + nome.replace(/\*/g, "") + ":*";
   return mensagem ? assinatura + "\n" + mensagem : assinatura;
 }
+
+export function classificarChamadoCorporativo(chamado, atribuicao, usuarioId) {
+  const criadoEm = Date.parse(chamado.createdAt || chamado.startedAt);
+  const atribuidoEm = new Date(atribuicao?.atualizado_em ?? NaN).getTime();
+  // O MySQL registra a atribuição com precisão de segundos.
+  const atribuicaoAtual = atribuicao?.usuario_id &&
+    Number.isFinite(criadoEm) && atribuidoEm >= Math.floor(criadoEm / 1000) * 1000;
+  if (!atribuicaoAtual) return "fila";
+  return String(atribuicao.usuario_id) === String(usuarioId) ? "meus" : "atribuido";
+}

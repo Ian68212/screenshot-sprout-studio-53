@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { assinarMensagemDigiSac, autorDigiSac, identidadeDigiSac } from "../src/digisac-identidade.js";
+import { assinarMensagemDigiSac, autorDigiSac, classificarChamadoCorporativo, identidadeDigiSac } from "../src/digisac-identidade.js";
 
 const corporativo = "10000000-0000-4000-8000-000000000001";
 const individual = "10000000-0000-4000-8000-000000000002";
@@ -31,4 +31,14 @@ test("assina textos e anexos com o primeiro nome da sessão quando habilitado", 
   assert.equal(assinarMensagemDigiSac("", usuario, identidade, true), "*Rodrigo:*");
   assert.equal(assinarMensagemDigiSac(" teste 002 ", usuario, identidade, false), "teste 002");
   assert.equal(assinarMensagemDigiSac(" teste 002 ", usuario, identidadeDigiSac(""), true), "teste 002");
+});
+
+test("a fila corporativa ignora o responsável do protocolo anterior", () => {
+  const novo = { createdAt: "2026-11-27T22:58:47.379Z", userId: corporativo };
+  const anterior = { usuario_id: 9, atualizado_em: "2026-11-27T22:58:46.000Z" };
+  assert.equal(classificarChamadoCorporativo(novo, anterior, 9), "fila");
+  assert.equal(classificarChamadoCorporativo(novo, undefined, 9), "fila");
+  const assumido = { usuario_id: 9, atualizado_em: "2026-11-27T22:58:47.000Z" };
+  assert.equal(classificarChamadoCorporativo(novo, assumido, 9), "meus");
+  assert.equal(classificarChamadoCorporativo(novo, assumido, 10), "atribuido");
 });

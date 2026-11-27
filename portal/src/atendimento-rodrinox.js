@@ -1,3 +1,4 @@
+import { classificarChamadoCorporativo } from "./digisac-identidade.js";
 import { Router } from "express";
 import { q, auditar } from "./db.js";
 import { exigir } from "./auth.js";
@@ -22,6 +23,21 @@ export async function atribuirAtendimento(contato, usuarioId, setorId, autorId) 
   await schema();
   await q(`INSERT INTO atendimento_rodrinox (contato_digisac,usuario_id,setor_id,atualizado_por) VALUES (?,?,?,?)
       ON DUPLICATE KEY UPDATE usuario_id=VALUES(usuario_id),setor_id=VALUES(setor_id),atualizado_por=VALUES(atualizado_por)`,[contato,usuarioId,setorId,autorId]);
+}
+export async function classificarChamadosCorporativos(chamados, usuarioId) {
+  const contatoId = chamado => chamado.contactId || chamado.contact?.id;
+  const contatos = [...new Set(chamados.map(contatoId).filter(Boolean))];
+  if (!contatos.length) return;
+  await schema();
+  const marcadores = contatos.map(() => "?").join(",");
+  const atribuicoes = await q(
+    `SELECT contato_digisac,usuario_id,atualizado_em FROM atendimento_rodrinox WHERE contato_digisac IN (${marcadores})`,
+    contatos
+  );
+  const porContato = new Map(atribuicoes.map(item => [item.contato_digisac, item]));
+  for (const chamado of chamados) {
+    chamado.rodrinoxFila = classificarChamadoCorporativo(chamado, porContato.get(contatoId(chamado)), usuarioId);
+  }
 }
 const admin=u=>u.perfil==="admin";
 const validId=x=>Number.isSafeInteger(Number(x))&&Number(x)>0;
