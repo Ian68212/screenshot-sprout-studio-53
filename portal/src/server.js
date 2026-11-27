@@ -8,7 +8,7 @@ import chatInternoRouter from "./chat-interno.js";
 import pushNotificacoesRouter from "./push-notificacoes.js";
 import gestaoArquivosRouter from "./gestao-arquivos.js";
 import { accessProfilesRouter } from "./access-profiles.js";
-import atendimentoRodrinoxRouter, { atribuirAtendimento } from "./atendimento-rodrinox.js";
+import atendimentoRodrinoxRouter, { atribuirAtendimento, classificarChamadosCorporativos } from "./atendimento-rodrinox.js";
 import { assinarMensagemDigiSac, autorDigiSac, identidadeDigiSac } from "./digisac-identidade.js";
 import whatsappMetaRouter from "./whatsapp-meta.js";
 import "dotenv/config";
@@ -389,6 +389,11 @@ r.get("/api/atendimento/consultar/:recurso", exigir("painel"), wrap(async (req, 
     if (raw.length > 500000) return res.status(502).json({erro:"Resposta da DigiSac excedeu o limite."});
     let payload;
     try { payload = JSON.parse(raw); } catch { return res.status(502).json({erro:"DigiSac retornou resposta inválida."}); }
+    if (endpoint === "tickets" && req.identidadeDigiSac.corporativa) {
+      const chamados = Array.isArray(payload) ? payload :
+        [payload?.rows, payload?.data, payload?.items, payload?.results].find(Array.isArray);
+      if (chamados) await classificarChamadosCorporativos(chamados, req.usuario.id);
+    }
     res.json(payload);
   } catch (err) {
     console.warn("Consulta DigiSac falhou:", err.name === "AbortError" ? "timeout" : "erro de comunicação");
