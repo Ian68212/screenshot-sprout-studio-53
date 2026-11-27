@@ -113,3 +113,17 @@ button.perigo{background:#a52828;color:white;border:0;border-radius:6px;padding:
 @media (max-width: 600px) {
   #previaAssinaturaColaborador > table { min-width: 560px; }
 }
+
+#formAssinaturaColaborador .campo-assinatura-opcao {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+#formAssinaturaColaborador .campo-assinatura-opcao input {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  margin: 0;
+  accent-color: var(--navy2);
+}

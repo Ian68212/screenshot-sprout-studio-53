@@ -221,13 +221,16 @@ async function abrirAssinaturaColaborador(id) {
       image.style.maxWidth = "100%";
       preview.replaceChildren(image);
     }
-    for (const input of form.querySelectorAll("input")) {
+    for (const input of form.querySelectorAll("input[name]")) {
       input.value = dados.personalizados[input.name] || "";
       input.placeholder = dados.cadastro[input.name] || "";
     }
+    for (const checkbox of form.querySelectorAll("[data-visibilidade]")) {
+      checkbox.checked = Boolean(dados.visibilidade[checkbox.dataset.visibilidade]);
+    }
     document.getElementById("orientacaoAssinatura").textContent = dados.imagem
       ? "Esta caixa usa uma imagem personalizada. Salvar o modelo ativa o carimbo com os dados abaixo."
-      : "Deixe um campo vazio para usar o dado do cadastro ou omitir um contato adicional.";
+      : "Marque os campos que devem aparecer na assinatura. Os dados dos campos desmarcados continuam salvos.";
   }
 
   preencher(await api(endpoint));
@@ -238,7 +241,11 @@ async function abrirAssinaturaColaborador(id) {
     submit.disabled = true;
     status.textContent = "";
     try {
-      await api(endpoint, { method: "PUT", body: Object.fromEntries(new FormData(form)) });
+      const body = Object.fromEntries(new FormData(form));
+      body.visibilidade = Object.fromEntries(
+        Array.from(form.querySelectorAll("[data-visibilidade]"), checkbox => [checkbox.dataset.visibilidade, checkbox.checked])
+      );
+      await api(endpoint, { method: "PUT", body });
       preencher(await api(endpoint));
       status.textContent = "Assinatura salva.";
     } catch (error) {
