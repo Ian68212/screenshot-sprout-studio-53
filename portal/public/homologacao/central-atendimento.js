@@ -1,6 +1,10 @@
 "use strict";
 (function(){
 const safe=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function signedMessageMarkup(text) {
+ const signature = /^\*([^*:\r\n]+:)\*(?=\r?\n|$)/.exec(text);
+ return signature ? "<strong>"+safe(signature[1])+"</strong>"+safe(text.slice(signature[0].length)) : safe(text);
+}
 let stagedFiles=[];let showFiles=()=>{};let activeServiceId=null;let attachmentSending=false;
 let voiceRecorder=null,voiceStream=null,voiceChunks=[],voiceStarted=0;
 let selected="meus",status=null,records=[],active=null,loading=false,error="",team=null,assignments=[],currentUser=null,lastSync=null,contactsById=new Map(),digiUserId=null,digiMatchStatus="",ticketDiagnostics="",searchTerm="";
@@ -79,10 +83,10 @@ async function openRecord(id,redraw=true){
       const body=messageText(m),type=messageType(m),sender=m.user?.name||m.contact?.name||m.origin||"Mensagem";
       const media=mediaMarkup(m);const content=body||(!media?"[Mensagem sem texto]":"");
       const sent=m.origin==='user'||m.isFromMe===true||m.fromMe===true||m.direction==='outbound';
-      return '<div class="ca-msg '+(sent?'ca-msg-out':'ca-msg-in')+'"><small>'+safe(sender)+' · '+safe(messageTime(m))+'</small><p>'+safe(content)+'</p>'+media+'</div>';
+      return '<div class="ca-msg '+(sent?'ca-msg-out':'ca-msg-in')+'"><small>'+safe(sender)+' · '+safe(messageTime(m))+'</small><p>'+(sent?signedMessageMarkup(content):safe(content))+'</p>'+media+'</div>';
     }).join(""):'Nenhuma mensagem disponível para este contato.';
     const pending=sentPending.filter(p=>p.contactId===String(contactId));
-    if(pending.length)target.innerHTML+=pending.map(p=>'<div class="ca-msg ca-msg-out"><small>Enviada · aguardando atualização do histórico</small><p>'+safe(p.text)+'</p></div>').join('');
+    if(pending.length)target.innerHTML+=pending.map(p=>'<div class="ca-msg ca-msg-out"><small>Enviada · aguardando atualização do histórico</small><p>'+signedMessageMarkup(p.text)+'</p></div>').join('');
     const scroll=target.closest('.ca-messages');if(scroll&&redraw)scroll.scrollTop=scroll.scrollHeight;
   }catch(e){target.textContent="Falha ao atualizar o histórico: "+e.message}
   finally{historyBusy=false}
@@ -124,7 +128,7 @@ async function sendMessage(){
   const result=await response.json();
   if(!response.ok||!result.enviado)throw Error((result.erro||"Envio não confirmado")+(result.codigo?" (HTTP "+result.codigo+")":""));
   textarea.value="";
-  sentPending.push({contactId:String(contactId),text:message,id:result.id?String(result.id):null,time:Date.now()});
+  sentPending.push({contactId:String(contactId),text:result.text??message,id:result.id?String(result.id):null,time:Date.now()});
   await openRecord(active.id,false);
   const scroll=document.querySelector(".ca-messages");if(scroll)scroll.scrollTop=scroll.scrollHeight;
  }catch(err){alert(err.message+" Verifique a DigiSac antes de reenviar, para evitar duplicidade.")}

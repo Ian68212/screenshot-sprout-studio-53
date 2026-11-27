@@ -456,13 +456,14 @@ r.post("/api/atendimento/enviar", exigir("painel"), wrap(async (req,res)=>{
   if(url.protocol!=="https:"||url.hostname!=="rodrinoxpro.digisac.app"||!url.pathname.startsWith("/api/v1/"))return res.status(503).json({erro:"Destino DigiSac inválido."});
   const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),12000);
   try{
-    const upstream=await fetch(url,{method:"POST",headers:{Authorization:"Bearer "+token,Accept:"application/json","Content-Type":"application/json"},body:JSON.stringify({text:assinarMensagemDigiSac(message,req.usuario,req.identidadeDigiSac),type:"chat",contactId,userId,origin:"user"}),signal:controller.signal,redirect:"error"});
+    const text = assinarMensagemDigiSac(message, req.usuario, req.identidadeDigiSac);
+    const upstream=await fetch(url,{method:"POST",headers:{Authorization:"Bearer "+token,Accept:"application/json","Content-Type":"application/json"},body:JSON.stringify({text,type:"chat",contactId,userId,origin:"user"}),signal:controller.signal,redirect:"error"});
     if(!upstream.ok)return res.status(502).json({erro:"DigiSac não confirmou o envio.",codigo:upstream.status});
     const raw=await upstream.text();
     let result={};try{result=JSON.parse(raw)}catch{}
     const id=result?.id||result?.data?.id||null;
     await auditarEnvioDigiSac(req,"digisac_mensagem_enviada",contactId,id);
-    return res.json({enviado:true,id});
+    return res.json({enviado:true,id,text});
   }catch(err){
     return res.status(502).json({erro:err.name==="AbortError"?"Tempo limite: confira na DigiSac antes de tentar novamente.":"Falha de comunicação: confira na DigiSac antes de tentar novamente."});
   }finally{clearTimeout(timeout)}
