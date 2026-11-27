@@ -5,7 +5,7 @@ export const camposAssinatura = {
 };
 export const visibilidadePadrao = Object.freeze({
   nome: true, cargo: true, email: true,
-  setor: false, emailExtra: false, telefone: true, whatsapp: true, site: false,
+  setor: false, emailExtra: false, telefone: true, whatsapp: true, site: true,
 });
 const contatosPadrao = { telefone: "(11) 4863-1292", whatsapp: "(11) 96598-8004" };
 
