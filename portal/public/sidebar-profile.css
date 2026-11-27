@@ -1,11 +1,12 @@
 #sidebarProfile{flex:none;position:relative;z-index:3;margin:8px 2px 12px}
-#sidebarProfile #rp-global-profile.rp-in-sidebar{position:relative;inset:auto;z-index:auto;pointer-events:auto}
+#sidebarProfile #rp-global-profile.rp-in-sidebar{position:relative;inset:auto;z-index:auto;pointer-events:auto;background:transparent}
 #sidebarProfile #rp-global-profile .rp-trigger{
- width:100%;min-height:58px;padding:8px;gap:6px;box-shadow:none;text-align:left;
- border:1px solid #35516c;border-radius:10px;background:#193650;color:#f5f9ff;
+ width:100%;min-height:58px;padding:8px 10px;gap:8px;box-shadow:none;text-align:left;
+ border:1px solid #36536e;border-radius:14px;background:linear-gradient(135deg,#1c3b56,#142c44);color:#f5f9ff;
 }
 #sidebarProfile #rp-global-profile .rp-trigger:hover,
 #sidebarProfile #rp-global-profile .rp-trigger[aria-expanded="true"]{background:#254762;border-color:#6484a0}
+#sidebarProfile #rp-global-profile .rp-trigger:focus-visible{outline:2px solid #96c7f0;outline-offset:2px}
 #sidebarProfile #rp-global-profile.rp-has-alert .rp-trigger{border-color:#ff9a4c}
 #sidebarProfile #rp-global-profile .rp-email-bell{order:2;position:relative;flex:none;border:0;padding:0;color:#c2d8ed}
 #sidebarProfile #rp-global-profile .rp-trigger > span:last-child{order:3;flex:none;color:#b8cfe2}
