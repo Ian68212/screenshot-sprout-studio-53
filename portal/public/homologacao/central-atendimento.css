@@ -125,3 +125,69 @@
  #ca-action-modal{z-index:2147483646!important}
  #ca-action-modal .ca-modal{max-height:90dvh;overflow:auto;width:min(96vw,440px)}
 }
+
+.ca-contact-toggle{display:none}
+@media (min-width:761px){
+  #details:not([hidden]):has(#items.ca-root > .ca-layout){
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    grid-template-rows:auto minmax(0,1fr);
+    align-items:center;
+    gap:10px 14px;
+    padding:12px 0 0;
+    overflow:hidden;
+  }
+  #details:has(#items.ca-root > .ca-layout) > #sectionTitle{
+    grid-area:1 / 1;
+    margin:0;
+  }
+  #details:has(#items.ca-root > .ca-layout) > .back{
+    grid-area:1 / 2;
+    margin:0;
+    padding:8px 12px;
+  }
+  #items.ca-root:has(> .ca-layout){
+    grid-column:1 / -1;
+    height:100%;
+    min-height:0;
+    min-width:0;
+  }
+  .ca-root .ca-layout{
+    position:relative;
+    grid-template-rows:minmax(0,1fr);
+    height:100%;
+    min-height:0;
+    grid-template-columns:clamp(216px,24%,330px) minmax(0,1fr) clamp(190px,20%,270px);
+  }
+  .ca-root .ca-left,.ca-root .ca-list,.ca-root .ca-contact{min-height:0}
+  .ca-root .ca-list,.ca-root .ca-messages,.ca-root .ca-contact{overscroll-behavior:contain}
+  .ca-root .ca-layout .ca-messages{overflow:auto}
+  .ca-root .ca-compose{flex:none;min-width:0}
+  .ca-root .ca-compose textarea{min-width:0}
+}
+@media (761px <= width <= 1280px){
+  .ca-root .ca-layout{grid-template-columns:clamp(190px,29%,290px) minmax(0,1fr)}
+  .ca-root .ca-conversation > header{position:relative;padding-right:88px}
+  .ca-root .ca-contact-toggle{
+    display:block;
+    position:absolute;
+    top:9px;
+    right:10px;
+    padding:6px 8px;
+    border:1px solid #c7d9eb;
+    border-radius:7px;
+    background:#edf5fd;
+    color:#1b537f;
+    cursor:pointer;
+  }
+  .ca-root.ca-contact-open .ca-contact{
+    display:block;
+    position:absolute;
+    top:48px;
+    bottom:0;
+    right:0;
+    width:min(250px,65%);
+    z-index:3;
+    box-shadow:-8px 0 24px #132f4c26;
+  }
+}
