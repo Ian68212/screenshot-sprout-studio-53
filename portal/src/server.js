@@ -368,6 +368,7 @@ r.get("/api/atendimento/consultar/:recurso", exigir("painel"), wrap(async (req, 
     if (url.protocol !== "https:" || url.hostname !== "rodrinoxpro.digisac.app" || !url.pathname.startsWith("/api/v1/")) throw Error("Destino inválido");
   } catch { return res.status(503).json({erro:"URL da API DigiSac inválida."}); }
   url.searchParams.set("perPage", req.params.recurso === "tickets" ? "100" : "100");
+  if (endpoint === "contacts") url.searchParams.set("include[0]", "avatar");
   if (req.params.recurso === "tickets") {
     // A listagem geral mistura chamados encerrados com conversas ativas.
     // A API DigiSac documenta o filtro Sequelize por isOpen.
@@ -384,7 +385,9 @@ r.get("/api/atendimento/consultar/:recurso", exigir("painel"), wrap(async (req, 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 9000);
   try {
-    const upstream = await fetch(url, {headers:{Authorization:"Bearer " + token, Accept:"application/json"},signal:controller.signal,redirect:"error"});
+    const options={headers:{Authorization:"Bearer " + token, Accept:"application/json"},signal:controller.signal,redirect:"error"};
+    let upstream = await fetch(url, options);
+    if(endpoint==="contacts" && [400,422].includes(upstream.status)){url.searchParams.delete("include[0]");upstream=await fetch(url,options);}
     if (!upstream.ok) return res.status(502).json({erro:"DigiSac recusou a consulta.",codigo:upstream.status});
     const raw = await upstream.text();
     if (raw.length > 500000) return res.status(502).json({erro:"Resposta da DigiSac excedeu o limite."});
