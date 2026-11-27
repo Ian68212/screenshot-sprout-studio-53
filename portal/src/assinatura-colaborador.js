@@ -69,20 +69,24 @@ export function modeloAssinatura(dados) {
     Object.entries(valores).filter(([campo]) => visibilidade[campo])
   );
   const contatos = [email, emailExtra, site, telefone, whatsapp].filter(Boolean);
+  const assets = "https://rodrinoxpro.com.br/colaborador/assets/assinatura";
   const contatosHtml = [
-    [email, "✉", "#42b4ff"], [emailExtra, "✉", "#42b4ff"], [site, "◎", "#42b4ff"],
-    [telefone, "☎", "#42b4ff"], [whatsapp, "☎", "#38dc87"],
-  ].filter(([valor]) => valor).map(([valor, icone, cor]) =>
-    `<tr><td width="22" valign="middle" style="padding:2px 0;color:${cor};font-size:17px" aria-hidden="true">${icone}</td><td style="padding:2px 0 2px 10px;background:linear-gradient(#58a2d5,#58a2d5) left center/1px 70% no-repeat;overflow-wrap:anywhere">${escapar(valor)}</td></tr>`
+    [email, "email"], [emailExtra, "email"], [site, "site"],
+    [telefone, "telefone"], [whatsapp, "whatsapp"],
+  ].filter(([valor]) => valor).map(([valor, icone]) =>
+    `<tr><td width="26" valign="middle" style="padding:2px 0"><img src="${assets}/${icone}.png" width="19" alt="" style="display:block;height:auto;border:0"></td><td style="padding:2px 0 2px 9px;border-left:1px solid #5786a5;color:#fff;overflow-wrap:anywhere">${escapar(valor)}</td></tr>`
   ).join("");
   const temIdentificacao = Boolean(nome || cargo || setor);
-  const linha = value => value ? `<div style="margin-top:4px">${escapar(value)}</div>` : "";
-  const divisoria = "background-image:linear-gradient(180deg,transparent,#118cf1 25%,#ff7619 52%,#175d9f 82%,transparent);background-position:right center;background-size:2px 78%;background-repeat:no-repeat";
-  const html = `<table role="presentation" cellpadding="0" cellspacing="0" bgcolor="#060e20" style="width:100%;max-width:760px;margin-top:12px;color:#fff;background:#060e20;background-image:linear-gradient(135deg,transparent 34%,#ff6a0a 35%,transparent 38%,#1158a6 48%,transparent 51%) top left/64px 64px no-repeat,linear-gradient(315deg,transparent 34%,#1687ef 35%,transparent 38%,#ff6a0a 48%,transparent 51%) bottom right/64px 64px no-repeat,radial-gradient(ellipse at 21% 48%,#102e57 0%,transparent 40%),linear-gradient(105deg,#02050c,#071227 55%,#02050e);border-top:1px solid #3495ec;border-bottom:2px solid #f26a1b;font:13px/1.45 Arial,sans-serif;table-layout:fixed">
+  const divisa = `<td width="5" aria-hidden="true" style="width:5px;padding:0"><img src="${assets}/divisoria.png" width="5" alt="" style="display:block;width:5px;height:100%;max-height:153px"></td>`;
+  const html = `<table role="presentation" cellpadding="0" cellspacing="0" bgcolor="#030917" style="width:100%;max-width:760px;margin-top:12px;color:#fff;background:#030917;border-top:1px solid #147aab;border-bottom:2px solid #f26a1b;table-layout:fixed;font:13px/1.35 Arial,sans-serif">
   <tr>
-    <td valign="middle" align="center" style="width:39%;padding:26px 18px;${temIdentificacao || contatos.length ? divisoria : ""}"><img src="https://rodrinoxpro.com.br/colaborador/assets/logo-horizontal-oficial-colorida.png" alt="Rodrinoxpro" width="242" style="display:block;width:100%;max-width:242px;height:auto;margin:0 auto;filter:drop-shadow(0 0 9px #1674bf)"></td>
-    ${temIdentificacao ? `<td valign="middle" style="width:32%;padding:20px 12px;${contatos.length ? divisoria : ""};overflow-wrap:anywhere;word-wrap:break-word"><strong style="display:block;font-size:25px;line-height:1.08;letter-spacing:-.025em;color:#fff">${escapar(nome)}</strong><div style="margin-top:6px;color:#dbe9fa">${cargo ? `<strong style="color:#fff">${escapar(cargo)}</strong>` : ""}${linha(setor)}</div></td>` : ""}
-    ${contatos.length ? `<td valign="middle" style="width:29%;padding:13px 12px;color:#dbe9fa;overflow-wrap:anywhere;word-wrap:break-word"><table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;table-layout:fixed;font:12px/1.4 Arial,sans-serif;color:#eef6ff">${contatosHtml}</table></td>` : ""}
+    <td width="40%" valign="middle" style="width:40%;padding:0"><img src="${assets}/marca.png" alt="Rodrinoxpro" width="302" style="display:block;width:100%;height:auto;border:0"></td>
+    ${temIdentificacao ? `<td width="30%" valign="middle" style="padding:14px 8px;color:#fff;overflow-wrap:anywhere;word-wrap:break-word">
+      ${nome ? `<strong style="display:block;font-size:27px;line-height:1.07;letter-spacing:-.04em;color:#fff">${escapar(nome)}</strong>` : ""}
+      ${cargo ? `<strong style="display:block;margin-top:5px;font-size:14px;color:#fff">${escapar(cargo)}</strong>` : ""}
+      ${setor ? `<div style="margin-top:2px;font-size:13px;color:#fff">${escapar(setor)}</div>` : ""}
+    </td>` : ""}
+    ${contatos.length ? `${divisa}<td valign="middle" style="padding:13px 10px;background:#030917 url('${assets}/canto.png') no-repeat right bottom;background-size:69px 25px"><table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;table-layout:fixed;font:12px/1.4 Arial,sans-serif;color:#fff">${contatosHtml}</table></td>` : ""}
   </tr></table>`;
   return { html, texto: [nome, cargo, setor, ...contatos].filter(Boolean).join("\n") };
 }
