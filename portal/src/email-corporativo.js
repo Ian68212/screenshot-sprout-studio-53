@@ -1,4 +1,4 @@
-import { dadosAssinatura, modeloAssinatura, salvarAssinatura, camposAssinatura, visibilidadePadrao } from "./assinatura-colaborador.js";
+import { dadosAssinatura, modeloAssinatura, salvarAssinatura, camposAssinatura, visibilidadePadrao, salvarContatosOficiais } from "./assinatura-colaborador.js";
 import { Router } from "express";
 import crypto from "node:crypto";
 import { ImapFlow } from "imapflow";
@@ -112,10 +112,24 @@ async function assinaturaDaCaixa(box, userId) {
   return { modelo: modeloAssinatura(dados), gerenciada: dados.usaModelo };
 }
 
+router.put("/admin/assinatura-contatos", exigir("admin.usuarios"), async (req, res, next) => {
+  try {
+    const telefone = String(req.body?.telefone ?? "").trim();
+    const whatsapp = String(req.body?.whatsapp ?? "").trim();
+    const numeroValido = valor => /^[+\d(). -]{8,40}$/.test(valor) && valor.replace(/\D/g, "").length >= 8;
+    if (!numeroValido(telefone) || !numeroValido(whatsapp)) {
+      return res.status(400).json({ erro: "Informe telefone e WhatsApp válidos." });
+    }
+    await salvarContatosOficiais(telefone, whatsapp);
+    await auditar(req.usuario.id, "email_assinatura_contatos_oficiais_atualizados", "Contatos oficiais", req.ip);
+    res.json({ ok: true });
+  } catch (error) { next(error); }
+});
+
 router.get("/admin/assinaturas/:id", exigir("admin.usuarios"), async (req, res, next) => {
   try {
     const dados = await dadosAssinatura(req.params.id);
-    if (!dados) return res.status(404).json({ erro: "Colaborador não encontrado." });
+    if (String(req.params.id) === "0" || !dados) return res.status(404).json({ erro: "Colaborador não encontrado." });
     await schema();
     const [imagem] = dados.usaModelo ? [] : await q(`SELECT a.imagem,a.mime FROM email_assinaturas a
       JOIN email_caixas c ON c.id=a.caixa_id WHERE c.usuario_dono_id=? AND c.endereco=? AND c.tipo='individual' AND c.ativo=1`,
