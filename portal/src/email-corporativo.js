@@ -1,4 +1,4 @@
-import { dadosAssinatura, modeloAssinatura, salvarAssinatura, camposAssinatura } from "./assinatura-colaborador.js";
+import { dadosAssinatura, modeloAssinatura, salvarAssinatura, camposAssinatura, visibilidadePadrao } from "./assinatura-colaborador.js";
 import { Router } from "express";
 import crypto from "node:crypto";
 import { ImapFlow } from "imapflow";
@@ -129,8 +129,13 @@ router.get("/admin/assinaturas/:id", exigir("admin.usuarios"), async (req, res, 
 
 router.put("/admin/assinaturas/:id", exigir("admin.usuarios"), async (req, res, next) => {
   try {
-    if (!await dadosAssinatura(req.params.id)) return res.status(404).json({ erro: "Colaborador não encontrado." });
-    const campos = {};
+    const dados = await dadosAssinatura(req.params.id);
+    if (!dados) return res.status(404).json({ erro: "Colaborador não encontrado." });
+    const campos = { visibilidade: { ...dados.visibilidade } };
+    for (const campo of Object.keys(visibilidadePadrao)) {
+      const marcado = req.body?.visibilidade?.[campo];
+      if (typeof marcado === "boolean") campos.visibilidade[campo] = marcado;
+    }
     for (const [campo, limite] of Object.entries(camposAssinatura)) {
       const valor = String(req.body?.[campo] ?? "").trim();
       if (valor.length > limite || (/^email/.test(campo) && valor && !emailRx.test(valor))) {
