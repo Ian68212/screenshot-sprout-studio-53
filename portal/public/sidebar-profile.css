@@ -1,19 +1,23 @@
 #sidebarProfile{flex:none;position:relative;z-index:3;margin:8px 2px 12px}
 #sidebarProfile #rp-global-profile.rp-in-sidebar{position:relative;inset:auto;z-index:auto;pointer-events:auto;background:transparent}
 #sidebarProfile #rp-global-profile .rp-trigger{
- width:100%;min-height:58px;padding:8px 10px;gap:8px;box-shadow:none;text-align:left;
+ display:grid;grid-template-columns:30px minmax(0,1fr) auto auto;align-items:center;
+ width:100%;min-height:58px;padding:8px 10px;gap:4px 8px;box-shadow:none;text-align:left;
  border:1px solid #36536e;border-radius:14px;background:linear-gradient(135deg,#1c3b56,#142c44);color:#f5f9ff;
 }
 #sidebarProfile #rp-global-profile .rp-trigger:hover,
 #sidebarProfile #rp-global-profile .rp-trigger[aria-expanded="true"]{background:#254762;border-color:#6484a0}
 #sidebarProfile #rp-global-profile .rp-trigger:focus-visible{outline:2px solid #96c7f0;outline-offset:2px}
 #sidebarProfile #rp-global-profile.rp-has-alert .rp-trigger{border-color:#ff9a4c}
-#sidebarProfile #rp-global-profile .rp-email-bell{order:2;position:relative;flex:none;border:0;padding:0;color:#c2d8ed}
-#sidebarProfile #rp-global-profile .rp-trigger > span:last-child{order:3;flex:none;color:#b8cfe2}
-#sidebarProfile #rp-global-profile .rp-avatar{width:30px;height:30px}
-#sidebarProfile #rp-global-profile .rp-sst-identity{display:flex;flex:1;min-width:0;flex-direction:column;line-height:1.18;gap:3px;text-align:left}
-#sidebarProfile #rp-global-profile .rp-sst-identity strong{font-size:12px;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;display:block}
-#sidebarProfile #rp-global-profile .rp-sst-identity small{font-size:10px;font-weight:400;color:#c6d9e9}
+#sidebarProfile #rp-global-profile .rp-email-bell{grid-area:2 / 3;position:relative;border:0;padding:0;color:#c2d8ed}
+#sidebarProfile #rp-global-profile .rp-trigger > span:last-child{grid-area:2 / 4;color:#b8cfe2}
+#sidebarProfile #rp-global-profile .rp-avatar{grid-area:2 / 1;width:30px;height:30px}
+#sidebarProfile #rp-global-profile .rp-alert-dot{position:absolute;bottom:5px;left:32px}
+#sidebarProfile #rp-global-profile .rp-sst-identity{display:contents}
+#sidebarProfile #rp-global-profile .rp-sst-identity strong{
+ grid-area:1 / 1 / 2 / -1;font-size:12px;line-height:1.2;overflow-wrap:anywhere;
+}
+#sidebarProfile #rp-global-profile .rp-sst-identity small{grid-area:2 / 2;font-size:11px;font-weight:400;color:#c6d9e9;overflow-wrap:anywhere}
 #sidebarProfile #rp-global-profile .rp-name{display:none}
 #sidebarProfile #rp-global-profile .rp-menu{right:auto;left:0;min-width:0;width:max(100%,205px)}
 
