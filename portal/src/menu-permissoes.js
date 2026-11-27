@@ -46,6 +46,14 @@ export async function podeAcessarAtendimento(usuario) {
   const rows = await q("SELECT escopo,alvo,botao,permitido FROM menu_permissoes WHERE botao='atendimento'");
   return resolve(usuario, rows).atendimento === true;
 }
+export async function atendentesDoPortal() {
+  await schema();
+  const [usuarios, regras] = await Promise.all([
+    q("SELECT id,nome,perfil,setor_id,cargo_id FROM usuarios WHERE ativo=1 ORDER BY nome"),
+    q("SELECT escopo,alvo,botao,permitido FROM menu_permissoes WHERE botao='atendimento'"),
+  ]);
+  return usuarios.filter(usuario => resolve(usuario, regras).atendimento === true);
+}
 export async function exigirAtendimento(req,res,next) {
   try { if (!await podeAcessarAtendimento(req.usuario)) return res.status(403).json({erro:"Central de Atendimento não autorizada para este colaborador."}); next(); }
   catch(e) { next(e); }

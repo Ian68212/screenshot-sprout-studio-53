@@ -27,7 +27,7 @@ import { PERFIS, podeVerFerramenta } from "./permissions.js";
 import { siteRouter } from "./site-cms.js";
 import { mediaRouter } from "./site-media.js";
 import { publicSiteRouter } from "./public-site.js";
-import menuPermissoesRouter, { exigirAtendimento } from "./menu-permissoes.js";
+import menuPermissoesRouter, { atendentesDoPortal, exigirAtendimento, podeAcessarAtendimento } from "./menu-permissoes.js";
 import emailCorporativoRouter, { conectarCaixaIndividualNoLogin } from "./email-corporativo.js";
 import { profilePhotoRouter, ensureProfilePhotoSchema } from "./profile-photo.js";
 
@@ -407,9 +407,15 @@ async function chamarDigiSac(endpoint, method="GET", body) {
 const digiId = id => /^[a-f0-9-]{36}$/i.test(String(id ?? ""));
 
 r.get("/api/atendimento/contato/:id",exigir("painel"),wrap(async(req,res)=>{res.setHeader("Cache-Control","no-store");if(!req.usuario?.ativo)return res.status(403).json({erro:"Acesso restrito ao administrador."});const id=String(req.params.id||"");if(!/^[a-f0-9-]{36}$/i.test(id))return res.status(400).json({erro:"Contato inválido."});try{res.json(await chamarDigiSac("/contacts/"+encodeURIComponent(id)+"?include[0]=tags"))}catch(e){res.status(e.status||502).json({erro:e.message||"Falha ao consultar contato."})}}));
+r.get("/api/atendimento/atendentes", wrap(async (_req, res) => {
+  const atendentes = await atendentesDoPortal();
+  res.setHeader("Cache-Control", "no-store");
+  res.json(atendentes.map(({ id, nome }) => ({ id, name: nome })));
+}));
+
 r.post("/api/atendimento/transferir", exigir("painel"), wrap(async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
-  const { contactId, departmentId, userId, comments = "", assumir = false } = req.body || {};
+  const { contactId, departmentId, userId, comments = "", assumir = false, portalUserId = null } = req.body || {};
   const byUserId = autorDigiSac(req.identidadeDigiSac, req.body?.byUserId);
   if (!digiId(contactId) || !digiId(departmentId) || (userId && !digiId(userId)) ||
       (byUserId && !digiId(byUserId)) || typeof assumir !== "boolean") {
@@ -419,16 +425,28 @@ r.post("/api/atendimento/transferir", exigir("painel"), wrap(async (req, res) =>
     return res.status(400).json({ erro: "Comentário inválido." });
   }
   const assumirNoPortal = assumir && req.identidadeDigiSac.corporativa;
-  const destino = assumirNoPortal ? byUserId : userId;
+  let responsavel = assumirNoPortal ? req.usuario : null;
+  if (portalUserId != null) {
+    const destinoPortal = Number(portalUserId);
+    if (!req.identidadeDigiSac.corporativa || assumir || userId || !Number.isSafeInteger(destinoPortal) || destinoPortal < 1) {
+      return res.status(400).json({ erro: "Selecione um atendente válido do portal." });
+    }
+    [responsavel] = await q("SELECT id,perfil,setor_id,cargo_id,ativo FROM usuarios WHERE id=?", [destinoPortal]);
+    if (!await podeAcessarAtendimento(responsavel)) {
+      return res.status(400).json({ erro: "O colaborador precisa estar ativo e ter acesso à Central de Atendimento." });
+    }
+  }
+  const destino = responsavel ? byUserId : userId;
   try {
     const data = await chamarDigiSac("/contacts/" + encodeURIComponent(contactId) + "/ticket/transfer", "POST", {
       departmentId, ...(destino ? { userId: destino } : {}), comments: comments.trim(), ...(byUserId ? { byUserId } : {}),
     });
-    if (assumirNoPortal) await atribuirAtendimento(contactId, req.usuario.id, req.usuario.setor_id ?? null, req.usuario.id);
-    await auditar(req.usuario.id, "digisac_transferencia", JSON.stringify({ contactId, departmentId, userId: destino || null }), req.ip);
+    if (req.identidadeDigiSac.corporativa) await atribuirAtendimento(contactId, responsavel?.id ?? null, responsavel?.setor_id ?? null, req.usuario.id);
+    await auditar(req.usuario.id, "digisac_transferencia", JSON.stringify({ contactId, departmentId, userId: destino || null, portalUserId: responsavel?.id ?? null }), req.ip);
     res.json({ ok: true, data });
   } catch (e) {
-    res.status(e.status || 502).json({ erro: e.message || "Não foi possível transferir o atendimento." });
+    const arquivado = e.message === "Cannot assign ticket to an archived user.";
+    res.status(e.status || 502).json({ erro: arquivado ? "O atendente selecionado está arquivado na DigiSac." : e.message || "Não foi possível transferir o atendimento." });
   }
 }));
 
