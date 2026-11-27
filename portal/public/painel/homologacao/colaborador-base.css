@@ -296,3 +296,12 @@ body{font-family:Inter,"Segoe UI",Arial,Helvetica,sans-serif;-webkit-font-smooth
  .tasks-shell .rt-focus-actions{grid-column:auto;justify-content:flex-end;max-width:230px}
  .tasks-shell .rt-focus-actions .rt-focus-all{margin-left:0}
 }
+
+/* Priority is visible on the whole card, including when it is collapsed. */
+.tasks-shell .rt-task-card[data-priority="baixa"]{--priority-bg:#e5f4e9;--priority-line:#88b99a;--priority-ink:#185432}
+.tasks-shell .rt-task-card[data-priority="normal"]{--priority-bg:#e7f1ff;--priority-line:#8cb1dc;--priority-ink:#1c4c7a}
+.tasks-shell .rt-task-card[data-priority="alta"]{--priority-bg:#fff0d3;--priority-line:#d6a347;--priority-ink:#714705}
+.tasks-shell .rt-task-card[data-priority="urgente"]{--priority-bg:#ffe0e3;--priority-line:#d66d79;--priority-ink:#802334}
+.tasks-shell .rt-task-card[data-priority]{background:var(--priority-bg);border-color:var(--priority-line);border-left-width:4px;color:var(--priority-ink)}
+.tasks-shell .rt-task-card[data-priority] > .rt-card{background:transparent;border-top-color:var(--priority-line)}
+.tasks-shell .rt-task-priority-label{display:inline-block;margin-inline-start:6px;padding:1px 6px;border:1px solid var(--priority-line);border-radius:8px;font-size:11px;color:var(--priority-ink)}
