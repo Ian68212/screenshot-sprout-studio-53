@@ -93,7 +93,23 @@ const upload = multer({
   },
 });
 app.set("trust proxy", 1);
-app.use(helmet({ contentSecurityPolicy: { directives: { "script-src": ["'self'"] } } }));
+const portalSecurity = helmet({ contentSecurityPolicy: { directives: { "script-src": ["'self'"] } } });
+const mailReaderSecurity = helmet({
+  contentSecurityPolicy: {
+    directives: {
+      "script-src": ["'self'"],
+      "img-src": ["'self'", "data:", "https:"],
+    },
+  },
+});
+const mailReaderPaths = new Set([
+  BASE + "/homologacao/email-corporativo.html",
+  BASE + "/oficial/email-corporativo.html",
+]);
+app.use((req, res, next) => {
+  const security = mailReaderPaths.has(req.path) ? mailReaderSecurity : portalSecurity;
+  security(req, res, next);
+});
 app.use(express.json({ limit: "100kb", verify(req,_res,buf){ if(req.originalUrl?.includes("/api/whatsapp-meta/webhook")) req.rawBody=Buffer.from(buf); } }));
 app.use(cookieParser());
 
