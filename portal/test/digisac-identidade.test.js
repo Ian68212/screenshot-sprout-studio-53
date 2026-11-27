@@ -27,8 +27,8 @@ test("rejeita configuração corporativa inválida", () => {
 test("assina textos e anexos com o primeiro nome da sessão quando habilitado", () => {
   const identidade = identidadeDigiSac(corporativo);
   const usuario = { nome: " Rodrigo Batista do Nascimento " };
-  assert.equal(assinarMensagemDigiSac(" teste 002 ", usuario, identidade, true), "Rodrigo:\nteste 002");
-  assert.equal(assinarMensagemDigiSac("", usuario, identidade, true), "Rodrigo:");
+  assert.equal(assinarMensagemDigiSac(" teste 002 ", usuario, identidade, true), "*Rodrigo:*\nteste 002");
+  assert.equal(assinarMensagemDigiSac("", usuario, identidade, true), "*Rodrigo:*");
   assert.equal(assinarMensagemDigiSac(" teste 002 ", usuario, identidade, false), "teste 002");
   assert.equal(assinarMensagemDigiSac(" teste 002 ", usuario, identidadeDigiSac(""), true), "teste 002");
 });

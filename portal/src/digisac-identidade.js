@@ -17,5 +17,7 @@ export function assinarMensagemDigiSac(texto, usuario, identidade, habilitada = 
   if (!habilitada || !identidade.corporativa) return mensagem;
 
   const nome = String(usuario?.nome ?? "").trim().split(/\s+/, 1)[0];
-  return nome ? (mensagem ? nome + ":\n" + mensagem : nome + ":") : mensagem;
+  if (!nome) return mensagem;
+  const assinatura = "*" + nome.replace(/\*/g, "") + ":*";
+  return mensagem ? assinatura + "\n" + mensagem : assinatura;
 }
