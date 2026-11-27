@@ -1,5 +1,5 @@
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex,nofollow"><title>Administração — Portal Rodrinox Pro</title><link rel="stylesheet" href="/colaborador/portal.css?v=diagramacao-assinatura"><link rel="icon" type="image/png" href="/favicon-rodrinox.png?v=20261110">
+<meta name="robots" content="noindex,nofollow"><title>Administração — Portal Rodrinox Pro</title><link rel="stylesheet" href="/colaborador/portal.css?v=campos-assinatura"><link rel="icon" type="image/png" href="/favicon-rodrinox.png?v=20261110">
 <link rel="stylesheet" href="/colaborador/sidebar-profile.css?v=4">
 </head><body class="admin-page">
 <header class="top"><strong>Rodrinox<span>Pro</span> · Administração</strong><nav aria-label="Navegação da administração"><a href="/colaborador/painel.html" data-portal-return>← Voltar ao portal</a><a href="#" id="sair">Sair</a></nav></header>
@@ -47,16 +47,17 @@
 <form id="formAssinaturaColaborador">
 <h2 id="tituloAssinatura">Assinatura de e-mail</h2>
 <div id="previaAssinaturaColaborador"></div>
-<p id="orientacaoAssinatura">Deixe um campo vazio para usar o dado do cadastro ou omitir um contato adicional.</p>
+<p id="orientacaoAssinatura">Marque os campos que devem aparecer na assinatura. Os dados dos campos desmarcados continuam salvos.</p>
 <div class="row">
-<label>Nome na assinatura<input name="nome" maxlength="160"></label>
-<label>Cargo<input name="cargo" maxlength="120"></label>
-<label>Setor<input name="setor" maxlength="120"></label>
-<label>E-mail<input name="email" type="email" maxlength="254"></label>
-<label>E-mail adicional<input name="emailExtra" type="email" maxlength="254"></label>
-<label>Telefone<input name="telefone" type="tel" maxlength="40"></label>
-<label>WhatsApp<input name="whatsapp" type="tel" maxlength="40"></label>
+<div class="campo-assinatura"><label class="campo-assinatura-opcao"><input type="checkbox" data-visibilidade="nome" aria-label="Exibir nome na assinatura na assinatura"> Nome na assinatura</label><input name="nome" maxlength="160" aria-label="Nome na assinatura"></div>
+<div class="campo-assinatura"><label class="campo-assinatura-opcao"><input type="checkbox" data-visibilidade="cargo" aria-label="Exibir cargo na assinatura"> Cargo</label><input name="cargo" maxlength="120" aria-label="Cargo"></div>
+<div class="campo-assinatura"><label class="campo-assinatura-opcao"><input type="checkbox" data-visibilidade="setor" aria-label="Exibir setor na assinatura"> Setor</label><input name="setor" maxlength="120" aria-label="Setor"></div>
+<div class="campo-assinatura"><label class="campo-assinatura-opcao"><input type="checkbox" data-visibilidade="email" aria-label="Exibir e-mail na assinatura"> E-mail corporativo</label><input name="email" type="email" maxlength="254" aria-label="E-mail"></div>
+<div class="campo-assinatura"><label class="campo-assinatura-opcao"><input type="checkbox" data-visibilidade="emailExtra" aria-label="Exibir e-mail adicional na assinatura"> E-mail adicional</label><input name="emailExtra" type="email" maxlength="254" aria-label="E-mail adicional"></div>
+<div class="campo-assinatura"><label class="campo-assinatura-opcao"><input type="checkbox" data-visibilidade="telefone" aria-label="Exibir telefone na assinatura"> Telefone</label><input name="telefone" type="tel" maxlength="40" aria-label="Telefone"></div>
+<div class="campo-assinatura"><label class="campo-assinatura-opcao"><input type="checkbox" data-visibilidade="whatsapp" aria-label="Exibir whatsapp na assinatura"> WhatsApp</label><input name="whatsapp" type="tel" maxlength="40" aria-label="WhatsApp"></div>
+<label class="campo-assinatura-opcao"><input type="checkbox" data-visibilidade="site"> Site da Rodrinoxpro</label>
 </div>
 <p id="erroAssinaturaColaborador" role="status"></p>
 <div class="botoes-modal"><button type="button" class="sec" id="fecharAssinatura">Fechar</button><button type="submit">Salvar modelo</button></div>
-</form></dialog></main><script src="/colaborador/app.js"></script><script src="/colaborador/admin.js?v=assinatura-colaborador"></script><script src="/colaborador/profile-photo.js?v=perfil-compacto" defer></script><script src="/colaborador/chat-nav.js?v=atalho-email" defer></script><script src="/colaborador/atendimento-alerta.js?v=1" defer></script><script src="/colaborador/portal-return.js?v=1" defer></script></body></html>
+</form></dialog></main><script src="/colaborador/app.js"></script><script src="/colaborador/admin.js?v=campos-assinatura"></script><script src="/colaborador/profile-photo.js?v=perfil-compacto" defer></script><script src="/colaborador/chat-nav.js?v=atalho-email" defer></script><script src="/colaborador/atendimento-alerta.js?v=1" defer></script><script src="/colaborador/portal-return.js?v=1" defer></script></body></html>
