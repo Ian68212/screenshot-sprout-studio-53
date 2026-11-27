@@ -212,7 +212,13 @@ async function abrirAssinaturaColaborador(id) {
   const submit = form.querySelector('button[type="submit"]');
   const endpoint = "email-corporativo/admin/assinaturas/" + encodeURIComponent(id);
 
-  function preencher(dados) {
+  const salvarContatos = document.getElementById("salvarContatosOficiais");
+  const telefone = document.getElementById("assinatura-oficial-telefone");
+  const whatsapp = document.getElementById("assinatura-oficial-whatsapp");
+
+  function atualizarPrevia(dados) {
+    telefone.value = dados.contatosOficiais.telefone;
+    whatsapp.value = dados.contatosOficiais.whatsapp;
     preview.innerHTML = dados.html;
     if (dados.imagem) {
       const image = new Image();
@@ -221,6 +227,10 @@ async function abrirAssinaturaColaborador(id) {
       image.style.maxWidth = "100%";
       preview.replaceChildren(image);
     }
+  }
+
+  function preencher(dados) {
+    atualizarPrevia(dados);
     for (const input of form.querySelectorAll("input[name]")) {
       input.value = dados.personalizados[input.name] || "";
       input.placeholder = dados.cadastro[input.name] || "";
@@ -236,9 +246,28 @@ async function abrirAssinaturaColaborador(id) {
   preencher(await api(endpoint));
   status.textContent = "";
   document.getElementById("fecharAssinatura").onclick = () => dialog.close();
+  salvarContatos.onclick = async () => {
+    if (!confirm("Atualizar o telefone e o WhatsApp oficiais para todas as assinaturas geradas?")) return;
+    salvarContatos.disabled = true;
+    submit.disabled = true;
+    status.textContent = "";
+    try {
+      await api("email-corporativo/admin/assinatura-contatos", {
+        method: "PUT", body: { telefone: telefone.value, whatsapp: whatsapp.value },
+      });
+      atualizarPrevia(await api(endpoint));
+      status.textContent = "Números oficiais atualizados.";
+    } catch (error) {
+      status.textContent = error.message;
+    } finally {
+      salvarContatos.disabled = false;
+      submit.disabled = false;
+    }
+  };
   form.onsubmit = async event => {
     event.preventDefault();
     submit.disabled = true;
+    salvarContatos.disabled = true;
     status.textContent = "";
     try {
       const body = Object.fromEntries(new FormData(form));
@@ -252,6 +281,7 @@ async function abrirAssinaturaColaborador(id) {
       status.textContent = error.message;
     } finally {
       submit.disabled = false;
+      salvarContatos.disabled = false;
     }
   };
   dialog.showModal();
