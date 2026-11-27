@@ -24,6 +24,20 @@ async function garantirTabela() {
   await schema;
 }
 
+function nomePadraoAssinatura(nome, email) {
+  const partes = (nome || "").trim().split(/\s+/).filter(Boolean);
+  const [primeiro] = partes;
+  if (partes.length < 2) return primeiro || "";
+
+  const normalizar = valor => valor.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+  const [inicio = "", sobrenome = ""] = (email || "").split("@")[0].split(/[._-]/);
+  const sobrenomes = partes.slice(1).filter(parte => !/^(da|de|do|das|dos|e)$/i.test(parte));
+  const correspondente = normalizar(inicio) === normalizar(primeiro)
+    ? sobrenomes.find(parte => normalizar(parte) === normalizar(sobrenome))
+    : undefined;
+  return [primeiro, correspondente || sobrenomes.at(-1)].filter(Boolean).join(" ");
+}
+
 export async function dadosAssinatura(id) {
   await garantirTabela();
   const [usuario] = await q(`SELECT u.nome,u.email,c.nome cargo,s.nome setor,a.campos,g.campos contatos
@@ -35,6 +49,7 @@ export async function dadosAssinatura(id) {
   const { campos, contatos, ...cadastro } = usuario;
   const { visibilidade, ...personalizados } = (typeof campos === "string" ? JSON.parse(campos) : campos) || {};
   const contatosOficiais = { ...contatosPadrao, ...(typeof contatos === "string" ? JSON.parse(contatos) : contatos) };
+  cadastro.nome = nomePadraoAssinatura(cadastro.nome, cadastro.email);
   return { cadastro, personalizados, contatosOficiais, visibilidade: { ...visibilidadePadrao, ...visibilidade }, usaModelo: campos != null };
 }
 
