@@ -299,3 +299,10 @@ body{font-family:Inter,"Segoe UI",Arial,Helvetica,sans-serif;-webkit-font-smooth
 #portalAdminMenu[hidden], .side #portalAdminMenu a[hidden]{display:none}
 #portalAdminMenu{border-top:1px solid #ffffff22;margin-top:8px;padding-top:7px}
 .portal-admin-label{padding:3px 8px 6px;color:#b7cbe0;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+
+.rt-task-card{margin:0 0 8px;border:1px solid #dbe8f2;border-radius:10px;background:#fff;color:#102d47}
+.rt-task-title{padding:10px 12px;font-size:13px;font-weight:700;line-height:1.35;cursor:pointer;overflow-wrap:anywhere}
+.rt-task-title[draggable="true"]{cursor:grab}
+.rt-task-title:focus-visible{outline:2px solid #43a7dd;outline-offset:-3px;border-radius:10px}
+.rt-task-card>.rt-card{margin:0;border:0;border-top:1px solid #e2ebf2;border-radius:0 0 10px 10px;box-shadow:none;transform:none}
+.tasks-column.rt-drop-active{outline:2px solid #63bdf0;outline-offset:-2px;background:#173b56}

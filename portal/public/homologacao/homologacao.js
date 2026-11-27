@@ -157,7 +157,7 @@ let rtTaskPolicy={grants:{},scope:"own"};
 const rtCan=key=>rtCurrentUser?.perfil==="admin"||rtTaskPolicy.grants?.[key]===true;
 let rtRevision=null,rtCurrentUser=null,rtSyncing=false,rtDirty=false,rtSharedReady=false,rtSyncError="",rtBoardMode="all",rtPermissionStamp="";
 async function rtRefreshBoard(){
- if(rtSyncing||rtDirty)return;
+ if(rtSyncing||rtDirty||rtDraggingTask!==null)return;
  rtSyncing=true;
  try{const response=await fetch("/colaborador/api/tasks-official/board",{credentials:"same-origin",cache:"no-store"});
  if(!response.ok){const problem=await response.json().catch(()=>({}));throw Error("HTTP "+response.status+(problem.erro?" — "+problem.erro:""));}
@@ -192,6 +192,62 @@ function rtExportBackup(){
  a.href=url;a.download="rodrinox-tasks-backup-"+new Date().toISOString().slice(0,10)+".json";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);
 }
 
+const rtExpandedCards=new Set();
+let rtDraggingTask=null;
+function rtChangeStatus(id,status){
+ const task=rtState.tasks.find(t=>t.id===id);
+ if(!task||!Object.hasOwn(rtStatus,status)||task.status===status){rtDraw();return;}
+ if(!rtCan("tasks.status")||!rtSharedReady||rtDirty||rtSyncing){
+  alert(!rtCan("tasks.status")?"Seu perfil não permite alterar o status.":"Aguarde a sincronização antes de alterar o status.");
+  rtDraw();return;
+ }
+ const previous=task.status;
+ task.status=status;
+ rtLog(task,"Status alterado",rtStatus[previous]+" → "+rtStatus[status]);
+ rtSave();rtDraw();
+}
+document.addEventListener("toggle",e=>{
+ const card=e.target;
+ if(!card.matches?.("details.rt-task-card")||!card.isConnected)return;
+ const id=Number(card.dataset.taskId);
+ if(card.open)rtExpandedCards.add(id);
+ else rtExpandedCards.delete(id);
+},true);
+document.addEventListener("dragstart",e=>{
+ const handle=e.target.closest?.(".rt-task-title[draggable=true]");
+ if(!handle||!e.dataTransfer)return;
+ if(!rtCan("tasks.status")||!rtSharedReady||rtDirty||rtSyncing){e.preventDefault();return;}
+ const card=handle.closest(".rt-task-card");
+ rtDraggingTask=Number(card.dataset.taskId);
+ e.dataTransfer.effectAllowed="move";
+ e.dataTransfer.setData("text/plain",handle.textContent);
+});
+function rtClearDrag(){
+ rtDraggingTask=null;
+ document.querySelectorAll(".rt-drop-active").forEach(column=>column.classList.remove("rt-drop-active"));
+}
+document.addEventListener("dragend",rtClearDrag);
+document.addEventListener("dragover",e=>{
+ const column=e.target.closest?.(".tasks-column[data-task-status]");
+ if(!column||rtDraggingTask===null)return;
+ e.preventDefault();
+ e.dataTransfer.dropEffect="move";
+ column.classList.add("rt-drop-active");
+});
+document.addEventListener("dragleave",e=>{
+ const column=e.target.closest?.(".rt-drop-active");
+ if(column&&!column.contains(e.relatedTarget))column.classList.remove("rt-drop-active");
+});
+document.addEventListener("drop",e=>{
+ if(rtDraggingTask===null)return;
+ const column=e.target.closest?.(".tasks-column[data-task-status]");
+ const id=rtDraggingTask;
+ rtClearDrag();
+ if(!column)return;
+ e.preventDefault();
+ rtChangeStatus(id,column.dataset.taskStatus);
+});
+
 function rtDraw(){const root=document.querySelector("#items .tasks-shell");if(root)root.outerHTML=renderTarefas();}
 let rtProjectDialogId=null,rtProjectHistoryId=null;
 function rtProjectAudit(p,action,detail){(p.history??=[]).push({at:new Date().toISOString(),actor:rtActor(),action,detail});}
@@ -212,7 +268,7 @@ function renderTarefas(){
  return '<section class="tasks-shell"><div class="tasks-heading"><div><span class="tasks-eyebrow">RODRINOX TASKS · OFICIAL</span><h2>Gestão de Tarefas</h2><p>Delegue, acompanhe e receba as tarefas concluídas.</p></div><span class="tasks-connection">'+(rtSharedReady?'Dados compartilhados · atualização a cada 10 s':'Conectando ao servidor…')+'</span></div>'+
  '<div class="tasks-toolbar"><button type="button" id="rt-mode-mine" aria-pressed="'+(rtBoardMode==="mine")+'">Minhas tarefas (atribuídas a mim)</button><button type="button" id="rt-mode-all" aria-pressed="'+(rtBoardMode==="all")+'">'+(rtCurrentUser?.perfil==="admin"?"Todos os projetos":"Projetos em que participo")+'</button><label>Visualizar como <select id="rt-view"><option value="admin"'+(rtView==="admin"?" selected":"")+'>Administrador</option><option value="frank"'+(rtView==="frank"?" selected":"")+'>Frank (simulação)</option></select></label><label>Projeto <select id="rt-project"><option value="0">Todos os projetos</option>'+rtState.projects.map(p=>'<option value="'+p.id+'"'+(rtProject===p.id?" selected":"")+'>'+esc(p.name)+'</option>').join("")+'</select></label><button type="button" id="rt-new-project"'+(rtCan("projects.create")?"":" disabled")+'>+ Novo projeto</button><button type="button" id="rt-new-task"'+(rtCan("tasks.create")?"":" disabled")+'>+ Nova tarefa</button><button type="button" id="rt-export-backup" title="Salvar cópia dos projetos e tarefas antes da migração">Exportar backup</button></div>'+rtProjectSummary()+rtProjectProgress()+
  '<div class="rt-filterbar"><label>Buscar <input id="rt-search" placeholder="Título, responsável, descrição..." value="'+esc(rtSearch)+'"></label><label>Prioridade <select id="rt-priority"><option value="all">Todas</option>'+["baixa","normal","alta","urgente"].map(p=>'<option value="'+p+'"'+(rtPriority===p?" selected":"")+'>'+p+'</option>').join("")+'</select></label><label>Ordenação <select id="rt-sort"><option value="default">Padrão</option><option value="due"'+(rtSort==="due"?" selected":"")+'>Prazo mais próximo</option></select></label></div><div class="tasks-stats"><div><small>Tarefas visíveis</small><strong>'+total+'</strong></div><div><small>Pendentes</small><strong>'+filtered.filter(t=>t.status!=="concluida").length+'</strong></div><div><small>Em andamento</small><strong>'+filtered.filter(t=>t.status==="andamento").length+'</strong></div><div><small>Concluídas</small><strong>'+done+'</strong></div></div>'+
- '<div class="tasks-board">'+Object.entries(rtStatus).map(([key,label])=>'<div class="tasks-column"><h3>'+label+' <small>'+filtered.filter(t=>t.status===key).length+'</small></h3>'+filtered.filter(t=>t.status===key).map(t=>'<article class="rt-card rt-priority-'+(["baixa","normal","alta","urgente"].includes(t.priority)?t.priority:"normal")+'"><div class="rt-card-heading"><strong>'+esc(t.title)+'</strong><span class="rt-priority-badge">'+({baixa:"Baixa",normal:"Normal",alta:"Alta",urgente:"Urgente"}[t.priority]||"Normal")+'</span></div><small>'+esc(rtState.projects.find(p=>p.id===t.projectId)?.name||"Projeto")+'</small><small>Responsável: '+esc(t.owner)+'</small><div class="rt-task-deadlines"><small>Prazo do projeto: '+rtDateLabel(rtState.projects.find(p=>p.id===t.projectId)?.endDate) .replace("Não definida","—")+'</small><small>Prazo da tarefa: '+rtDateLabel(t.due).replace("Não definida","—")+'</small></div>'+(t.note?'<small>'+esc(t.note)+'</small>':'')+(t.repeat?'<small>Recorrência: '+esc(t.repeat)+'</small>':'')+((t.comments||[]).length?'<details class="rt-comments-details"><summary>Visualizar comentários <span class="rt-comments-count">'+t.comments.length+'</span></summary><div class="rt-comments-list">'+t.comments.map(c=>'<small class="rt-comment">'+esc(c)+'</small>').join("")+'</div></details>':'')+(t.checklist||[]).map((c,i)=>'<label class="rt-check"><input type="checkbox" class="rt-check-toggle" data-id="'+t.id+'" data-index="'+i+'"'+(c.done?" checked":"")+'> '+esc(c.text)+'</label>').join("")+'<div class="rt-attachments"><strong>Anexos e documentos</strong>'+(rtAttachments[t.id]||[]).map((a,i)=>'<div class="rt-attachment-row"><span title="'+esc(a.name)+'">'+esc(a.name)+' · '+Math.round(a.size/1024)+' KB</span><button type="button" class="rt-download" data-id="'+t.id+'" data-index="'+i+'">Baixar</button><button type="button" class="rt-remove-file" data-id="'+t.id+'" data-index="'+i+'">Excluir</button></div>').join("")+'<label class="rt-upload-label">+ Anexar documentos<input class="rt-upload" type="file" data-id="'+t.id+'" accept=".pdf,.png,.jpg,.jpeg,.webp,.txt,.csv,.doc,.docx,.xls,.xlsx" multiple></label><small>Arquivos de até 10 MB; anexos armazenados no servidor.</small></div>'+'<label>Status <select class="rt-status" data-id="'+t.id+'">'+Object.entries(rtStatus).map(([v,n])=>'<option value="'+v+'"'+(v===t.status?" selected":"")+'>'+n+'</option>').join("")+'</select></label>'+(rtView==="admin"?'<button type="button" class="rt-delegate" data-id="'+t.id+'">Prazo de conclusão</button><button type="button" class="rt-priority-btn" data-id="'+t.id+'" aria-expanded="'+(rtPriorityPickerId===t.id)+'">Prioridade</button>'+(rtPriorityPickerId===t.id?'<div class="rt-priority-picker" role="group" aria-label="Selecionar prioridade da tarefa">'+["baixa","normal","alta","urgente"].map(p=>'<button type="button" class="rt-priority-choice rt-choice-'+p+'" data-id="'+t.id+'" data-priority="'+p+'" aria-pressed="'+((t.priority||"normal")===p)+'"><span class="rt-choice-dot"></span>'+({baixa:"Baixa",normal:"Normal",alta:"Alta",urgente:"Urgente"}[p])+'</button>').join("")+'</div>':'')+'<button type="button" class="rt-checklist-add" data-id="'+t.id+'">+ Checklist</button><button type="button" class="rt-comment-add" data-id="'+t.id+'">+ Comentário</button><button type="button" class="rt-recurring" data-id="'+t.id+'">Recorrência</button><button type="button" class="rt-history-btn" data-id="'+t.id+'">Histórico ('+(t.history?.length||0)+')</button><button type="button" class="rt-handoff" data-id="'+t.id+'">Concluir etapa e encaminhar</button>':'')+(rtPicker?.taskId===t.id?'<div class="rt-person-picker"><strong>'+(rtPicker.kind==="handoff"?"Encaminhar próxima etapa":"Selecionar responsável")+'</strong><label>Colaborador cadastrado <select class="rt-person-select"><option value="">Selecione um colaborador</option>'+rtPeople.map(p=>'<option value="'+p.id+'">'+esc(rtPersonLabel(p))+'</option>').join("")+'</select></label>'+(rtPeopleError?'<small>'+esc(rtPeopleError)+'</small>':"")+(!rtPeople.length&&!rtPeopleError?'<small>Nenhum colaborador ativo encontrado.</small>':"")+'<div class="rt-picker-actions"><button type="button" class="rt-person-confirm" data-id="'+t.id+'"'+(!rtPeople.length?" disabled":"")+'>Confirmar</button><button type="button" class="rt-person-cancel" data-id="'+t.id+'">Cancelar</button></div></div>':"")+(rtHistoryOpen===t.id?rtHistory(t):"")+'</article>').join("")+(filtered.some(t=>t.status===key)?"":'<p class="rt-empty">Nenhuma tarefa</p>')+'</div>').join("")+'</div>'+
+ '<div class="tasks-board">'+Object.entries(rtStatus).map(([key,label])=>'<div class="tasks-column" data-task-status="'+key+'"><h3>'+label+' <small>'+filtered.filter(t=>t.status===key).length+'</small></h3>'+filtered.filter(t=>t.status===key).map(t=>'<details class="rt-task-card" data-task-id="'+t.id+'"'+(rtExpandedCards.has(t.id)?' open':'')+'><summary class="rt-task-title" draggable="'+rtCan("tasks.status")+'">'+esc(t.title)+'</summary><article class="rt-card rt-priority-'+(["baixa","normal","alta","urgente"].includes(t.priority)?t.priority:"normal")+'"><div class="rt-card-heading"><span class="rt-priority-badge">'+({baixa:"Baixa",normal:"Normal",alta:"Alta",urgente:"Urgente"}[t.priority]||"Normal")+'</span></div><small>'+esc(rtState.projects.find(p=>p.id===t.projectId)?.name||"Projeto")+'</small><small>Responsável: '+esc(t.owner)+'</small><div class="rt-task-deadlines"><small>Prazo do projeto: '+rtDateLabel(rtState.projects.find(p=>p.id===t.projectId)?.endDate) .replace("Não definida","—")+'</small><small>Prazo da tarefa: '+rtDateLabel(t.due).replace("Não definida","—")+'</small></div>'+(t.note?'<small>'+esc(t.note)+'</small>':'')+(t.repeat?'<small>Recorrência: '+esc(t.repeat)+'</small>':'')+((t.comments||[]).length?'<details class="rt-comments-details"><summary>Visualizar comentários <span class="rt-comments-count">'+t.comments.length+'</span></summary><div class="rt-comments-list">'+t.comments.map(c=>'<small class="rt-comment">'+esc(c)+'</small>').join("")+'</div></details>':'')+(t.checklist||[]).map((c,i)=>'<label class="rt-check"><input type="checkbox" class="rt-check-toggle" data-id="'+t.id+'" data-index="'+i+'"'+(c.done?" checked":"")+'> '+esc(c.text)+'</label>').join("")+'<div class="rt-attachments"><strong>Anexos e documentos</strong>'+(rtAttachments[t.id]||[]).map((a,i)=>'<div class="rt-attachment-row"><span title="'+esc(a.name)+'">'+esc(a.name)+' · '+Math.round(a.size/1024)+' KB</span><button type="button" class="rt-download" data-id="'+t.id+'" data-index="'+i+'">Baixar</button><button type="button" class="rt-remove-file" data-id="'+t.id+'" data-index="'+i+'">Excluir</button></div>').join("")+'<label class="rt-upload-label">+ Anexar documentos<input class="rt-upload" type="file" data-id="'+t.id+'" accept=".pdf,.png,.jpg,.jpeg,.webp,.txt,.csv,.doc,.docx,.xls,.xlsx" multiple></label><small>Arquivos de até 10 MB; anexos armazenados no servidor.</small></div>'+'<label>Status <select class="rt-status" data-id="'+t.id+'">'+Object.entries(rtStatus).map(([v,n])=>'<option value="'+v+'"'+(v===t.status?" selected":"")+'>'+n+'</option>').join("")+'</select></label>'+(rtView==="admin"?'<button type="button" class="rt-delegate" data-id="'+t.id+'">Prazo de conclusão</button><button type="button" class="rt-priority-btn" data-id="'+t.id+'" aria-expanded="'+(rtPriorityPickerId===t.id)+'">Prioridade</button>'+(rtPriorityPickerId===t.id?'<div class="rt-priority-picker" role="group" aria-label="Selecionar prioridade da tarefa">'+["baixa","normal","alta","urgente"].map(p=>'<button type="button" class="rt-priority-choice rt-choice-'+p+'" data-id="'+t.id+'" data-priority="'+p+'" aria-pressed="'+((t.priority||"normal")===p)+'"><span class="rt-choice-dot"></span>'+({baixa:"Baixa",normal:"Normal",alta:"Alta",urgente:"Urgente"}[p])+'</button>').join("")+'</div>':'')+'<button type="button" class="rt-checklist-add" data-id="'+t.id+'">+ Checklist</button><button type="button" class="rt-comment-add" data-id="'+t.id+'">+ Comentário</button><button type="button" class="rt-recurring" data-id="'+t.id+'">Recorrência</button><button type="button" class="rt-history-btn" data-id="'+t.id+'">Histórico ('+(t.history?.length||0)+')</button><button type="button" class="rt-handoff" data-id="'+t.id+'">Concluir etapa e encaminhar</button>':'')+(rtPicker?.taskId===t.id?'<div class="rt-person-picker"><strong>'+(rtPicker.kind==="handoff"?"Encaminhar próxima etapa":"Selecionar responsável")+'</strong><label>Colaborador cadastrado <select class="rt-person-select"><option value="">Selecione um colaborador</option>'+rtPeople.map(p=>'<option value="'+p.id+'">'+esc(rtPersonLabel(p))+'</option>').join("")+'</select></label>'+(rtPeopleError?'<small>'+esc(rtPeopleError)+'</small>':"")+(!rtPeople.length&&!rtPeopleError?'<small>Nenhum colaborador ativo encontrado.</small>':"")+'<div class="rt-picker-actions"><button type="button" class="rt-person-confirm" data-id="'+t.id+'"'+(!rtPeople.length?" disabled":"")+'>Confirmar</button><button type="button" class="rt-person-cancel" data-id="'+t.id+'">Cancelar</button></div></div>':"")+(rtHistoryOpen===t.id?rtHistory(t):"")+'</article></details>').join("")+(filtered.some(t=>t.status===key)?"":'<p class="rt-empty">Nenhuma tarefa</p>')+'</div>').join("")+'</div>'+
  '<p class="tasks-note">'+(rtSharedReady?'Quadro compartilhado no servidor. As tarefas pessoais são filtradas pelo usuário autenticado.':'Sincronização indisponível: '+esc(rtSyncError||'aguardando resposta')+'. Não faça alterações até restabelecer a conexão.')+'</p></section>';
 }
 document.addEventListener("change",async e=>{
@@ -237,7 +293,7 @@ document.addEventListener("change",async e=>{
  if(e.target.classList.contains("rt-check-toggle")){const t=rtState.tasks.find(x=>x.id===Number(e.target.dataset.id));const c=t?.checklist?.[Number(e.target.dataset.index)];if(c){c.done=e.target.checked;rtLog(t,"Checklist atualizado",(c.done?"Concluiu: ":"Reabriu: ")+c.text);rtSave();rtDraw();}}
  if(e.target.id==="rt-view"){if(!rtCan("tasks.priority")&&!rtCan("tasks.assign"))return;rtView=e.target.value;rtProject=0;rtProjectStatusFilter="todos";rtDraw();}
  if(e.target.id==="rt-project"){rtProject=Number(e.target.value);rtDraw();}
- if(e.target.classList.contains("rt-status")){const t=rtState.tasks.find(t=>t.id===Number(e.target.dataset.id));if(t){const previous=t.status;t.status=e.target.value;if(previous!==t.status)rtLog(t,"Status alterado",rtStatus[previous]+" → "+rtStatus[t.status]);rtSave();rtDraw();}}
+ if(e.target.classList.contains("rt-status"))rtChangeStatus(Number(e.target.dataset.id),e.target.value);
 });
 document.addEventListener("click",e=>{
  const b=e.target.closest("button");if(!b)return;

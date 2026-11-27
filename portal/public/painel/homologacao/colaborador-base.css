@@ -239,3 +239,10 @@ body{font-family:Inter,"Segoe UI",Arial,Helvetica,sans-serif;-webkit-font-smooth
 
 /* Seleção de prioridade visual — painel oficial e homologação */
 .rt-priority-picker{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:7px 0 10px;padding:9px;border:1px solid #d8e2eb;border-radius:10px;background:#f8fafc}.rt-priority-picker .rt-priority-choice{display:flex;align-items:center;justify-content:flex-start;gap:8px;border:1px solid transparent;border-radius:7px;padding:9px 10px;font-weight:700;cursor:pointer}.rt-choice-dot{width:10px;height:10px;border-radius:50%;background:currentColor;flex-shrink:0}.rt-priority-picker .rt-choice-baixa{background:#e5f4e9;color:#207a3a;border-color:#bde3c8}.rt-priority-picker .rt-choice-normal{background:#e6f1ff;color:#1c63aa;border-color:#b9d8fb}.rt-priority-picker .rt-choice-alta{background:#fff1d7;color:#9b5c00;border-color:#f5d18e}.rt-priority-picker .rt-choice-urgente{background:#fde5e7;color:#b42332;border-color:#f5b8c0}.rt-priority-picker .rt-priority-choice:hover{filter:brightness(.96)}
+
+.rt-task-card{margin:0 0 8px;border:1px solid #dbe8f2;border-radius:10px;background:#fff;color:#102d47}
+.rt-task-title{padding:10px 12px;font-size:13px;font-weight:700;line-height:1.35;cursor:pointer;overflow-wrap:anywhere}
+.rt-task-title[draggable="true"]{cursor:grab}
+.rt-task-title:focus-visible{outline:2px solid #43a7dd;outline-offset:-3px;border-radius:10px}
+.rt-task-card>.rt-card{margin:0;border:0;border-top:1px solid #e2ebf2;border-radius:0 0 10px 10px;box-shadow:none;transform:none}
+.tasks-column.rt-drop-active{outline:2px solid #63bdf0;outline-offset:-2px;background:#173b56}
