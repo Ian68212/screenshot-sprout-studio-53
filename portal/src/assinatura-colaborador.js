@@ -80,13 +80,13 @@ export function modeloAssinatura(dados) {
   const divisa = `<td width="5" aria-hidden="true" style="width:5px;padding:0"><img src="${assets}/divisoria.png" width="5" alt="" style="display:block;width:5px;height:100%;max-height:153px"></td>`;
   const html = `<table role="presentation" cellpadding="0" cellspacing="0" bgcolor="#030917" style="width:100%;max-width:760px;margin-top:12px;color:#fff;background:#030917;border-top:1px solid #147aab;border-bottom:2px solid #f26a1b;table-layout:fixed;font:13px/1.35 Arial,sans-serif">
   <tr>
-    <td width="40%" valign="middle" style="width:40%;padding:0"><img src="${assets}/marca.png" alt="Rodrinoxpro" width="302" style="display:block;width:100%;height:auto;border:0"></td>
-    ${temIdentificacao ? `<td width="30%" valign="middle" style="padding:14px 8px;color:#fff;overflow-wrap:anywhere;word-wrap:break-word">
-      ${nome ? `<strong style="display:block;font-size:27px;line-height:1.07;letter-spacing:-.04em;color:#fff">${escapar(nome)}</strong>` : ""}
-      ${cargo ? `<strong style="display:block;margin-top:5px;font-size:14px;color:#fff">${escapar(cargo)}</strong>` : ""}
+    <td width="32%" valign="middle" style="width:32%;padding:0"><img src="${assets}/marca.png" alt="Rodrinoxpro" width="243" style="display:block;width:100%;height:auto;border:0"></td>
+    ${temIdentificacao ? `<td width="32%" valign="middle" style="width:32%;padding:14px 8px;color:#fff;overflow-wrap:anywhere;word-wrap:break-word">
+      ${nome ? `<strong style="display:block;font-size:25px;line-height:1.07;letter-spacing:-.04em;color:#fff">${escapar(nome)}</strong>` : ""}
+      ${cargo ? `<strong style="display:block;margin-top:5px;font-size:12px;color:#fff">${escapar(cargo)}</strong>` : ""}
       ${setor ? `<div style="margin-top:2px;font-size:13px;color:#fff">${escapar(setor)}</div>` : ""}
     </td>` : ""}
-    ${contatos.length ? `${divisa}<td valign="middle" style="padding:13px 10px;background:#030917 url('${assets}/canto.png') no-repeat right bottom;background-size:69px 25px"><table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;table-layout:fixed;font:12px/1.4 Arial,sans-serif;color:#fff">${contatosHtml}</table></td>` : ""}
+    ${contatos.length ? `${divisa}<td valign="middle" style="padding:13px 8px;background:#030917 url('${assets}/canto.png') no-repeat right bottom;background-size:69px 25px"><table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;table-layout:fixed;font:12px/1.4 Arial,sans-serif;color:#fff">${contatosHtml}</table></td>` : ""}
   </tr></table>`;
   return { html, texto: [nome, cargo, setor, ...contatos].filter(Boolean).join("\n") };
 }
