@@ -31,7 +31,7 @@ async function mostrarContatos(){
 }
 
 const moduleRoutes = {
-  email: { url: "./email-corporativo.html?noPortal=1&v=assinatura-editor", title: "E-mail corporativo" },
+  email: { url: "./email-corporativo.html?noPortal=1&v=leitura-rapida", title: "E-mail corporativo" },
   propostas: { url: "/colaborador/propostas-comerciais.html?noPortal=1", title: "Propostas Comerciais" }
 };
 const sidebar = document.querySelector(".side");
