@@ -26,3 +26,18 @@ Somente depois dos testes: repita os passos com um **banco novo de produção** 
 
 ## Testes
 `npm test` — regras de permissão e senha.
+
+## Identidade corporativa da Central de Atendimento
+
+No aplicativo Node.js de homologação da Hostinger, configure `DIGISAC_API_BASE_URL`,
+`DIGISAC_API_TOKEN` e `DIGISAC_CORPORATE_USER_ID`. A última variável recebe o
+UUID do atendente corporativo autorizado a operar nas filas usadas pela
+Rodrinoxpro. Sem essa variável, o portal mantém a identificação individual.
+
+No painel, libere **Central de Atendimento** para os colaboradores que vão usar
+o módulo. Valide com um usuário liberado sem cadastro na DigiSac e com um
+usuário sem permissão. Na conta liberada, teste fila, histórico, envio de
+texto e anexo, transferência, etiquetas e encerramento usando um contato de
+teste. Em **Contatos**, confirme que **Assumir atendimento** inclui a conversa
+em **Meus Chats** do colaborador. Confira também o registro do colaborador na
+auditoria do portal.
