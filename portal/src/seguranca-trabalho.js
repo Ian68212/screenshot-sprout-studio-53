@@ -16,6 +16,7 @@ await q("CREATE TABLE IF NOT EXISTS sst_documentos (id BIGINT AUTO_INCREMENT PRI
 await q("CREATE TABLE IF NOT EXISTS sst_assinaturas (documento_id BIGINT NOT NULL, usuario_id BIGINT NOT NULL, assinado_em DATETIME NULL, evidencia CHAR(64) NULL, PRIMARY KEY(documento_id,usuario_id))");
 await q("CREATE TABLE IF NOT EXISTS sst_epi_catalogo (id BIGINT AUTO_INCREMENT PRIMARY KEY, nome VARCHAR(160) NOT NULL, ca VARCHAR(40) NOT NULL DEFAULT '', UNIQUE KEY produto(nome,ca))");
 await q("CREATE TABLE IF NOT EXISTS sst_pastas (nome VARCHAR(80) PRIMARY KEY)");
+await q("CREATE TABLE IF NOT EXISTS sst_pasta_config (chave VARCHAR(80) PRIMARY KEY, rotulo VARCHAR(80) NOT NULL, oculto TINYINT NOT NULL DEFAULT 0)");
 await q("CREATE TABLE IF NOT EXISTS sst_versoes (id BIGINT AUTO_INCREMENT PRIMARY KEY, documento_id BIGINT NOT NULL, corpo TEXT NOT NULL, autor_id BIGINT NOT NULL, criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
 const archiveCols=await q("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='sst_documentos' AND COLUMN_NAME='arquivado_em'");if(!archiveCols.length)await q("ALTER TABLE sst_documentos ADD COLUMN arquivado_em DATETIME NULL");
 await q("CREATE TABLE IF NOT EXISTS sst_treinamentos (id BIGINT AUTO_INCREMENT PRIMARY KEY,titulo VARCHAR(200) NOT NULL,inicio DATETIME NOT NULL,local VARCHAR(200) NOT NULL,descricao TEXT NOT NULL,autor_id BIGINT NOT NULL,documentos TEXT NOT NULL)");
@@ -147,6 +148,13 @@ res.json({titulo:r.titulo,categoria:r.categoria,nome:provas?.nome||r.nome,assina
 
 const protectedFolders=["Todos","Certificados e CAs","Fiscalização","Para assinatura","Em elaboração","Documentos assinados","Treinamentos","Fichas de EPI","PGR, PCMSO e laudos","PGR","PCMSO","Laudos","EPI","Entrega de EPI","Retirada de EPI","DDS"];
 const reservedFolder=n=>protectedFolders.some(x=>x.localeCompare(n,"pt-BR",{sensitivity:"base"})===0);
+router.get("/pastas/config",wrap(async(req,res)=>{res.json(await q("SELECT chave,rotulo,oculto FROM sst_pasta_config"));}));
+router.post("/pastas/config",wrap(async(req,res)=>{
+if(!manager(req.usuario))return res.sendStatus(403);
+const chave=String(req.body?.chave||"").trim(),rotulo=String(req.body?.rotulo||"").trim(),oculto=req.body?.oculto===true;
+if(!chave||chave==="Todos"||chave.length>80||!rotulo||rotulo.length>80||rotulo==="Todos")return res.sendStatus(400);
+await q("INSERT INTO sst_pasta_config(chave,rotulo,oculto) VALUES(?,?,?) ON DUPLICATE KEY UPDATE rotulo=VALUES(rotulo),oculto=VALUES(oculto)",[chave,rotulo,oculto?1:0]);res.json({ok:true});
+}));
 router.post("/pastas/renomear",wrap(async(req,res)=>{
 if(!manager(req.usuario))return res.sendStatus(403);
 const nome=String(req.body?.nome||"").trim(),novo=String(req.body?.novo||"").trim();
