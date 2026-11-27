@@ -144,4 +144,21 @@ let provas=null;try{provas=JSON.parse(String(r.provas));}catch{}
 let hashDocumento;try{const a=JSON.parse(r.corpo);if(a.tipo==="sst-anexo-v1")hashDocumento=a.hash;}catch{}
 res.json({titulo:r.titulo,categoria:r.categoria,nome:provas?.nome||r.nome,assinado_em:r.assinado_em,evidencia:r.evidencia,hashDocumento:hashDocumento||crypto.createHash("sha256").update(r.corpo).digest("hex"),provas});
 }));
+
+const protectedFolders=["Todos","Certificados e CAs","Fiscalização","Para assinatura","Em elaboração","Documentos assinados","Treinamentos","Fichas de EPI","PGR, PCMSO e laudos","PGR","PCMSO","Laudos","EPI","Entrega de EPI","Retirada de EPI","DDS"];
+const reservedFolder=n=>protectedFolders.some(x=>x.localeCompare(n,"pt-BR",{sensitivity:"base"})===0);
+router.post("/pastas/renomear",wrap(async(req,res)=>{
+if(!manager(req.usuario))return res.sendStatus(403);
+const nome=String(req.body?.nome||"").trim(),novo=String(req.body?.novo||"").trim();
+if(!nome||!novo||novo.length>80||reservedFolder(nome)||reservedFolder(novo))return res.status(400).json({erro:"Categoria protegida ou nome inválido."});
+const [p]=await q("SELECT nome FROM sst_pastas WHERE nome=?",[nome]);if(!p)return res.sendStatus(404);
+const [exists]=await q("SELECT nome FROM sst_pastas WHERE nome=? UNION SELECT categoria FROM sst_documentos WHERE categoria=? LIMIT 1",[novo,novo]);if(exists)return res.status(409).json({erro:"Já existe uma categoria com esse nome."});
+await q("UPDATE sst_pastas p LEFT JOIN sst_documentos d ON d.categoria=p.nome SET p.nome=?,d.categoria=? WHERE p.nome=?",[novo,novo,nome]);res.json({ok:true});
+}));
+router.post("/pastas/excluir",wrap(async(req,res)=>{
+if(!manager(req.usuario))return res.sendStatus(403);
+const nome=String(req.body?.nome||"").trim();if(!nome||reservedFolder(nome))return res.sendStatus(400);
+const r=await q("DELETE FROM sst_pastas WHERE nome=? AND NOT EXISTS (SELECT 1 FROM sst_documentos WHERE categoria=?)",[nome,nome]);if(!r.affectedRows)return res.status(409).json({erro:"Transfira os documentos para outra categoria antes de excluir."});res.json({ok:true});
+}));
+
 export default router;
