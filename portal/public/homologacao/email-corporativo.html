@@ -123,7 +123,13 @@ html,body{height:100%}body{overflow:hidden}.shell{height:100dvh;min-height:0}.la
 .portal-embedded .mail-row .line time{white-space:nowrap}
 .portal-embedded .mail-read-status{bottom:8px;background:#edf4fa;color:#395d7d;border-color:#b5cadb}
 .portal-embedded .mail-read-status.is-unread{background:#dceafd;color:#184d78;border-color:#a5c3df}
-.portal-embedded #embeddedCompose{background:#223f59;border-color:#ad754f;color:#ffe4ce;font-weight:650}
+.portal-embedded #embeddedCompose{
+ background:#d9c6ff;border-color:#e8dcff;color:#322052;
+ padding-inline:13px;border-radius:9px;font-weight:700;white-space:nowrap;
+}
+.portal-embedded #embeddedCompose:hover{background:#eadfff;filter:none}
+.portal-embedded #embeddedCompose:active{background:#cdb4ff}
+.portal-embedded #embeddedCompose:focus-visible{outline:2px solid #e8dcff;outline-offset:2px}
 .portal-embedded .layout{grid-template-columns:clamp(145px,13%,174px) clamp(255px,25%,365px) minmax(0,1fr)}
 .portal-embedded .folders{display:flex;flex-direction:column;gap:7px;background:#122d47;padding:13px 10px}
 .portal-embedded .folders .section,.portal-embedded .folder-heading{font-size:10px;letter-spacing:.1em;color:#bdcfe2}
