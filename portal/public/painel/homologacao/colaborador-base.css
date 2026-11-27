@@ -246,3 +246,21 @@ body{font-family:Inter,"Segoe UI",Arial,Helvetica,sans-serif;-webkit-font-smooth
 .rt-task-title:focus-visible{outline:2px solid #43a7dd;outline-offset:-3px;border-radius:10px}
 .rt-task-card>.rt-card{margin:0;border:0;border-top:1px solid #e2ebf2;border-radius:0 0 10px 10px;box-shadow:none;transform:none}
 .tasks-column.rt-drop-active{outline:2px solid #63bdf0;outline-offset:-2px;background:#173b56}
+
+.rt-workspace-switch{display:flex;gap:8px;margin:15px 0;border-bottom:1px solid #35536a}
+.rt-workspace-switch button{padding:8px 14px;border:0;border-bottom:2px solid transparent;border-radius:7px 7px 0 0;background:transparent;color:#b8cee2;cursor:pointer}
+.rt-workspace-switch button[aria-pressed=true]{border-color:#80d1ff;background:#19334d;color:#a9e1ff}
+.rt-project-focus{display:grid;grid-template-columns:minmax(0,1fr) minmax(175px,30%);gap:15px;align-items:center;margin-bottom:14px;padding:18px;border:1px solid #416080;border-left:4px solid #ff9b54;border-radius:14px;background:linear-gradient(115deg,#203e60,#142b44 68%,#172b3d)}
+.rt-project-focus h3{margin:4px 0 8px;font-size:clamp(20px,3vw,28px);line-height:1.2;overflow-wrap:anywhere}
+.rt-project-focus .rt-project-dates{justify-content:flex-start;gap:12px;flex-wrap:wrap}
+.rt-project-focus .rt-project-description-toggle{margin-top:8px}
+.rt-focus-progress{padding:10px 14px;border:1px solid #3b5673;border-radius:10px;background:#0e2036}
+.rt-focus-progress .rt-progress-track{margin:5px 0}
+.rt-focus-actions{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px}
+.rt-focus-actions button{padding:7px 11px;border:1px solid #507291;border-radius:7px;background:#224868;color:#f2f8ff;cursor:pointer}
+.rt-focus-actions .rt-focus-create{background:#ff9b54;border-color:#ff9b54;color:#25160e;font-weight:700}
+.rt-focus-actions .rt-focus-all{margin-left:auto}
+.tasks-shell .tasks-stats{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.tasks-shell .tasks-stats>div{display:flex;align-items:center;gap:7px;padding:4px 9px;border-radius:8px;min-height:0}
+.tasks-shell .tasks-stats strong{margin:0;font-size:13px}
+@media(max-width:650px){.rt-project-focus{grid-template-columns:1fr}.rt-focus-actions .rt-focus-all{margin-left:0}}
