@@ -49,7 +49,7 @@ export async function podeAcessarAtendimento(usuario) {
 export async function atendentesDoPortal() {
   await schema();
   const [usuarios, regras] = await Promise.all([
-    q("SELECT id,nome,perfil,setor_id,cargo_id FROM usuarios WHERE ativo=1 ORDER BY nome"),
+    q("SELECT u.id,u.nome,u.perfil,u.setor_id,u.cargo_id,u.foto_url,s.nome AS setor,c.nome AS cargo FROM usuarios u LEFT JOIN setores s ON s.id=u.setor_id LEFT JOIN cargos c ON c.id=u.cargo_id WHERE u.ativo=1 ORDER BY u.nome"),
     q("SELECT escopo,alvo,botao,permitido FROM menu_permissoes WHERE botao='atendimento'"),
   ]);
   return usuarios.filter(usuario => resolve(usuario, regras).atendimento === true);

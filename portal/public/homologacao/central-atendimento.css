@@ -211,3 +211,25 @@
 @media (max-width:760px){
   .ca-root .ca-ticket-actions{display:none}
 }
+
+@media (min-width:761px){
+  body:has(#adminWorkspace) main:has(> #details:not([hidden]) #items.ca-root > .ca-layout){
+    height:100dvh!important;
+    min-height:0!important;
+    overflow:hidden!important;
+    padding-bottom:12px!important;
+  }
+  body:has(#adminWorkspace) #details:not([hidden]):has(#items.ca-root > .ca-layout){
+    height:100%;
+  }
+}
+.ca-modal .ca-transfer-people{min-width:0;border:0;margin:0;padding:0}
+.ca-modal .ca-transfer-people legend{font-size:13px;font-weight:700;color:#29445e;margin-bottom:6px}
+.ca-transfer-list{max-height:min(31dvh,235px);overflow:auto;border:1px solid #dbe5ee;border-radius:9px}
+.ca-modal-content .ca-transfer-person{display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer}
+.ca-transfer-person + .ca-transfer-person{border-top:1px solid #edf2f7}
+.ca-transfer-person:has(input:checked){background:#edf6fe}
+.ca-transfer-person input{accent-color:#147c61}
+.ca-transfer-person small{display:block;margin-top:2px;color:#536c82;font-weight:400}
+.ca-transfer-avatar{position:relative;display:grid;place-items:center;width:34px;height:34px;flex:none;border-radius:50%;overflow:hidden;background:#dcecf7;color:#254862}
+.ca-transfer-avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}

@@ -414,9 +414,10 @@ const digiId = id => /^[a-f0-9-]{36}$/i.test(String(id ?? ""));
 
 r.get("/api/atendimento/contato/:id",exigir("painel"),wrap(async(req,res)=>{res.setHeader("Cache-Control","no-store");if(!req.usuario?.ativo)return res.status(403).json({erro:"Acesso restrito ao administrador."});const id=String(req.params.id||"");if(!/^[a-f0-9-]{36}$/i.test(id))return res.status(400).json({erro:"Contato inválido."});try{res.json(await chamarDigiSac("/contacts/"+encodeURIComponent(id)+"?include[0]=tags"))}catch(e){res.status(e.status||502).json({erro:e.message||"Falha ao consultar contato."})}}));
 r.get("/api/atendimento/atendentes", wrap(async (_req, res) => {
+  await ensureProfilePhotoSchema();
   const atendentes = await atendentesDoPortal();
   res.setHeader("Cache-Control", "no-store");
-  res.json(atendentes.map(({ id, nome }) => ({ id, name: nome })));
+  res.json(atendentes.map(({ id, nome, foto_url, setor, cargo }) => ({ id, name: nome, foto_url, setor, cargo })));
 }));
 
 r.post("/api/atendimento/transferir", exigir("painel"), wrap(async (req, res) => {
