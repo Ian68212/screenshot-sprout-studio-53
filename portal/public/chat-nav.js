@@ -27,12 +27,13 @@ body.rp-no-dock #rp-attendance-dock{display:grid!important}
 @keyframes rp-dot-blink{0%,100%{opacity:1}50%{opacity:.08}}@keyframes rp-nav-flash{0%,100%{background:#2b4969}50%{background:#a3222a;color:#fff}}
 #sidebarAttendance{flex:none;padding:0 0 8px}
 #sidebarAttendance #rp-attendance-dock{position:static;grid-template-columns:1fr;gap:4px;width:100%;padding:0 4px;border:0;background:none;box-shadow:none;backdrop-filter:none}
-#sidebarAttendance #rp-attendance-dock button{min-height:34px;justify-content:flex-start;padding:5px 9px;border:1px solid #35516c;border-radius:7px;background:#193650;color:#f5f9ff;font-size:12px;text-align:left}
+#sidebarAttendance #rp-attendance-dock :is(button, a){min-height:34px;display:flex;align-items:center;justify-content:flex-start;gap:7px;font:700 12px/1.2 system-ui,Arial;text-decoration:none;padding:5px 9px;border:1px solid #35516c;border-radius:7px;background:#193650;color:#f5f9ff;font-size:12px;text-align:left}
 #sidebarAttendance #rp-attendance-dock [data-open="whatsapp"]{--accent:#81ddb5;--border:#3e7667;--surface:#153c3b;--highlight:#214d48}
 #sidebarAttendance #rp-attendance-dock [data-open="chat"]{--accent:#ffc18c;--border:#865a42;--surface:#3b302d;--highlight:#4f3c31}
-#sidebarAttendance #rp-attendance-dock button{background:var(--surface);border-color:var(--border)}
-#sidebarAttendance #rp-attendance-dock button:is(:hover,:focus-visible,[aria-expanded="true"]){background:var(--highlight)}
-#sidebarAttendance #rp-attendance-dock button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+#sidebarAttendance #rp-attendance-dock [data-sidebar-email]{--accent:#a5d2ff;--border:#436e98;--surface:#193b60;--highlight:#244e78}
+#sidebarAttendance #rp-attendance-dock :is(button, a){background:var(--surface);border-color:var(--border)}
+#sidebarAttendance #rp-attendance-dock :is(button, a):is(:hover,:focus-visible,[aria-expanded="true"],[aria-current="page"]){background:var(--highlight)}
+#sidebarAttendance #rp-attendance-dock :is(button, a):focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 #sidebarAttendance #rp-attendance-dock .rp-dock-icon{color:var(--accent)}
 #sidebarAttendance #rp-attendance-dock .rp-dock-icon svg{width:17px;height:17px;stroke:currentColor}
 #sidebarAttendance #rp-attendance-dock .rp-dock-count{position:static;margin-left:auto}
@@ -41,9 +42,15 @@ body.rp-no-dock #rp-attendance-dock{display:grid!important}
 .side:not(:has(#menu [data-tab="chat-interno"]:not([hidden]))) #sidebarAttendance [data-open="chat"],
 .side:not(:has(#menu [data-tab="atendimento"]:not([hidden]))) #sidebarAttendance [data-open="whatsapp"]{display:none}
 `;document.head.append(style);
-const dock=document.createElement("nav");dock.id="rp-attendance-dock";dock.setAttribute("aria-label","Atendimento Rodrinox");
+const dock=document.createElement("nav");dock.id="rp-attendance-dock";dock.setAttribute("aria-label","Atalhos de comunicação");
 dock.innerHTML='<button type="button" data-open="whatsapp"><span class="rp-dock-icon" aria-hidden="true"><svg viewBox="0 0 24 24" role="img" aria-label="WhatsApp"><path d="M12 2.1a9.7 9.7 0 0 0-8.35 14.63L2.4 21.6l5.02-1.2A9.7 9.7 0 1 0 12 2.1Z"/><path d="M8.15 7.25c.25-.55.52-.56.8-.56h.55c.18 0 .38.07.5.36l.78 1.82c.1.24.08.43-.08.62l-.57.68c-.17.18-.22.36-.08.6.45.83 1.2 1.62 2.06 2.13.25.15.44.15.62-.08l.72-.86c.18-.22.4-.25.65-.14l1.75.83c.27.13.42.2.46.36.04.17.04.96-.35 1.47-.4.52-1.05.8-1.7.82-.7.02-1.57-.2-2.7-.7-1.4-.62-2.5-1.65-3.43-2.76-.77-.92-1.26-2-1.3-2.88-.04-.83.36-1.42.72-1.7Z"/></svg></span><span>Central de Atendimento</span></button><button type="button" data-open="chat"><span class="rp-dock-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 3h4l2 5-2.5 1.7a15 15 0 0 0 5.8 5.8L16 13l5 2v4c0 1.1-.9 2-2 2C10.2 21 3 13.8 3 5c0-1.1.9-2 2-2Z"/></svg></span><span>Chat Interno</span></button>';
-(document.getElementById("sidebarAttendance") || document.body).append(dock);
+const sidebarAttendance = document.getElementById("sidebarAttendance");
+const emailShortcut = sidebarAttendance?.closest(".side")?.querySelector("[data-sidebar-email]");
+if (emailShortcut) {
+  emailShortcut.innerHTML = '<span class="rp-dock-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg></span><span>Minha caixa de e-mails</span>';
+  dock.append(emailShortcut);
+}
+(sidebarAttendance || document.body).append(dock);
 const chatDockButton=dock.querySelector('[data-open="chat"]');const chatDockCount=document.createElement("span");chatDockCount.className="rp-dock-count";chatDockCount.hidden=true;chatDockCount.setAttribute("aria-label","Mensagens não lidas");chatDockButton.append(chatDockCount);
 const chatWindow=document.createElement("section");chatWindow.id="rp-chat-window";chatWindow.hidden=true;chatWindow.setAttribute("aria-label","Janela do Chat Interno");chatWindow.innerHTML='<div class="rp-chat-window-bar"><strong>Chat Interno · Rodrinoxpro</strong><button type="button" data-window="maximize" title="Maximizar chat" aria-label="Maximizar chat">□</button><button type="button" data-window="close" title="Fechar chat" aria-label="Fechar chat">×</button></div><iframe title="Chat Interno Rodrinoxpro" loading="lazy"></iframe>';document.body.append(chatWindow);const chatFrame=chatWindow.querySelector("iframe"),maximizeButton=chatWindow.querySelector('[data-window="maximize"]');const attendanceButton=dock.querySelector('[data-open="whatsapp"]');
 const attendanceTab=document.querySelector('#menu [data-tab="atendimento"]');
