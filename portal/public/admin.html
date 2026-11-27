@@ -1,7 +1,12 @@
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex,nofollow"><title>Administração — Portal Rodrinox Pro</title><link rel="stylesheet" href="/colaborador/portal.css?v=20261110-catalogo-v3"><link rel="icon" type="image/png" href="/favicon-rodrinox.png?v=20261110">
-</head><body>
-<header class="top"><strong>Rodrinox<span>Pro</span> · Administração</strong><nav><span id="user">Meu perfil</span><a href="/colaborador/painel.html">Painel</a><a href="#" id="sair">Sair</a></nav></header>
+<meta name="robots" content="noindex,nofollow"><title>Administração — Portal Rodrinox Pro</title><link rel="stylesheet" href="/colaborador/portal.css?v=admin-navegacao"><link rel="icon" type="image/png" href="/favicon-rodrinox.png?v=20261110">
+<link rel="stylesheet" href="/colaborador/sidebar-profile.css?v=4">
+</head><body class="admin-page">
+<header class="top"><strong>Rodrinox<span>Pro</span> · Administração</strong><nav aria-label="Navegação da administração"><a href="/colaborador/painel.html" data-portal-return>← Voltar ao portal</a><a href="#" id="sair">Sair</a></nav></header>
+<aside class="admin-sidebar" aria-label="Perfil e comunicação">
+<div id="sidebarProfile"></div>
+<div id="sidebarAttendance"></div>
+</aside>
 <main>
 <div id="soAdmin" hidden>
 <section class="card"><h2>Cadastrar colaborador</h2><form id="fu" class="row">
@@ -11,7 +16,7 @@
 <div><label>Setor</label><select name="setor_id" class="selSetor"></select></div><div><label>Cargo</label><select name="cargo_id" class="selCargo"></select></div>
 <div><button>Cadastrar</button></div></form><p class="erro" id="eu"></p></section>
 <section class="card"><h2>Candidaturas recebidas</h2><p style="color:#5d6b7e">Currículos enviados pelo site institucional. Acesso restrito à administração.</p><div style="overflow-x:auto"><table><thead><tr><th>Data</th><th>Nome</th><th>Contato</th><th>Área</th><th>Cargo pretendido</th><th>Currículo</th><th>Status</th></tr></thead><tbody id="tc"></tbody></table></div></section>
-<section class="card"><h2>Colaboradores</h2><table><thead><tr><th>Foto</th><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Setor</th><th>Cargo</th><th>Status</th><th></th></tr></thead><tbody id="tu"></tbody></table></section>
+<section class="card"><h2>Colaboradores</h2><div class="tabela-responsiva"><table><thead><tr><th>Foto</th><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Setor</th><th>Cargo</th><th>Status</th><th></th></tr></thead><tbody id="tu"></tbody></table></div></section>
 <section class="card"><h2>Setores e cargos</h2><div class="row">
 <form id="fs"><label>Novo setor</label><input name="nome" required><button class="sec" style="margin-top:.5rem">Adicionar setor</button></form>
 <form id="fc"><label>Novo cargo</label><input name="nome" required><button class="sec" style="margin-top:.5rem">Adicionar cargo</button></form></div>
@@ -27,7 +32,7 @@
 <div><button type="submit">Salvar ferramenta</button></div></form><p class="erro" id="ef"></p></section>
 <section class="card"><h2>Ferramentas e documentos cadastrados</h2><div class="tabela-responsiva"><table><thead><tr><th>Foto</th><th>Nome</th><th>Categoria</th><th>Descrição</th><th></th></tr></thead><tbody id="listaFerramentas"></tbody></table></div></section>
 </div>
-<section class="card"><h2>Registro de acessos</h2><table><thead><tr><th>Quando</th><th>Usuário</th><th>Ação</th><th>Detalhe</th></tr></thead><tbody id="ta"></tbody></table></section>
+<section class="card"><h2>Registro de acessos</h2><div class="tabela-responsiva"><table><thead><tr><th>Quando</th><th>Usuário</th><th>Ação</th><th>Detalhe</th></tr></thead><tbody id="ta"></tbody></table></div></section>
 <dialog id="editarUsuario" class="modal-usuario">
 <form id="formEditarUsuario">
 <h2>Editar colaborador</h2><input type="hidden" name="id">
@@ -38,4 +43,4 @@
 <div class="campo-modal"><label>Cargo</label><select name="cargo_id" class="selCargo"><option value="">Nenhum</option></select></div>
 <p class="erro" id="erroEditarUsuario"></p>
 <div class="botoes-modal"><button type="button" class="sec" id="cancelarEdicao">Cancelar</button><button type="submit">Salvar alterações</button></div>
-</form></dialog></main><script src="/colaborador/app.js"></script><script src="/colaborador/admin.js?v=access-profile-registration-20261111"></script><script src="/colaborador/profile-photo.js?v=perfil-azul-20261126" defer></script><script src="/colaborador/chat-nav.js?v=7" defer></script><script src="/colaborador/atendimento-alerta.js?v=1" defer></script><script src="/colaborador/portal-return.js?v=1" defer></script></body></html>
+</form></dialog></main><script src="/colaborador/app.js"></script><script src="/colaborador/admin.js?v=access-profile-registration-20261111"></script><script src="/colaborador/profile-photo.js?v=perfil-compacto" defer></script><script src="/colaborador/chat-nav.js?v=atalho-email" defer></script><script src="/colaborador/atendimento-alerta.js?v=1" defer></script><script src="/colaborador/portal-return.js?v=1" defer></script></body></html>
