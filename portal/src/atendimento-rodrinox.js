@@ -18,6 +18,11 @@ function schema(){
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`).catch(e=>{pending=null;throw e});
   return pending;
 }
+export async function atribuirAtendimento(contato, usuarioId, setorId, autorId) {
+  await schema();
+  await q(`INSERT INTO atendimento_rodrinox (contato_digisac,usuario_id,setor_id,atualizado_por) VALUES (?,?,?,?)
+      ON DUPLICATE KEY UPDATE usuario_id=VALUES(usuario_id),setor_id=VALUES(setor_id),atualizado_por=VALUES(atualizado_por)`,[contato,usuarioId,setorId,autorId]);
+}
 const admin=u=>u.perfil==="admin";
 const validId=x=>Number.isSafeInteger(Number(x))&&Number(x)>0;
 router.get("/equipe",exigir("painel"),async(req,res,next)=>{
@@ -54,9 +59,7 @@ router.put("/atribuicoes/:contato",exigir("painel"),async(req,res,next)=>{
       const [s]=await q("SELECT id FROM setores WHERE id=?",[setorId]);
       if(!s)return res.status(400).json({erro:"Setor inexistente."});
     }
-    await schema();
-    await q(`INSERT INTO atendimento_rodrinox (contato_digisac,usuario_id,setor_id,atualizado_por) VALUES (?,?,?,?)
-      ON DUPLICATE KEY UPDATE usuario_id=VALUES(usuario_id),setor_id=VALUES(setor_id),atualizado_por=VALUES(atualizado_por)`,[contato,usuarioId,setorId,req.usuario.id]);
+    await atribuirAtendimento(contato, usuarioId, setorId, req.usuario.id);
     await auditar(req.usuario.id,"atendimento_atribuido",JSON.stringify({contato,usuarioId,setorId}),req.ip);
     res.json({ok:true});
   }catch(e){next(e)}
