@@ -80,3 +80,36 @@ button.perigo{background:#a52828;color:white;border:0;border-radius:6px;padding:
 @media (max-width: 780px) {
   .admin-page { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto 1fr; }
 }
+
+/* Keep the signature preview wide without stretching the edit form. */
+#assinaturaColaborador {
+  width: min(860px, calc(100% - 24px));
+  max-height: calc(100dvh - 24px);
+  padding: clamp(16px, 3vw, 28px);
+  overflow: auto;
+}
+#formAssinaturaColaborador { gap: 16px; }
+#tituloAssinatura { margin: 0; }
+#previaAssinaturaColaborador {
+  min-width: 0;
+  overflow-x: auto;
+  background: #f0f4fa;
+  padding: 12px;
+  border: 1px solid #dde7f2;
+  border-radius: 10px;
+}
+#previaAssinaturaColaborador > table { margin: 0 auto !important; }
+#previaAssinaturaColaborador > table td {
+  min-width: 0;
+  border-bottom: 0;
+}
+#previaAssinaturaColaborador > img { display: block; margin: auto; height: auto; }
+#orientacaoAssinatura { margin: 0; color: var(--muted); font-size: .875rem; }
+#formAssinaturaColaborador label { margin: 0; }
+#formAssinaturaColaborador input { margin-top: 5px; }
+#erroAssinaturaColaborador { margin: 0; }
+#erroAssinaturaColaborador:empty { display: none; }
+
+@media (max-width: 600px) {
+  #previaAssinaturaColaborador > table { min-width: 560px; }
+}
