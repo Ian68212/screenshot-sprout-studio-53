@@ -1,3 +1,4 @@
+import { dadosAssinatura, modeloAssinatura, salvarAssinatura, camposAssinatura } from "./assinatura-colaborador.js";
 import { Router } from "express";
 import crypto from "node:crypto";
 import { ImapFlow } from "imapflow";
@@ -102,10 +103,66 @@ router.post("/:id/mensagens/:uid/excluir",exigir("painel"),async(req,res,next)=>
 router.get("/:id/mensagens/:uid/anexos/:index",exigir("painel"),async(req,res,next)=>{let client,lock;try{const c=await caixaPermitida(req,req.params.id);if(!c)return res.status(403).json({erro:"Sem permissão para acessar esta caixa."});if(!c.senha)return res.status(409).json({erro:"Caixa ainda não conectada."});const uid=Number(req.params.uid),index=Number(req.params.index);if(!Number.isSafeInteger(uid)||uid<1||!Number.isSafeInteger(index)||index<0)return res.status(400).json({erro:"Anexo inválido."});const folder=String(req.query.pasta||"INBOX").slice(0,200);client=imap(c);await client.connect();lock=await client.getMailboxLock(folder);const item=await client.fetchOne(uid,{source:true},{uid:true});if(!item?.source)return res.status(404).json({erro:"Mensagem não encontrada."});const parsed=await simpleParser(item.source),file=parsed.attachments?.[index];if(!file)return res.status(404).json({erro:"Anexo não encontrado."});res.set("Cache-Control","no-store");res.type(file.contentType||"application/octet-stream");res.attachment(String(file.filename||"anexo").replace(/[\\\\/\\r\\n]/g,"_"));res.send(file.content)}catch(e){next(e)}finally{if(lock)lock.release();if(client)try{await client.logout()}catch{client.close()}}});
 
 // Assinatura por caixa, persistida no MySQL; cada titular só altera sua própria caixa.
-router.get("/:id/assinatura",exigir("painel"),async(req,res,next)=>{try{const c=await caixaPermitida(req,req.params.id);if(!c)return res.status(403).json({erro:"Sem permissão."});const [a]=await q("SELECT mime,atualizado_em FROM email_assinaturas WHERE caixa_id=?",[c.id]);res.set("Cache-Control","no-store").json({configurada:!!a,imagemUrl:a?"/colaborador/api/email-corporativo/"+c.id+"/assinatura/imagem":null,atualizadoEm:a?.atualizado_em||null})}catch(e){next(e)}});
-router.get("/:id/assinatura/imagem",exigir("painel"),async(req,res,next)=>{try{const c=await caixaPermitida(req,req.params.id);if(!c)return res.status(403).end();const [a]=await q("SELECT imagem,mime FROM email_assinaturas WHERE caixa_id=?",[c.id]);if(!a)return res.status(404).end();res.set({"Cache-Control":"private, no-store","X-Content-Type-Options":"nosniff","Content-Security-Policy":"default-src 'none'; sandbox"});res.type(a.mime);res.send(a.imagem)}catch(e){next(e)}});
-router.post("/:id/assinatura",exigir("painel"),signatureUpload.single("imagem"),async(req,res,next)=>{try{const c=await caixaPermitida(req,req.params.id,true);if(!c)return res.status(403).json({erro:"Sem permissão."});const file=req.file;if(!file)return res.status(400).json({erro:"Selecione uma imagem PNG ou JPEG."});const b=file.buffer;const png=b.length>8&&b.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10]));const jpg=b.length>3&&b[0]===255&&b[1]===216&&b[2]===255;const mime=png?"image/png":jpg?"image/jpeg":null;if(!mime)return res.status(400).json({erro:"Somente PNG ou JPEG válidos."});await q("INSERT INTO email_assinaturas(caixa_id,imagem,mime) VALUES(?,?,?) ON DUPLICATE KEY UPDATE imagem=VALUES(imagem),mime=VALUES(mime)",[c.id,b,mime]);await auditar(req.usuario.id,"email_assinatura_atualizada",c.endereco,req.ip);res.json({ok:true})}catch(e){next(e)}});
-router.post("/:id/enviar",exigir("painel"),uploadEmail.array("anexos",5),async(req,res,next)=>{try{const c=await caixaPermitida(req,req.params.id,true);if(!c)return res.status(403).json({erro:"Sem permissão para enviar por esta caixa."});if(!c.senha)return res.status(409).json({erro:"Caixa ainda não conectada."});const to=String(req.body?.para||"").trim(),subject=String(req.body?.assunto||"").slice(0,998),textBody=String(req.body?.texto||"").slice(0,100000),htmlBody=String(req.body?.html||"").slice(0,300000);const validList=v=>String(v||"").split(/[;,]/).map(x=>x.trim()).filter(Boolean).every(x=>emailRx.test(x));if(!validList(to)||!to||!validList(req.body?.cc)||!validList(req.body?.cco)||!subject&&!textBody&&!htmlBody)return res.status(400).json({erro:"Informe destinatários válidos e o conteúdo da mensagem."});const files=(req.files||[]).map(x=>({filename:x.originalname.replace(/[\\\\/\\r\\n]/g,"_"),content:x.buffer,contentType:x.mimetype}));const [signature]=await q("SELECT imagem,mime FROM email_assinaturas WHERE caixa_id=?",[c.id]);const signatureCid="rodrinox-signature@portal";const signatureTag='<div style="margin-top:18px"><img src="cid:'+signatureCid+'" alt="Assinatura corporativa" style="max-width:620px;width:auto;height:auto"></div>';const effectiveHtml=signature?(htmlBody||'<div>'+textBody.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/\\n/g,"<br>")+'</div>')+signatureTag:htmlBody;const effectiveText=signature?textBody+"\\n\\n[Assinatura corporativa]":textBody;if(signature)files.push({filename:"assinatura."+ (signature.mime==="image/png"?"png":"jpg"),content:signature.imagem,contentType:signature.mime,cid:signatureCid,contentDisposition:"inline"});const message={from:c.endereco,to,cc:req.body?.cc||undefined,bcc:req.body?.cco||undefined,subject,text:effectiveText,html:effectiveHtml||undefined,attachments:files};const raw=await new MailComposer(message).compile().build();const transport=smtp(c);let sent;try{sent=await transport.sendMail({envelope:{from:c.endereco,to:[...to.split(/[;,]/),...String(req.body?.cc||"").split(/[;,]/),...String(req.body?.cco||"").split(/[;,]/)].map(x=>x.trim()).filter(Boolean)},raw})}finally{transport.close()}let savedToSent=false;let sentFolder=null;let saveClient;try{saveClient=imap(c);await saveClient.connect();const boxes=await saveClient.list();const sentBox=boxes.find(b=>b.specialUse==="\\Sent")||boxes.find(b=>/^(sent|sent items|enviados)$/i.test(b.name));if(sentBox){sentFolder=sentBox.path;await saveClient.append(sentFolder,raw,["\\Seen"],new Date());savedToSent=true;mailboxListCache.delete(String(c.id)+":"+sentFolder)}}catch(saveError){console.error("[email] Falha ao salvar cópia em Enviados",saveError.message)}finally{if(saveClient)try{await saveClient.logout()}catch{saveClient.close()}}await auditar(req.usuario.id,"email_enviado",c.endereco+" -> "+to+"; anexos:"+files.length,req.ip);res.json({ok:true,messageId:sent.messageId,savedToSent,sentFolder})}catch(e){next(e)}});
+async function assinaturaDaCaixa(box, userId) {
+  const dados = await dadosAssinatura(userId);
+  const [imagem] = dados?.usaModelo ? [] : await q("SELECT imagem,mime FROM email_assinaturas WHERE caixa_id=?", [box.id]);
+  if (imagem) return { imagem };
+  if (!dados) return {};
+  if (box.tipo === "compartilhada") dados.personalizados.email = box.endereco;
+  return { modelo: modeloAssinatura(dados), gerenciada: dados.usaModelo };
+}
+
+router.get("/admin/assinaturas/:id", exigir("admin.usuarios"), async (req, res, next) => {
+  try {
+    const dados = await dadosAssinatura(req.params.id);
+    if (!dados) return res.status(404).json({ erro: "Colaborador não encontrado." });
+    await schema();
+    const [imagem] = dados.usaModelo ? [] : await q(`SELECT a.imagem,a.mime FROM email_assinaturas a
+      JOIN email_caixas c ON c.id=a.caixa_id WHERE c.usuario_dono_id=? AND c.endereco=? AND c.tipo='individual' AND c.ativo=1`,
+      [req.params.id,dados.cadastro.email]);
+    res.set("Cache-Control","no-store").json({
+      ...dados, ...modeloAssinatura(dados),
+      imagem: imagem ? "data:"+imagem.mime+";base64,"+imagem.imagem.toString("base64") : null,
+    });
+  } catch (error) { next(error); }
+});
+
+router.put("/admin/assinaturas/:id", exigir("admin.usuarios"), async (req, res, next) => {
+  try {
+    if (!await dadosAssinatura(req.params.id)) return res.status(404).json({ erro: "Colaborador não encontrado." });
+    const campos = {};
+    for (const [campo, limite] of Object.entries(camposAssinatura)) {
+      const valor = String(req.body?.[campo] ?? "").trim();
+      if (valor.length > limite || (/^email/.test(campo) && valor && !emailRx.test(valor))) {
+        return res.status(400).json({ erro: "Confira os dados da assinatura." });
+      }
+      if (valor) campos[campo] = valor;
+    }
+    await salvarAssinatura(req.params.id, campos);
+    await auditar(req.usuario.id, "email_assinatura_colaborador_atualizada", req.params.id, req.ip);
+    res.json({ ok: true });
+  } catch (error) { next(error); }
+});
+
+router.get("/:id/assinatura", exigir("painel"), async (req, res, next) => {
+  try {
+    const box = await caixaPermitida(req, req.params.id) || await caixaPermitida(req, req.params.id, true);
+    if (!box) return res.status(403).json({ erro: "Sem permissão." });
+    const { imagem, modelo, gerenciada } = await assinaturaDaCaixa(box, req.usuario.id);
+    res.set("Cache-Control","no-store").json({
+      configurada: Boolean(imagem || modelo),
+      imagemUrl: imagem ? "/colaborador/api/email-corporativo/"+box.id+"/assinatura/imagem" : null,
+      html: modelo?.html,
+      gerenciada: Boolean(gerenciada),
+    });
+  } catch (error) { next(error); }
+});
+router.get("/:id/assinatura/imagem",exigir("painel"),async(req,res,next)=>{try{const c=await caixaPermitida(req,req.params.id)||await caixaPermitida(req,req.params.id,true);if(!c)return res.status(403).end();const [a]=await q("SELECT imagem,mime FROM email_assinaturas WHERE caixa_id=?",[c.id]);if(!a)return res.status(404).end();res.set({"Cache-Control":"private, no-store","X-Content-Type-Options":"nosniff","Content-Security-Policy":"default-src 'none'; sandbox"});res.type(a.mime);res.send(a.imagem)}catch(e){next(e)}});
+router.post("/:id/assinatura",exigir("painel"),signatureUpload.single("imagem"),async(req,res,next)=>{try{const c=await caixaPermitida(req,req.params.id,true);if(!c)return res.status(403).json({erro:"Sem permissão."});if((await dadosAssinatura(req.usuario.id))?.usaModelo)return res.status(409).json({erro:"Esta assinatura é gerenciada no cadastro de colaboradores."});const file=req.file;if(!file)return res.status(400).json({erro:"Selecione uma imagem PNG ou JPEG."});const b=file.buffer;const png=b.length>8&&b.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10]));const jpg=b.length>3&&b[0]===255&&b[1]===216&&b[2]===255;const mime=png?"image/png":jpg?"image/jpeg":null;if(!mime)return res.status(400).json({erro:"Somente PNG ou JPEG válidos."});await q("INSERT INTO email_assinaturas(caixa_id,imagem,mime) VALUES(?,?,?) ON DUPLICATE KEY UPDATE imagem=VALUES(imagem),mime=VALUES(mime)",[c.id,b,mime]);await auditar(req.usuario.id,"email_assinatura_atualizada",c.endereco,req.ip);res.json({ok:true})}catch(e){next(e)}});
+router.post("/:id/enviar",exigir("painel"),uploadEmail.array("anexos",5),async(req,res,next)=>{try{const c=await caixaPermitida(req,req.params.id,true);if(!c)return res.status(403).json({erro:"Sem permissão para enviar por esta caixa."});if(!c.senha)return res.status(409).json({erro:"Caixa ainda não conectada."});const to=String(req.body?.para||"").trim(),subject=String(req.body?.assunto||"").slice(0,998),textBody=String(req.body?.texto||"").slice(0,100000),htmlBody=String(req.body?.html||"").slice(0,300000);const validList=v=>String(v||"").split(/[;,]/).map(x=>x.trim()).filter(Boolean).every(x=>emailRx.test(x));if(!validList(to)||!to||!validList(req.body?.cc)||!validList(req.body?.cco)||!subject&&!textBody&&!htmlBody)return res.status(400).json({erro:"Informe destinatários válidos e o conteúdo da mensagem."});const files=(req.files||[]).map(x=>({filename:x.originalname.replace(/[\\\\/\\r\\n]/g,"_"),content:x.buffer,contentType:x.mimetype}));const { imagem:signature, modelo }=await assinaturaDaCaixa(c,req.usuario.id);const signatureCid="rodrinox-signature@portal";const signatureTag='<div style="margin-top:18px"><img src="cid:'+signatureCid+'" alt="Assinatura corporativa" style="max-width:620px;width:auto;height:auto"></div>';const signatureHtml=signature?signatureTag:modelo?.html;
+const effectiveHtml=signatureHtml?(htmlBody||'<div>'+textBody.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/\n/g,"<br>")+'</div>')+signatureHtml:htmlBody;
+const effectiveText=signatureHtml?textBody+"\n\n"+(modelo?.texto||"[Assinatura corporativa]"):textBody;
+if(signature)files.push({filename:"assinatura."+ (signature.mime==="image/png"?"png":"jpg"),content:signature.imagem,contentType:signature.mime,cid:signatureCid,contentDisposition:"inline"});const message={from:c.endereco,to,cc:req.body?.cc||undefined,bcc:req.body?.cco||undefined,subject,text:effectiveText,html:effectiveHtml||undefined,attachments:files};const raw=await new MailComposer(message).compile().build();const transport=smtp(c);let sent;try{sent=await transport.sendMail({envelope:{from:c.endereco,to:[...to.split(/[;,]/),...String(req.body?.cc||"").split(/[;,]/),...String(req.body?.cco||"").split(/[;,]/)].map(x=>x.trim()).filter(Boolean)},raw})}finally{transport.close()}let savedToSent=false;let sentFolder=null;let saveClient;try{saveClient=imap(c);await saveClient.connect();const boxes=await saveClient.list();const sentBox=boxes.find(b=>b.specialUse==="\\Sent")||boxes.find(b=>/^(sent|sent items|enviados)$/i.test(b.name));if(sentBox){sentFolder=sentBox.path;await saveClient.append(sentFolder,raw,["\\Seen"],new Date());savedToSent=true;mailboxListCache.delete(String(c.id)+":"+sentFolder)}}catch(saveError){console.error("[email] Falha ao salvar cópia em Enviados",saveError.message)}finally{if(saveClient)try{await saveClient.logout()}catch{saveClient.close()}}await auditar(req.usuario.id,"email_enviado",c.endereco+" -> "+to+"; anexos:"+files.length,req.ip);res.json({ok:true,messageId:sent.messageId,savedToSent,sentFolder})}catch(e){next(e)}});
 
 // Administração original das caixas e concessões, mantida nesta versão integrada.
 router.get("/admin/caixas",exigir("admin.usuarios"),async(_req,res,next)=>{try{await schema();res.set("Cache-Control","no-store").json({caixas:await q("SELECT id,endereco,nome,tipo,usuario_dono_id,ativo FROM email_caixas ORDER BY tipo,nome")})}catch(e){next(e)}});

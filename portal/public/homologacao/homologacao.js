@@ -31,7 +31,7 @@ async function mostrarContatos(){
 }
 
 const moduleRoutes = {
-  email: { url: "./email-corporativo.html?noPortal=1&v=botao-roxo", title: "E-mail corporativo" },
+  email: { url: "./email-corporativo.html?noPortal=1&v=assinatura-colaborador", title: "E-mail corporativo" },
   propostas: { url: "/colaborador/propostas-comerciais.html?noPortal=1", title: "Propostas Comerciais" }
 };
 const sidebar = document.querySelector(".side");
