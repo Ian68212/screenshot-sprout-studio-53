@@ -150,7 +150,7 @@ function rtPersonLabel(p){return p.nome+" · "+p.departamento+" · "+p.email;}
 let rtHistoryOpen=null;
 const rtActor=()=>rtCurrentUser?.nome||"Usuário";
 function rtLog(task,event,details=""){(task.history??=[]).push({at:new Date().toISOString(),actor:rtActor(),event,details});}
-function rtHistory(task){const history=task.history?.length?task.history:[{at:null,actor:"Demonstração",event:"Tarefa inicial do protótipo",details:"Eventos anteriores não foram registrados."}];return '<div class="rt-history-panel"><h4>Linha do tempo</h4>'+history.map(h=>'<div class="rt-history-event"><strong>'+esc(h.event)+'</strong><small>'+esc(h.actor)+' · '+(h.at?new Date(h.at).toLocaleString("pt-BR"):"Sem data")+'</small>'+(h.details?'<p>'+esc(h.details)+'</p>':"")+'</div>').join("")+'</div>';}
+function rtHistory(task){const history=task.history?.length?task.history:[{at:null,actor:"Demonstração",event:"Tarefa inicial do protótipo",details:"Eventos anteriores não foram registrados."}];return '<details class="rt-history-panel"><summary style="cursor:pointer;font-weight:600">Linha do tempo ('+history.length+')</summary><div style="max-height:280px;overflow-y:auto;padding-top:8px">'+history.map(h=>'<div class="rt-history-event"><strong>'+esc(h.event)+'</strong><small>'+esc(h.actor)+' · '+(h.at?new Date(h.at).toLocaleString("pt-BR"):"Sem data")+'</small>'+(h.details?'<p>'+esc(h.details)+'</p>':"")+'</div>').join("")+'</div></details>';}
 let rtView="admin",rtProject=0,rtPriorityPickerId=null;
 const rtStatus={a_fazer:"A fazer",andamento:"Em andamento",revisao:"Em revisão",concluida:"Concluída"};
 let rtTaskPolicy={grants:{},scope:"own"};
@@ -369,7 +369,7 @@ document.addEventListener("click",e=>{
    const selector=document.querySelector(".rt-person-select");const person=rtPeople.find(p=>p.id===Number(selector?.value));if(!person)return alert("Selecione um colaborador cadastrado.");
    let note="";if(rtPicker.kind==="handoff"){const response=prompt("Descreva a etapa concluída (opcional):","");if(response===null)return;note=response.trim().slice(0,600);}
    const previous=t.owner;t.owner=person.nome;t.ownerId=person.id;t.ownerEmail=person.email;
-   if(rtPicker.kind==="handoff"){t.status="a_fazer";rtLog(t,"Etapa concluída e encaminhada",previous+" → "+person.nome+" ("+person.email+")"+(note?" | Entrega: "+note:""));rtHistoryOpen=t.id;}
+   if(rtPicker.kind==="handoff"){t.status="a_fazer";rtLog(t,"Etapa concluída e encaminhada",previous+" → "+person.nome+" ("+person.email+")"+(note?" | Entrega: "+note:""));rtHistoryOpen=null;}
    else rtLog(t,"Responsável alterado",previous+" → "+person.nome+" ("+person.email+")");
    rtPicker=null;rtSave();rtDraw();return;
  }
