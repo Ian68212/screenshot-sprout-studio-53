@@ -36,7 +36,11 @@ export function resolve(u, rows) {
     for (const row of rows) if (row.escopo === scope && String(row.alvo) === alvo && Object.hasOwn(visible,row.botao) && (!ADMIN_KEYS.has(row.botao) || u.perfil === "admin")) visible[row.botao] = Number(row.permitido) === 1;
   }
   // Administradores sempre conservam acesso ao menu e à central de controle.
-  if (u.perfil === "admin") visible["admin.permissoes"] = true;
+  if (u.perfil === "admin") {
+    visible["admin.permissoes"] = true;
+    visible.atendimento = true;
+    visible["atendimento.fila"] = true;
+  }
   visible.seguranca = true; // SST disponível a todos os usuários autenticados.
   visible["atendimento.fila"] = visible.atendimento && visible["atendimento.fila"];
   return visible;
