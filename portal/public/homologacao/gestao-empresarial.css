@@ -64,3 +64,15 @@
 @media(max-width:900px){#ge-live .ge-workspace{flex-direction:column}#ge-live #ge-results,#ge-live .ge-summary{width:100%}}
 
 #ge-live [hidden]{display:none!important}.ge-detail-dialog{background:#112d46;color:#eaf2fa;border:1px solid #42607b;border-radius:12px;width:min(850px,90vw);max-height:85vh;overflow:auto;padding:24px}.ge-detail-dialog::backdrop{background:#0009}.ge-detail-dialog dt{color:#a7bfd4;font-weight:bold;margin-top:10px}.ge-detail-dialog dd{margin:4px 0 4px 16px;overflow-wrap:anywhere}.ge-detail-button,.ge-detail-dialog button{background:#23435e;color:#fff;border:1px solid #42607b;border-radius:6px;padding:7px 12px;cursor:pointer}
+
+#ge-live.ge-finance .ge-heading{margin-bottom:8px}
+#ge-live.ge-finance .ge-heading h3{font-size:20px}
+#ge-live.ge-finance .ge-panel{padding:10px;background:transparent;border:0}
+#ge-live.ge-finance .ge-data-table{font-size:12px}
+#ge-live.ge-finance .ge-data-table th,#ge-live.ge-finance .ge-data-table td{padding:7px 8px;vertical-align:middle}
+#ge-live.ge-finance .ge-data-table td:nth-child(2){min-width:155px}
+#ge-live.ge-finance .ge-data-table td:nth-child(3){min-width:200px}
+#ge-live.ge-finance .ge-data-table input[type=checkbox]{min-width:0;width:15px;height:15px;accent-color:#e78a24}
+#ge-live.ge-finance .ge-detail-button{padding:4px 9px}
+#ge-live.ge-finance #ge-results{max-height:65vh}
+#ge-live.ge-finance .ge-summary{width:190px}
