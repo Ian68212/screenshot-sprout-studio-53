@@ -33,7 +33,7 @@ export function resolve(u, rows) {
   for (const scope of ["perfil","setor","cargo","usuario"]) {
     const alvo = target(u, scope);
     if (alvo == null) continue;
-    for (const row of rows) if (row.escopo === scope && row.alvo === alvo && Object.hasOwn(visible,row.botao) && (!ADMIN_KEYS.has(row.botao) || u.perfil === "admin")) visible[row.botao] = !!row.permitido;
+    for (const row of rows) if (row.escopo === scope && String(row.alvo) === alvo && Object.hasOwn(visible,row.botao) && (!ADMIN_KEYS.has(row.botao) || u.perfil === "admin")) visible[row.botao] = Number(row.permitido) === 1;
   }
   // Administradores sempre conservam acesso ao menu e à central de controle.
   if (u.perfil === "admin") visible["admin.permissoes"] = true;
