@@ -20,3 +20,17 @@ form("newModel",async d=>{await post("/modelos",Object.fromEntries(d));await mod
 function generate(m){model=m;$("generator").hidden=false;const el=$("fields");el.replaceChildren();const keys=[...new Set(Array.from(m.corpo.matchAll(/\{\{\s*([\w.-]+)\s*\}\}/g),x=>x[1]))];const inputs=new Map();function render(){$("preview").value=m.corpo.replace(/\{\{\s*([\w.-]+)\s*\}\}/g,(all,k)=>inputs.get(k)?.value||all);}for(const k of keys){const label=node("label",k,el);const i=node("input","",label);inputs.set(k,i);i.oninput=render;}render();}
 $("download").onclick=()=>{if(!model)return;const url=URL.createObjectURL(new Blob([$("preview").value],{type:"text/plain;charset=utf-8"}));const a=document.createElement("a");a.href=url;a.download="contrato.txt";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
 run(async()=>{await categories();await list();})();
+
+async function permissionPanel(){
+ const me=await fetch("/colaborador/api/eu",{credentials:"same-origin"});if(!me.ok)return;
+ const user=await me.json();if(user.perfil!=="admin")return;
+ const section=node("section","",document.querySelector("main"));node("h2","Permissões de contratos",section);
+ const list=node("div","",section);
+ const button=node("button","Gerenciar acessos",section);
+ button.onclick=run(async()=>{list.replaceChildren();for(const u of await api("/permissoes")){const row=node("article","",list);node("strong",u.nome,row);
+ const viewLabel=node("label","Visualizar ",row),view=node("input","",viewLabel);view.type="checkbox";view.checked=!!u.visualizar;
+ const editLabel=node("label","Editar ",row),edit=node("input","",editLabel);edit.type="checkbox";edit.checked=!!u.editar;
+ view.onchange=()=>{if(!view.checked)edit.checked=false;};edit.onchange=()=>{if(edit.checked)view.checked=true;};
+ const save=node("button","Salvar acesso",row);save.onclick=run(async()=>{await api("/permissoes/"+u.id,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({visualizar:view.checked,editar:edit.checked})});$("status").textContent="Permissão atualizada.";});}});
+}
+run(permissionPanel)();
