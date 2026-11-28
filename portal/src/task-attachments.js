@@ -6,7 +6,7 @@ import crypto from "node:crypto";
 import { q, auditar } from "./db.js";
 import { exigir } from "./auth.js";
 import { taskPolicy } from "./access-profiles.js";
-import { uploadDriveFile, readDriveFile, deleteDriveFile } from "./drive-storage.js";
+import { uploadDriveFile, streamDriveFile, deleteDriveFile, startResumableDriveUpload, appendResumableDriveChunk } from "./drive-storage.js";
 
 export const taskAttachmentsRouter = Router();
 taskAttachmentsRouter.use(exigir("painel"));
@@ -73,11 +73,11 @@ taskAttachmentsRouter.get("/:taskId/:id/download",wrap(async(req,res)=>{
  if(!row)return res.status(404).json({erro:"Anexo não encontrado"});
  res.set("Cache-Control","private, no-store");
  if(row.drive_file_id){
-  const bytes=await readDriveFile(row.drive_file_id);
+  
   res.set("Content-Type","application/octet-stream");
   res.set("X-Content-Type-Options","nosniff");
   res.set("Content-Disposition","attachment; filename*=UTF-8''"+encodeURIComponent(row.original_name));
-  return res.send(bytes);
+  return streamDriveFile(row.drive_file_id,res);
  }
  res.download(path.join(folder,row.stored_name),row.original_name);
 }));
@@ -90,4 +90,30 @@ taskAttachmentsRouter.delete("/:taskId/:id",wrap(async(req,res)=>{
  if(!row.drive_file_id)await fs.unlink(path.join(folder,row.stored_name)).catch(()=>{});
  await auditar(req.usuario.id,"excluiu_documento_tarefa",String(req.params.taskId),req.ip);
  res.json({ok:true});
+}));
+
+const sessions=new Map();
+const chunkUpload=multer({storage:multer.memoryStorage(),limits:{fileSize:4*1024*1024,files:1}}).single("arquivo");
+taskAttachmentsRouter.post("/:taskId/start",wrap(async(req,res)=>{
+ if(!await access(req,req.params.taskId,"tasks.attachments.upload"))return res.sendStatus(403);
+ const {name,size,mime}=req.body||{};
+ if(typeof name!=="string"||!Number.isSafeInteger(size)||size<1||size>1073741824)return res.status(400).json({erro:"Limite de 1 GB por arquivo"});
+ if(!allowed.has(path.extname(name).toLowerCase())&&!/\.(mp4|mov|webm|zip|step|stp|dwg|dxf)$/i.test(name))return res.status(400).json({erro:"Formato não permitido"});
+ for(const [k,v] of sessions)if(v.expires<Date.now())sessions.delete(k);
+ if(sessions.size>=100)return res.sendStatus(429);
+ const type=typeof mime==="string"&&/^[\w.+-]+\/[\w.+-]+$/.test(mime)?mime:"application/octet-stream";
+ const url=await startResumableDriveUpload({category:"Tarefas",name:path.basename(name),mime:type,size});
+ const token=crypto.randomUUID();sessions.set(token,{url,name:path.basename(name).slice(0,255),size,type,task:req.params.taskId,user:req.usuario.id,offset:0,expires:Date.now()+3600000,busy:false});res.json({token});
+}));
+taskAttachmentsRouter.post("/:taskId/chunk/:token",wrap(async(req,res,next)=>{
+ const v=sessions.get(req.params.token);
+ if(!v||v.expires<Date.now()||v.task!==req.params.taskId||v.user!==req.usuario.id||!await access(req,v.task,"tasks.attachments.upload"))return res.sendStatus(403);
+ if(v.busy)return res.sendStatus(409);v.busy=true;
+ chunkUpload(req,res,async err=>{try{
+ if(err)throw err;
+ const b=req.file?.buffer;if(!b||b.length!==Math.min(4*1024*1024,v.size-v.offset)||Number(req.body.offset)!==v.offset)return res.status(400).json({erro:"Bloco inválido"});
+ const result=await appendResumableDriveChunk(v.url,b,v.offset,v.size,v.type);v.offset=result.nextOffset;
+ if(result.complete){sessions.delete(req.params.token);try{await q("INSERT INTO rp_task_attachments(task_id,stored_name,original_name,mime_type,file_size,uploaded_by,drive_file_id) VALUES (?,?,?,?,?,?,?)",[v.task,crypto.randomUUID(),v.name,v.type,v.size,v.user,result.id]);}catch(e){await deleteDriveFile(result.id).catch(()=>{});throw e;}await auditar(v.user,"anexou_documento_tarefa",v.task,req.ip);}
+ res.json({complete:result.complete,nextOffset:v.offset});
+ }catch(e){next(e)}finally{v.busy=false;}});
 }));
