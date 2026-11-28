@@ -298,7 +298,7 @@ document.addEventListener("click",e=>{
  if(b.classList.contains("rt-project-history-btn")){const id=Number(b.dataset.project);rtProjectHistoryId=rtProjectHistoryId===id?null:id;rtDraw();return;}
  if(b.dataset.rtWorkspace){
   rtWorkspaceView=b.dataset.rtWorkspace;
-  if(rtWorkspaceView==="projects"){rtProject=0;rtProjectStatusFilter="todos";}
+  if(rtWorkspaceView==="projects"){rtBoardMode="all";rtProject=0;rtProjectStatusFilter="todos";}
   rtDraw();document.querySelector('[data-rt-workspace="'+rtWorkspaceView+'"]')?.focus();return;
  }
  if(b.classList.contains("rt-focus-all")){rtProject=0;rtProjectStatusFilter="todos";rtDraw();document.getElementById("rt-project")?.focus();return;}
