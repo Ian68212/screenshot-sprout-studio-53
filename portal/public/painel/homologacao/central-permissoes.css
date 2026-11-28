@@ -84,3 +84,26 @@
 #adminWorkspace #mp-profiles:hover{background:#275e85;border-color:#74b5df;transform:translateY(-1px)}
 #adminWorkspace #mp-profiles:focus-visible{outline:3px solid #ff8b30;outline-offset:3px}
 @media(max-width:560px){#adminWorkspace #mp-profiles{width:100%;white-space:normal}}
+
+/* Compact responsive profile editor; no changes to access rules. */
+#adminWorkspace:has(#ap-select) .admin-heading{padding:12px 18px!important;margin-bottom:12px!important}
+#adminWorkspace:has(#ap-select) .admin-heading h2{font-size:22px!important;margin:4px 0!important}
+#adminWorkspace:has(#ap-select) .admin-heading p{margin:4px 0!important;font-size:12px}
+#adminWorkspace .mp-wrap:has(#ap-select){max-width:none;max-height:none;overflow:visible;gap:0}
+#adminWorkspace .mp-wrap:has(#ap-select) .mp-intro{margin:0}
+#adminWorkspace .mp-wrap:has(#ap-select) .mp-intro h3{font-size:17px;margin:0 0 4px}
+#adminWorkspace .mp-wrap:has(#ap-select) .mp-intro p{font-size:12px;margin:0 0 6px}
+#adminWorkspace .mp-wrap:has(#ap-select) .mp-controls{gap:10px;margin:7px 0;align-items:end}
+#adminWorkspace .mp-wrap:has(#ap-select) .mp-controls:has(#ap-select){grid-template-columns:minmax(0,1fr) auto auto}
+#adminWorkspace .mp-wrap:has(#ap-select) .mp-controls:has(#ap-name){grid-template-columns:minmax(0,1fr) minmax(0,1.4fr) minmax(0,1fr) auto}
+#adminWorkspace .mp-wrap:has(#ap-select) .mp-controls:has(#ap-user){grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto}
+#adminWorkspace .mp-wrap:has(#ap-select) .mp-controls label{gap:4px}
+#adminWorkspace .mp-wrap:has(#ap-select) input:not([type=checkbox]),#adminWorkspace .mp-wrap:has(#ap-select) select,#adminWorkspace .mp-wrap:has(#ap-select) button{min-height:34px;padding:6px 11px;font-size:13px;border-radius:6px}
+#adminWorkspace .mp-wrap:has(#ap-select) #ap-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));min-height:0;max-height:none;overflow:visible}
+#adminWorkspace .mp-wrap:has(#ap-select) #ap-actions .mp-item{min-height:34px;padding:6px 12px;box-sizing:border-box;font-size:13px;gap:8px;border-bottom:1px solid #2d4862}
+#adminWorkspace .mp-wrap:has(#ap-select) #ap-actions .mp-item:nth-child(odd){border-right:1px solid #2d4862}
+#adminWorkspace .mp-wrap:has(#ap-select) #ap-actions input[type=checkbox]{flex:none;margin:0}
+#adminWorkspace .mp-wrap:has(#ap-select) .mp-footer{margin:8px 0 12px;min-height:34px;gap:8px}
+#adminWorkspace .mp-wrap:has(#ap-select) .mp-note{margin:6px 0;font-size:11px;line-height:1.4}
+@media(max-width:1050px){#adminWorkspace .mp-wrap:has(#ap-select) .mp-controls:has(#ap-name){grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:740px){#adminWorkspace .mp-wrap:has(#ap-select) .mp-controls:has(#ap-select),#adminWorkspace .mp-wrap:has(#ap-select) .mp-controls:has(#ap-name),#adminWorkspace .mp-wrap:has(#ap-select) .mp-controls:has(#ap-user),#adminWorkspace .mp-wrap:has(#ap-select) #ap-actions{grid-template-columns:1fr}#adminWorkspace .mp-wrap:has(#ap-select) #ap-actions .mp-item:nth-child(odd){border-right:0}}
