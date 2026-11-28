@@ -13,6 +13,9 @@ router.use(exigir("painel"),wrap(async(req,res,next)=>{res.set("Cache-Control","
 const edit=(req,res,next)=>req.contratoEditar?next():res.sendStatus(403);
 const upload=multer({storage:multer.memoryStorage(),limits:{fileSize:25*1024*1024,files:1}}).single("arquivo");
 const str=(v,n)=>String(v??"").trim().slice(0,n);
+const adminOnly=(req,res,next)=>req.usuario.perfil==="admin"?next():res.sendStatus(403);
+router.get("/permissoes",adminOnly,wrap(async(req,res)=>res.json(await q("SELECT u.id,u.nome,COALESCE(p.visualizar,0) visualizar,COALESCE(p.editar,0) editar FROM usuarios u LEFT JOIN contratos_permissoes p ON p.usuario_id=u.id ORDER BY u.nome"))));
+router.put("/permissoes/:id",adminOnly,wrap(async(req,res)=>{const visualizar=req.body.visualizar===true,editar=visualizar&&req.body.editar===true;await q("INSERT INTO contratos_permissoes(usuario_id,visualizar,editar) VALUES(?,?,?) ON DUPLICATE KEY UPDATE visualizar=VALUES(visualizar),editar=VALUES(editar)",[req.params.id,visualizar,editar]);res.json({ok:true});}));
 router.get("/categorias",wrap(async(req,res)=>res.json(await q("SELECT * FROM contratos_categorias ORDER BY nome"))));
 router.post("/categorias",edit,wrap(async(req,res)=>{const nome=str(req.body.nome,150);if(!nome)return res.sendStatus(400);await q("INSERT IGNORE INTO contratos_categorias(nome) VALUES(?)",[nome]);res.json({ok:true});}));
 router.get("/",wrap(async(req,res)=>{const term="%"+str(req.query.busca,200)+"%";res.json(await q("SELECT c.*,k.nome categoria,(SELECT MAX(v.versao) FROM contratos_versoes v WHERE v.contrato_id=c.id) versao FROM contratos c JOIN contratos_categorias k ON k.id=c.categoria_id WHERE c.arquivado_em IS NULL AND (c.titulo LIKE ? OR c.contraparte LIKE ? OR c.documento LIKE ? OR c.numero LIKE ?) ORDER BY c.id DESC LIMIT 500",[term,term,term,term]));}));
