@@ -595,11 +595,12 @@ r.use("/api/whatsapp-meta", whatsappMetaRouter);
 // Diretório de responsáveis para o protótipo de tarefas: IDs reais e usuários ativos.
 // Apenas campos necessários à delegação; requer sessão autenticada.
 r.get("/api/tarefas/responsaveis", exigir("painel"), wrap(async (_req, res) => {
-  const rows = await q(`SELECT u.id, u.nome, u.email, s.nome AS departamento
-    FROM usuarios u LEFT JOIN setores s ON s.id=u.setor_id
+  await ensureProfilePhotoSchema();
+  const rows = await q(`SELECT u.id, u.nome, u.email, u.foto_url, c.nome AS cargo, s.nome AS departamento
+    FROM usuarios u LEFT JOIN setores s ON s.id=u.setor_id LEFT JOIN cargos c ON c.id=u.cargo_id
     WHERE u.ativo=1 AND LOWER(u.email) LIKE '%@rodrinoxpro.com.br'
     ORDER BY s.nome, u.nome`);
-  res.json(rows.map(({id,nome,email,departamento})=>({id,nome,email,departamento:departamento||"Sem departamento"})));
+  res.json(rows.map(({id,nome,email,departamento,foto_url,cargo})=>({id,nome,email,foto_url:foto_url||null,cargo:cargo||null,departamento:departamento||"Sem departamento"})));
 }));
 
 r.get("/api/contatos", exigir("painel"), wrap(async (_req, res) => {
