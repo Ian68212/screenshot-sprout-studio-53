@@ -128,6 +128,7 @@ blingRouter.get("/consulta/:resource/:id",admin,wrap(async(req,res)=>{
 
 const snapshotJobs=new Map();
 const snapshotFailures=new Map();
+const snapshotProgress=new Map();
 async function buildFinanceSnapshot(resource,from,to,k){
  const rows=new Map();
  for(let page=1;page<=50;page++){
@@ -143,19 +144,22 @@ async function buildFinanceSnapshot(resource,from,to,k){
   await new Promise(r=>setTimeout(r,450));
  }
  const refs=new Map();
+ snapshotProgress.set(k,{data:[...rows.values()],done:0});
+ let done=0;
  for(const row of rows.values()){
-  const detail=await cachedDetail(resource,String(row.id));if(!detail.data)throw Error("detail_failed");
+  const detail=await cachedDetail(resource,String(row.id));if(!detail.data){if(detail.status===429)throw Error("rate_limit");continue;}
   Object.assign(row,detail.data);
   for(const [field,type] of [["contato","contatos"],["formaPagamento","formas"]]){
    const v=row[field],id=String(v?.id??v??"");
    if(!/^\d{1,18}$/.test(id)||id==="0"||v?.nome||v?.descricao)continue;
    const refKey=type+"/"+id;
-   if(!refs.has(refKey)){const result=await cachedDetail(type,id);if(!result.data)throw Error("reference_failed");refs.set(refKey,result.data)}
+   if(!refs.has(refKey)){const result=await cachedDetail(type,id);if(!result.data){if(result.status===429)throw Error("rate_limit");continue;}refs.set(refKey,result.data)}
    const ref=refs.get(refKey);row[field]={id,nome:ref.nome??ref.descricao??"Não identificado"};
   }
-  row._geDone=true;
+  row._geDone=true;snapshotProgress.get(k).done=++done;
  }
  const data=[...rows.values()].sort((a,b)=>String(a.vencimento).localeCompare(String(b.vencimento)));
+ if(done!==rows.size)throw Error("incomplete_details");
  await saveStored(k,{data,updatedAt:Date.now()},86400);
 }
 blingRouter.get("/financeiro/:resource/snapshot",admin,wrap(async(req,res)=>{
@@ -165,7 +169,7 @@ blingRouter.get("/financeiro/:resource/snapshot",admin,wrap(async(req,res)=>{
  const stored=await readStored(k);
  let job=snapshotJobs.get(k);
  if((!stored||Date.now()-stored.updatedAt>300000)&&!job&&snapshotJobs.size<1&&(!snapshotFailures.has(k)||Date.now()-snapshotFailures.get(k)>60000)){
-  job=buildFinanceSnapshot(resource,from,to,k).then(()=>snapshotFailures.delete(k)).catch(()=>{snapshotFailures.set(k,Date.now());if(snapshotFailures.size>100)snapshotFailures.delete(snapshotFailures.keys().next().value)}).finally(()=>snapshotJobs.delete(k));snapshotJobs.set(k,job);
+  job=buildFinanceSnapshot(resource,from,to,k).then(()=>snapshotFailures.delete(k)).catch(()=>{snapshotFailures.set(k,Date.now());if(snapshotFailures.size>100)snapshotFailures.delete(snapshotFailures.keys().next().value)}).finally(()=>{snapshotJobs.delete(k);snapshotProgress.delete(k)});snapshotJobs.set(k,job);
  }
- res.json({data:stored?.data??null,updatedAt:stored?.updatedAt??null,refreshing:!!job,failed:snapshotFailures.has(k)&&!job});
+ res.json({data:stored?.data??null,updatedAt:stored?.updatedAt??null,partial:stored?null:snapshotProgress.get(k)??null,refreshing:!!job,failed:snapshotFailures.has(k)&&!job});
 }));
