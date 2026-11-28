@@ -427,6 +427,35 @@ async function chamarDigiSac(endpoint, method="GET", body) {
 
 const digiId = id => /^[a-f0-9-]{36}$/i.test(String(id ?? ""));
 
+const contactRows = p => Array.isArray(p)?p:(p?.rows||p?.data||p?.items||p?.results||[]);
+async function whatsappConnections(){
+ const data=await chamarDigiSac("/services?perPage=100");
+ const rows=contactRows(data);
+ return (Array.isArray(rows)?rows:[]).filter(s=>digiId(s.id)&&!s.archivedAt&&!s.deletedAt&&/^whatsapp(?:-|$)/i.test(s.type||"")).map(s=>({id:s.id,name:s.name||"WhatsApp"}));
+}
+r.get("/api/atendimento/conexoes-whatsapp",wrap(async(req,res)=>{
+ res.set("Cache-Control","no-store");try{res.json(await whatsappConnections());}catch(e){res.status(502).json({erro:"Não foi possível consultar as conexões de WhatsApp."});}
+}));
+r.post("/api/atendimento/contatos",wrap(async(req,res)=>{
+ res.set("Cache-Control","no-store");
+ const {nome,numero,serviceId}=req.body||{};
+ if(typeof nome!=="string"||!nome.trim()||nome.length>150||typeof numero!=="string"||!/^\+?[1-9][0-9]{7,14}$/.test(numero)||!digiId(serviceId))return res.status(400).json({erro:"Informe nome, número internacional e conexão válidos."});
+ const number=numero.replace(/^\+/,"");
+ try{
+ if(!(await whatsappConnections()).some(s=>s.id===serviceId))return res.status(400).json({erro:"Conexão de WhatsApp indisponível."});
+ const query=new URLSearchParams({"where[data.number][$iLike]":number,"where[serviceId]":serviceId});
+ const existing=contactRows(await chamarDigiSac("/contacts?"+query));
+ const found=Array.isArray(existing)&&existing.find(c=>digiId(c.id)&&String(c.data?.number||c.number||"").replace(/\D/g,"")===number);
+ if(found)return res.json({contato:found,existente:true});
+ const result=await chamarDigiSac("/contacts","POST",{name:nome.trim(),internalName:nome.trim(),number,serviceId});
+ const contato=result?.data||result;
+ if(!digiId(contato?.id))return res.status(502).json({erro:"Cadastro sem identificação confirmada. Pesquise o número antes de repetir."});
+ await auditar(req.usuario.id,"atendimento_contato_criado",JSON.stringify({contactId:contato.id}),req.ip).catch(()=>{});
+ res.status(201).json({contato});
+ }catch(e){res.status(502).json({erro:"Não foi possível confirmar o cadastro. Pesquise o número antes de tentar novamente."});}
+}));
+
+
 r.get("/api/atendimento/contato/:id",exigir("painel"),wrap(async(req,res)=>{res.setHeader("Cache-Control","no-store");if(!req.usuario?.ativo)return res.status(403).json({erro:"Acesso restrito ao administrador."});const id=String(req.params.id||"");if(!/^[a-f0-9-]{36}$/i.test(id))return res.status(400).json({erro:"Contato inválido."});try{res.json(await chamarDigiSac("/contacts/"+encodeURIComponent(id)+"?include[0]=tags"))}catch(e){res.status(e.status||502).json({erro:e.message||"Falha ao consultar contato."})}}));
 r.get("/api/atendimento/atendentes", wrap(async (_req, res) => {
   await ensureProfilePhotoSchema();
