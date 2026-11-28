@@ -10,6 +10,7 @@ const key=()=>crypto.createHash("sha256").update(process.env.BLING_TOKEN_KEY).di
 function encrypt(value){const iv=crypto.randomBytes(12),c=crypto.createCipheriv("aes-256-gcm",key(),iv);return Buffer.concat([iv,Buffer.concat([c.update(JSON.stringify(value)),c.final()]),c.getAuthTag()]).toString("base64")}
 let ready;
 function schema(){return ready ||= (async()=>{
+ await q("CREATE TABLE IF NOT EXISTS rp_bling_finance_schedule (resource VARCHAR(12) NOT NULL,date_from CHAR(10) NOT NULL,date_to CHAR(10) NOT NULL,last_requested DATETIME NOT NULL,PRIMARY KEY(resource,date_from,date_to)) ENGINE=InnoDB");
  await q("CREATE TABLE IF NOT EXISTS rp_bling_read_cache (cache_key CHAR(64) PRIMARY KEY,payload MEDIUMTEXT NOT NULL,expires_at DATETIME NOT NULL) ENGINE=InnoDB");
  await q("CREATE TABLE IF NOT EXISTS rp_bling_state (state_hash CHAR(64) PRIMARY KEY,user_id INT NOT NULL,expires_at DATETIME NOT NULL) ENGINE=InnoDB");
  await q("CREATE TABLE IF NOT EXISTS rp_bling_tokens (id INT PRIMARY KEY,token_enc TEXT NOT NULL,connected_by INT NOT NULL,updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP) ENGINE=InnoDB");
@@ -38,7 +39,7 @@ blingRouter.get("/callback",admin,wrap(async(req,res)=>{
  const data=await response.json();
  if(!response.ok||!data.access_token||!data.refresh_token)return res.status(502).json({erro:"Autorização Bling não concluída."});
  await q("INSERT INTO rp_bling_tokens(id,token_enc,connected_by) VALUES(1,?,?) ON DUPLICATE KEY UPDATE token_enc=VALUES(token_enc),connected_by=VALUES(connected_by)",[encrypt({...data,received_at:Date.now()}),req.usuario.id]);
- await q("DELETE FROM rp_bling_read_cache");detailCache.clear();
+ await q("DELETE FROM rp_bling_read_cache");await q("DELETE FROM rp_bling_finance_schedule");detailCache.clear();
  res.type("text/plain").send("Autorização Bling armazenada. Sincronização ainda não ativada.");
 }));
 
@@ -109,7 +110,7 @@ async function cachedDetail(resource,id){
   const response=await fetch("https://api.bling.com.br/Api/v3/"+resources[resource]+"/"+id,{headers:{Authorization:"Bearer "+token,Accept:"application/json"},redirect:"error",signal:AbortSignal.timeout(15000)});
   if(!response.ok)return {status:response.status};
   const payload=await response.json();const data={data:payload.data??null};
-  if(data.data)await saveStored("detail:"+cacheKey,data,["contatos","formas"].includes(resource)?900:120);
+  if(data.data)await saveStored("detail:"+cacheKey,data,["contatos","formas"].includes(resource)?86400:1800);
   if(data.data){detailCache.set(cacheKey,{data,until:Date.now()+(["contatos","formas"].includes(resource)?300000:60000)});if(detailCache.size>2000)detailCache.delete(detailCache.keys().next().value)}
   return data;
  });
@@ -144,9 +145,9 @@ async function buildFinanceSnapshot(resource,from,to,k){
   await new Promise(r=>setTimeout(r,450));
  }
  const refs=new Map();
- snapshotProgress.set(k,{data:[...rows.values()],done:0});
+ snapshotProgress.set(k,{data:[...rows.values()].sort((a,b)=>String(a.vencimento).localeCompare(String(b.vencimento))),done:0});
  let done=0;
- for(const row of rows.values()){
+ for(const row of [...rows.values()].sort((a,b)=>Number(b.situacao===1)-Number(a.situacao===1)||String(a.vencimento).localeCompare(String(b.vencimento)))){
   const detail=await cachedDetail(resource,String(row.id));if(!detail.data){if(detail.status===429)throw Error("rate_limit");continue;}
   Object.assign(row,detail.data);
   for(const [field,type] of [["contato","contatos"],["formaPagamento","formas"]]){
@@ -154,18 +155,19 @@ async function buildFinanceSnapshot(resource,from,to,k){
    if(!/^\d{1,18}$/.test(id)||id==="0"||v?.nome||v?.descricao)continue;
    const refKey=type+"/"+id;
    if(!refs.has(refKey)){const result=await cachedDetail(type,id);if(!result.data){if(result.status===429)throw Error("rate_limit");continue;}refs.set(refKey,result.data)}
-   const ref=refs.get(refKey);row[field]={id,nome:ref.nome??ref.descricao??"Não identificado"};
+   const ref=refs.get(refKey);if(!ref)continue;row[field]={id,nome:ref.nome??ref.descricao??"Não identificado"};
   }
   row._geDone=true;snapshotProgress.get(k).done=++done;
  }
  const data=[...rows.values()].sort((a,b)=>String(a.vencimento).localeCompare(String(b.vencimento)));
  if(done!==rows.size)throw Error("incomplete_details");
- await saveStored(k,{data,updatedAt:Date.now()},86400);
+ await saveStored(k,{data,updatedAt:Date.now()},604800);
 }
 blingRouter.get("/financeiro/:resource/snapshot",admin,wrap(async(req,res)=>{
  const {resource}=req.params,{from,to}=req.query;
  if(!["pagar","receber"].includes(resource)||typeof from!=="string"||typeof to!=="string"||!/^\d{4}-\d{2}-\d{2}$/.test(from)||!/^\d{4}-\d{2}-\d{2}$/.test(to)||from>to)return res.sendStatus(400);
  const k="finance:"+resource+":"+from+":"+to;
+ await q("INSERT INTO rp_bling_finance_schedule(resource,date_from,date_to,last_requested) VALUES(?,?,?,UTC_TIMESTAMP()) ON DUPLICATE KEY UPDATE last_requested=UTC_TIMESTAMP()",[resource,from,to]);
  const stored=await readStored(k);
  let job=snapshotJobs.get(k);
  if((!stored||Date.now()-stored.updatedAt>300000)&&!job&&snapshotJobs.size<1&&(!snapshotFailures.has(k)||Date.now()-snapshotFailures.get(k)>60000)){
@@ -173,3 +175,23 @@ blingRouter.get("/financeiro/:resource/snapshot",admin,wrap(async(req,res)=>{
  }
  res.json({data:stored?.data??null,updatedAt:stored?.updatedAt??null,partial:stored?null:snapshotProgress.get(k)??null,refreshing:!!job,failed:snapshotFailures.has(k)&&!job});
 }));
+
+async function refreshScheduledFinance(){
+ if(!configured()||snapshotJobs.size)return;
+ await schema();
+ const [authorized]=await q("SELECT id FROM rp_bling_tokens WHERE id=1");if(!authorized)return;
+ const schedules=await q("SELECT resource,date_from,date_to FROM rp_bling_finance_schedule WHERE last_requested>DATE_SUB(UTC_TIMESTAMP(),INTERVAL 7 DAY) ORDER BY last_requested DESC LIMIT 12");
+ for(const item of schedules){
+  if(snapshotJobs.size)return;
+  const {resource,date_from:from,date_to:to}=item,k="finance:"+resource+":"+from+":"+to;
+  if(!["pagar","receber"].includes(resource))continue;
+  const stored=await readStored(k);
+  if(snapshotJobs.size)return;
+  if(stored&&Date.now()-stored.updatedAt<1800000)continue;
+  if(snapshotFailures.has(k)&&Date.now()-snapshotFailures.get(k)<120000)continue;
+  const job=buildFinanceSnapshot(resource,from,to,k).then(()=>snapshotFailures.delete(k)).catch(()=>snapshotFailures.set(k,Date.now())).finally(()=>{snapshotJobs.delete(k);snapshotProgress.delete(k)});
+  snapshotJobs.set(k,job);return;
+ }
+}
+const financeTimer=setInterval(()=>refreshScheduledFinance().catch(()=>{}),60000);
+financeTimer.unref();
