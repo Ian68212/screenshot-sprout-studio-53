@@ -200,7 +200,7 @@ root.querySelectorAll(".ca-contact-photo").forEach(img=>{img.addEventListener("e
 // Revalida explicitamente o estado dos controles apos cada renderizacao.
 // As acoes dependem do contato real do chamado, nao do mapeamento de e-mail.
 const actionTarget = selectedContactId();
-if(status?.identidadeCorporativa&&selected!=="meus"){for(const id of ["caAttach","caRecordVoice","caAttachmentInput"]) {const el=document.getElementById(id);if(el)el.disabled=true;}const input=document.getElementById("caComposeText");if(input)input.placeholder="Assuma o atendimento para responder";if(active&&selected==="fila"){const b=document.getElementById("caTransfer");if(b){b.innerHTML="Assumir atendimento";b.setAttribute("aria-label","Assumir atendimento");}}}
+if(status?.identidadeCorporativa&&selected!=="meus"){for(const id of ["caAttach","caRecordVoice","caAttachmentInput"]) {const el=document.getElementById(id);if(el)el.disabled=true;}const input=document.getElementById("caComposeText");if(input)input.placeholder="Assuma o atendimento para responder";if(active&&selected==="fila"){const b=document.getElementById("caTransfer");if(b){b.innerHTML="Assumir atendimento";b.style.cssText="width:auto;min-width:0;max-width:none;height:36px;padding:0 12px;border-radius:8px;white-space:nowrap;background:#087f5b;color:white;font-size:12px;font-weight:600;flex-shrink:0";const actions=b.parentElement;actions.style.cssText="display:flex;align-items:center;gap:8px;width:auto;flex-shrink:0";b.setAttribute("aria-label","Assumir atendimento");}}}
 const canRunTicketActions = Boolean(active && selected !== "meta" && actionTarget);
 for (const id of ["caTransfer","caClose"]) {
   const button = document.getElementById(id);
