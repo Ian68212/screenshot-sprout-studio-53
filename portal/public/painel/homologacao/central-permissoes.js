@@ -60,7 +60,25 @@ async function openCustomProfiles(){
   $("ap-select").innerHTML='<option value="">Novo perfil</option>'+options(customProfiles,"id","name");
   $("ap-user").innerHTML=options(people.filter(p=>p.perfil!=="admin"),"id","nome");
   $("ap-assign-profile").innerHTML='<option value="">Sem perfil personalizado</option>'+options(customProfiles.filter(p=>p.active),"id","name");
-  $("ap-user").onchange=()=>{$("ap-assign-profile").value=String(customAssignments.find(a=>String(a.user_id)===$("ap-user").value)?.profile_id||"")};
+  const userSelect=$("ap-user");
+  const preview=document.createElement("div");
+  preview.setAttribute("aria-live","polite");
+  Object.assign(preview.style,{display:"flex",alignItems:"center",gap:"12px",padding:"10px",marginTop:"8px",border:"1px solid #35536e",borderRadius:"10px"});
+  userSelect.parentElement.append(preview);
+  userSelect.onchange=()=>{
+   $("ap-assign-profile").value=String(customAssignments.find(a=>String(a.user_id)===userSelect.value)?.profile_id||"");
+   preview.replaceChildren();
+   const person=people.find(p=>String(p.id)===userSelect.value&&p.perfil!=="admin");
+   preview.style.display=person?"flex":"none";
+   if(!person)return;
+   const avatar=document.createElement("span");
+   Object.assign(avatar.style,{position:"relative",display:"grid",placeItems:"center",width:"48px",height:"48px",flexShrink:"0",borderRadius:"50%",overflow:"hidden",background:"#284c68",color:"#fff",fontWeight:"700"});
+   avatar.textContent=String(person.nome||"").trim().split(/\s+/).slice(0,2).map(n=>n[0]||"").join("").toUpperCase();
+   try{const url=new URL(person.foto_url||"",location.origin);if(person.foto_url&&url.origin===location.origin){const img=document.createElement("img");img.src=url.href;img.alt="";Object.assign(img.style,{position:"absolute",inset:"0",width:"100%",height:"100%",objectFit:"cover"});img.onerror=()=>img.remove();avatar.append(img)}}catch{}
+   const info=document.createElement("div"),name=document.createElement("strong"),detail=document.createElement("small");
+   name.textContent=person.nome;detail.textContent=[person.cargo,person.setor].filter(Boolean).join(" · ")||"Colaborador cadastrado";
+   detail.style.display="block";info.append(name,detail);preview.append(avatar,info);
+  };
   $("ap-actions").innerHTML=data.actions.map(k=>'<label class="mp-item"><span>'+esc(taskLabels[k]||k)+'</span><input type="checkbox" data-ap-action="'+esc(k)+'"></label>').join("");
   fillProfile();$("ap-user").onchange();
  }catch(e){$("ap-status").textContent=e.message}
