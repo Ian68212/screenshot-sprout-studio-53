@@ -62,3 +62,5 @@
 #ge-live .ge-summary{width:190px;flex:none;padding:14px;background:#0c2238;border:1px solid #34516a;border-radius:8px;font-size:13px;color:#b9cede}
 #ge-live .ge-summary strong{display:block;font-size:19px;color:#78d6a2}
 @media(max-width:900px){#ge-live .ge-workspace{flex-direction:column}#ge-live #ge-results,#ge-live .ge-summary{width:100%}}
+
+#ge-live [hidden]{display:none!important}.ge-detail-dialog{background:#112d46;color:#eaf2fa;border:1px solid #42607b;border-radius:12px;width:min(850px,90vw);max-height:85vh;overflow:auto;padding:24px}.ge-detail-dialog::backdrop{background:#0009}.ge-detail-dialog dt{color:#a7bfd4;font-weight:bold;margin-top:10px}.ge-detail-dialog dd{margin:4px 0 4px 16px;overflow-wrap:anywhere}.ge-detail-button,.ge-detail-dialog button{background:#23435e;color:#fff;border:1px solid #42607b;border-radius:6px;padding:7px 12px;cursor:pointer}

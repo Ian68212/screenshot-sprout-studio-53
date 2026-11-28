@@ -82,3 +82,13 @@ blingRouter.get("/consulta/:resource",admin,wrap(async(req,res)=>{
  const data=await response.json();
  res.json({data:data.data??[],pagina:page,limite:limit});
 }));
+
+blingRouter.get("/consulta/:resource/:id",admin,wrap(async(req,res)=>{
+ const {resource,id}=req.params;
+ if(!Object.hasOwn(resources,resource)||resource==="estoques"||!/^\d{1,18}$/.test(id))return res.sendStatus(400);
+ if(!configured())return res.sendStatus(503);
+ const token=await accessToken();
+ const response=await fetch("https://api.bling.com.br/Api/v3/"+resources[resource]+"/"+id,{headers:{Authorization:"Bearer "+token,Accept:"application/json"},redirect:"error",signal:AbortSignal.timeout(15000)});
+ if(!response.ok)return res.status(response.status===429?429:502).json({erro:"Detalhe indisponível",statusBling:response.status});
+ const data=await response.json();res.json({data:data.data??null});
+}));
