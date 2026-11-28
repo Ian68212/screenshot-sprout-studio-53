@@ -9,7 +9,7 @@ import chatInternoRouter from "./chat-interno.js";
 import pushNotificacoesRouter from "./push-notificacoes.js";
 import gestaoArquivosRouter from "./gestao-arquivos.js";
 import { accessProfilesRouter } from "./access-profiles.js";
-import atendimentoRodrinoxRouter, { atribuirAtendimento, classificarChamadosCorporativos } from "./atendimento-rodrinox.js";
+import atendimentoRodrinoxRouter, { atribuirAtendimento, classificarChamadosCorporativos, reservarAtendimentoCorporativo } from "./atendimento-rodrinox.js";
 import { assinarMensagemDigiSac, autorDigiSac, identidadeDigiSac } from "./digisac-identidade.js";
 import whatsappMetaRouter from "./whatsapp-meta.js";
 import "dotenv/config";
@@ -461,7 +461,7 @@ r.post("/api/atendimento/transferir", exigir("painel"), wrap(async (req, res) =>
 }));
 
 r.post("/api/atendimento/etiquetas",exigir("painel"),wrap(async(req,res)=>{res.setHeader("Cache-Control","no-store");const {contactId,tagIds}=req.body||{};if(!digiId(contactId)||!Array.isArray(tagIds)||tagIds.length>50||!tagIds.every(digiId))return res.status(400).json({erro:"Contato ou etiquetas inválidos."});try{const data=await chamarDigiSac("/contacts/"+encodeURIComponent(contactId),"PUT",{tagIds});await auditar(req.usuario.id,"digisac_etiquetas",JSON.stringify({contactId,tagIds}),req.ip);res.json({ok:true,data})}catch(e){res.status(e.status||502).json({erro:e.message||"Não foi possível atualizar as etiquetas."})}}));
-r.post("/api/atendimento/finalizar",exigir("painel"),wrap(async(req,res)=>{res.setHeader("Cache-Control","no-store");const {contactId,ticketTopicIds=[],comments=""}=req.body||{};const byUserId=autorDigiSac(req.identidadeDigiSac,req.body?.byUserId);if(!digiId(contactId)||!Array.isArray(ticketTopicIds)||ticketTopicIds.length>10||!ticketTopicIds.every(digiId)||(byUserId&&!digiId(byUserId)))return res.status(400).json({erro:"Contato ou assunto inválido."});if(typeof comments!=="string"||comments.length>500)return res.status(400).json({erro:"Comentário inválido."});try{const data=await chamarDigiSac("/contacts/"+encodeURIComponent(contactId)+"/ticket/close","POST",{ticketTopicIds,comments:comments.trim(),...(byUserId?{byUserId}:{})});await auditar(req.usuario.id,"digisac_atendimento_finalizado",JSON.stringify({contactId,ticketTopicIds}),req.ip);res.json({ok:true,data})}catch(e){res.status(e.status||502).json({erro:e.message||"Não foi possível finalizar o atendimento."})}}));
+r.post("/api/atendimento/finalizar",exigir("painel"),wrap(async(req,res)=>{res.setHeader("Cache-Control","no-store");const {contactId,ticketTopicIds=[],comments=""}=req.body||{};const byUserId=autorDigiSac(req.identidadeDigiSac,req.body?.byUserId);if(!digiId(contactId)||!Array.isArray(ticketTopicIds)||ticketTopicIds.length>10||!ticketTopicIds.every(digiId)||(byUserId&&!digiId(byUserId)))return res.status(400).json({erro:"Contato ou assunto inválido."});if(typeof comments!=="string"||comments.length>500)return res.status(400).json({erro:"Comentário inválido."});try{const data=await chamarDigiSac("/contacts/"+encodeURIComponent(contactId)+"/ticket/close","POST",{ticketTopicIds,comments:comments.trim(),...(byUserId?{byUserId}:{})});if(req.identidadeDigiSac.corporativa)await atribuirAtendimento(contactId,null,null,req.usuario.id);await auditar(req.usuario.id,"digisac_atendimento_finalizado",JSON.stringify({contactId,ticketTopicIds}),req.ip);res.json({ok:true,data})}catch(e){res.status(e.status||502).json({erro:e.message||"Não foi possível finalizar o atendimento."})}}));
 
 async function auditarEnvioDigiSac(req, acao, contactId, mensagemId) {
   try {
@@ -482,6 +482,7 @@ r.post("/api/atendimento/enviar", exigir("painel"), wrap(async (req,res)=>{
   if(!base||!token)return res.status(503).json({erro:"Integração não configurada."});
   const url=new URL(base+"/messages");
   if(url.protocol!=="https:"||url.hostname!=="rodrinoxpro.digisac.app"||!url.pathname.startsWith("/api/v1/"))return res.status(503).json({erro:"Destino DigiSac inválido."});
+  if(req.identidadeDigiSac.corporativa && !await reservarAtendimentoCorporativo(contactId,req.usuario))return res.status(409).json({erro:"Atendimento de outro colaborador. Solicite a transferência."});
   const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),12000);
   try{
     const text = assinarMensagemDigiSac(message, req.usuario, req.identidadeDigiSac);
@@ -519,7 +520,8 @@ r.post("/api/atendimento/enviar-anexo",exigir("painel"),(req,res,next)=>digiMedi
  if([prepareUrl,messageUrl].some(u=>u.protocol!=="https:"||u.hostname!=="rodrinoxpro.digisac.app"||!u.pathname.startsWith("/api/v1/")))return res.status(503).json({erro:"Destino DigiSac inválido."});
  const filename=path.basename(req.file.originalname).slice(0,120),mimetype=mimeMap[ext];
  const sendAsDocument=![".jpg",".jpeg",".png",".webp",".gif"].includes(ext);
- const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),45000);
+ if(req.identidadeDigiSac.corporativa && !await reservarAtendimentoCorporativo(contactId,req.usuario))return res.status(409).json({erro:"Atendimento de outro colaborador. Solicite a transferência."});
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),45000);
  const apiHeaders={Authorization:"Bearer "+token,Accept:"application/json","Content-Type":"application/json"};
  const fail=async(upstream,etapa)=>{const detail=(await upstream.text().catch(()=>"")).slice(0,1200);let parsed={};try{parsed=JSON.parse(detail)}catch{};return res.status(502).json({erro:"A DigiSac recusou a etapa "+etapa+".",etapa,codigo:upstream.status,detalhe:String(parsed?.message||parsed?.error||parsed?.errors?.[0]?.message||"").slice(0,240)})};
  try{
