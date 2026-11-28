@@ -3,7 +3,7 @@ import { q, auditar } from "./db.js";
 import { exigir } from "./auth.js";
 
 // Controle de VISIBILIDADE da navegação. Autorizações de APIs permanecem independentes.
-export const MENU_KEYS = Object.freeze(["documentos","chat-interno","pcp","tarefas","gestao-empresarial","atendimento","almoxarifado","qualidade","rh","seguranca","comunicados","treinamentos","ferramentas","aplicativos","contatos","suporte","link.email","link.drive","link.cameras","link.bling","admin.visao","admin.permissoes","admin.organograma","admin.pessoas","admin.candidaturas","admin.site"]);
+export const MENU_KEYS = Object.freeze(["documentos","chat-interno","pcp","tarefas","gestao-empresarial","atendimento","atendimento.fila","almoxarifado","qualidade","rh","seguranca","comunicados","treinamentos","ferramentas","aplicativos","contatos","suporte","link.email","link.drive","link.cameras","link.bling","admin.visao","admin.permissoes","admin.organograma","admin.pessoas","admin.candidaturas","admin.site"]);
 const ADMIN_KEYS = new Set(["admin.visao","admin.permissoes","admin.organograma","admin.pessoas","admin.candidaturas","admin.site"]);
 const SCOPES = new Set(["perfil","setor","cargo","usuario"]);
 const router = Router();
@@ -28,7 +28,7 @@ function target(u, scope) {
   return String(u.id);
 }
 export function resolve(u, rows) {
-  const visible = Object.fromEntries(MENU_KEYS.map(k => [k, k === "atendimento" ? u.perfil === "admin" : (!ADMIN_KEYS.has(k) || u.perfil === "admin")]));
+  const visible = Object.fromEntries(MENU_KEYS.map(k => [k, (k === "atendimento" || k === "atendimento.fila") ? u.perfil === "admin" : (!ADMIN_KEYS.has(k) || u.perfil === "admin")]));
   // Mais específico prevalece: perfil < setor < cargo < usuário.
   for (const scope of ["perfil","setor","cargo","usuario"]) {
     const alvo = target(u, scope);
@@ -38,6 +38,7 @@ export function resolve(u, rows) {
   // Administradores sempre conservam acesso ao menu e à central de controle.
   if (u.perfil === "admin") visible["admin.permissoes"] = true;
   visible.seguranca = true; // SST disponível a todos os usuários autenticados.
+  visible["atendimento.fila"] = visible.atendimento && visible["atendimento.fila"];
   return visible;
 }
 export async function podeAcessarAtendimento(usuario) {
