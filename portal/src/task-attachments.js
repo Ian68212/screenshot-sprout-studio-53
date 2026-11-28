@@ -117,3 +117,15 @@ taskAttachmentsRouter.post("/:taskId/chunk/:token",wrap(async(req,res,next)=>{
  res.json({complete:result.complete,nextOffset:v.offset});
  }catch(e){next(e)}finally{v.busy=false;}});
 }));
+
+taskAttachmentsRouter.get("/:taskId/:id/preview",wrap(async(req,res)=>{
+ if(!await access(req,req.params.taskId))return res.sendStatus(403);
+ const [row]=await q("SELECT * FROM rp_task_attachments WHERE id=? AND task_id=?",[req.params.id,req.params.taskId]);
+ if(!row)return res.sendStatus(404);
+ const types={".png":"image/png",".jpg":"image/jpeg",".jpeg":"image/jpeg",".webp":"image/webp",".pdf":"application/pdf",".txt":"text/plain; charset=utf-8",".csv":"text/plain; charset=utf-8"};
+ const type=types[path.extname(row.original_name).toLowerCase()];
+ if(!type)return res.sendStatus(415);
+ res.set({"Content-Type":type,"Cache-Control":"private, no-store","X-Content-Type-Options":"nosniff","Content-Disposition":"inline","Content-Security-Policy":"default-src 'none'; frame-ancestors 'self'; sandbox"});
+ if(row.drive_file_id)return streamDriveFile(row.drive_file_id,res);
+ return res.sendFile(path.join(folder,row.stored_name));
+}));
