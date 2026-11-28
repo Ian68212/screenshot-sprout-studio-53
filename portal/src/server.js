@@ -28,7 +28,7 @@ import { PERFIS, podeVerFerramenta } from "./permissions.js";
 import { siteRouter } from "./site-cms.js";
 import { mediaRouter } from "./site-media.js";
 import { publicSiteRouter } from "./public-site.js";
-import menuPermissoesRouter, { atendentesDoPortal, exigirAtendimento, podeAcessarAtendimento } from "./menu-permissoes.js";
+import menuPermissoesRouter, { atendentesDoPortal, exigirAtendimento, podeAcessarAtendimento, resolve as resolverMenu } from "./menu-permissoes.js";
 import emailCorporativoRouter, { conectarCaixaIndividualNoLogin } from "./email-corporativo.js";
 import { profilePhotoRouter, ensureProfilePhotoSchema } from "./profile-photo.js";
 
@@ -276,16 +276,21 @@ r.use("/api/atendimento", exigir("painel"), exigirAtendimento, (req, res, next) 
 
 // Estado da integração de atendimento: nunca expõe token, URL interna ou credenciais.
 // Disponível somente a usuários autenticados do portal.
-r.get("/api/atendimento/status", exigir("painel"), (req, res) => {
+async function podeVerFila(req) {
+  const regras = await q("SELECT escopo,alvo,botao,permitido FROM menu_permissoes WHERE botao IN ('atendimento','atendimento.fila')");
+  return resolverMenu(req.usuario,regras)["atendimento.fila"] === true;
+}
+r.get("/api/atendimento/status", exigir("painel"), wrap(async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
   res.json({
     configurada: Boolean(process.env.DIGISAC_API_TOKEN && process.env.DIGISAC_API_BASE_URL),
     ativa: Boolean(process.env.DIGISAC_API_TOKEN && process.env.DIGISAC_API_BASE_URL),
     modo: "oficial",
+    podeVerFila: await podeVerFila(req),
     identidadeCorporativa: req.identidadeDigiSac.corporativa,
     usuario: { id: req.usuario.id, perfil: req.usuario.perfil }
   });
-});
+}));
 
 // Download de mídia já vinculada à mensagem: evita consultar /files/:id (404).
 // A URL assinada vem do histórico DigiSac, nunca de um host arbitrário.
@@ -396,7 +401,12 @@ r.get("/api/atendimento/consultar/:recurso", exigir("painel"), wrap(async (req, 
     if (endpoint === "tickets" && req.identidadeDigiSac.corporativa) {
       const chamados = Array.isArray(payload) ? payload :
         [payload?.rows, payload?.data, payload?.items, payload?.results].find(Array.isArray);
-      if (chamados) await classificarChamadosCorporativos(chamados, req.usuario.id);
+      if (chamados) {
+        await classificarChamadosCorporativos(chamados, req.usuario.id);
+        if (!await podeVerFila(req)) {
+          for (let i=chamados.length-1;i>=0;i--) if(chamados[i].rodrinoxFila==="fila") chamados.splice(i,1);
+        }
+      }
     }
     res.json(payload);
   } catch (err) {
