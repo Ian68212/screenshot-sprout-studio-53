@@ -19,6 +19,12 @@ function schema(){
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`).catch(e=>{pending=null;throw e});
   return pending;
 }
+export async function reservarAtendimentoCorporativo(contato,usuario) {
+  await schema();
+  await q("INSERT INTO atendimento_rodrinox (contato_digisac,usuario_id,setor_id,atualizado_por) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE usuario_id=COALESCE(usuario_id,VALUES(usuario_id))",[contato,usuario.id,usuario.setor_id??null,usuario.id]);
+  const [a]=await q("SELECT usuario_id FROM atendimento_rodrinox WHERE contato_digisac=?",[contato]);
+  return String(a?.usuario_id)===String(usuario.id);
+}
 export async function atribuirAtendimento(contato, usuarioId, setorId, autorId) {
   await schema();
   await q(`INSERT INTO atendimento_rodrinox (contato_digisac,usuario_id,setor_id,atualizado_por) VALUES (?,?,?,?)
