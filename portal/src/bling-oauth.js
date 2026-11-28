@@ -83,12 +83,30 @@ blingRouter.get("/consulta/:resource",admin,wrap(async(req,res)=>{
  res.json({data:data.data??[],pagina:page,limite:limit});
 }));
 
+const detailCache=new Map();
+const detailPending=new Map();
+let detailQueue=Promise.resolve();
+async function cachedDetail(resource,id){
+ const cacheKey=resource+"/"+id, cached=detailCache.get(cacheKey);
+ if(cached&&cached.until>Date.now())return cached.data;
+ if(detailPending.has(cacheKey))return detailPending.get(cacheKey);
+ const task=detailQueue.then(async()=>{
+  const token=await accessToken();
+  const response=await fetch("https://api.bling.com.br/Api/v3/"+resources[resource]+"/"+id,{headers:{Authorization:"Bearer "+token,Accept:"application/json"},redirect:"error",signal:AbortSignal.timeout(15000)});
+  if(!response.ok)return {status:response.status};
+  const payload=await response.json();const data={data:payload.data??null};
+  if(data.data){detailCache.set(cacheKey,{data,until:Date.now()+(["contatos","formas"].includes(resource)?300000:60000)});if(detailCache.size>2000)detailCache.delete(detailCache.keys().next().value)}
+  return data;
+ });
+ detailPending.set(cacheKey,task);
+ detailQueue=task.catch(()=>null).then(()=>new Promise(r=>setTimeout(r,400)));
+ try{return await task}finally{detailPending.delete(cacheKey)}
+}
 blingRouter.get("/consulta/:resource/:id",admin,wrap(async(req,res)=>{
  const {resource,id}=req.params;
  if(!Object.hasOwn(resources,resource)||resource==="estoques"||!/^\d{1,18}$/.test(id))return res.sendStatus(400);
  if(!configured())return res.sendStatus(503);
- const token=await accessToken();
- const response=await fetch("https://api.bling.com.br/Api/v3/"+resources[resource]+"/"+id,{headers:{Authorization:"Bearer "+token,Accept:"application/json"},redirect:"error",signal:AbortSignal.timeout(15000)});
- if(!response.ok)return res.status(response.status===429?429:502).json({erro:"Detalhe indisponível",statusBling:response.status});
- const data=await response.json();res.json({data:data.data??null});
+ const result=await cachedDetail(resource,id);
+ if(result.status)return res.status(result.status===429?429:502).json({erro:"Detalhe indisponível",statusBling:result.status});
+ res.json(result);
 }));
