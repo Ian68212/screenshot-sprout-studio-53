@@ -93,3 +93,25 @@
 #ge-live .ge-state.late{color:#b32249;background:#fce2e9}
 #ge-live .ge-state.open{color:#805814;background:#fff0c7}
 #ge-live .ge-state.neutral{color:#455568;background:#e9edf1}
+
+/* Compact light workspace, scoped to ERP */
+#ge-live{padding:10px 14px;border-radius:6px}
+#ge-live .ge-heading{margin:0 0 8px}
+#ge-live .ge-heading h3{margin:4px 0;font-size:18px}
+#ge-live .ge-heading p{margin:3px 0;font-size:12px}
+#ge-live .ge-layout{gap:4px;padding:4px;margin-bottom:8px}
+#ge-live .ge-menu summary{padding:8px 14px;font-size:13px;border:0}
+#ge-live .ge-menu[open] summary{background:#e2f4e8;color:#21834a}
+#ge-live .ge-panel{padding:4px 0}
+#ge-live #ge-title{font-size:18px;margin:8px 0}
+#ge-live #ge-message{margin:4px 0}
+#ge-live .ge-toolbar{margin:6px 0;gap:6px}
+#ge-live .ge-toolbar input,#ge-live .ge-toolbar button,#ge-live .ge-toolbar select{font-size:12px;padding:6px 9px;border:1px solid #ced9e3;border-radius:5px;background:white;color:#34465a}
+#ge-live #ge-filter{flex:0 1 420px}
+#ge-live.ge-finance .ge-data-table td,#ge-live.ge-finance .ge-data-table th{padding:6px 7px;font-size:12px}
+#ge-live.ge-finance #ge-results{max-height:70vh}
+#ge-live.ge-finance .ge-summary{width:180px;box-sizing:border-box}
+#ge-live .ge-data-table tbody tr:nth-child(even){background:#fff}
+#ge-live .ge-data-table tbody tr:hover{background:#edf4ef}
+#ge-live .ge-summary h4{margin:0 0 10px}
+#ge-live .ge-summary p{margin:8px 0}
