@@ -79,6 +79,7 @@ async function openRecord(id,redraw=true){
   try{
     const res=await fetch("/colaborador/api/atendimento/consultar/messages?contactId="+encodeURIComponent(contactId),{credentials:"same-origin",cache:"no-store"});
     const data=await res.json();if(!res.ok)throw Error(data.erro||"Consulta indisponível");
+    if(active&&String(active.id)===String(id)&&!document.hidden)window.dispatchEvent(new CustomEvent("rp-ca-viewed",{detail:{id:String(id)}}));
     const messages=rows(data).filter(isMessage).sort((a,b)=>new Date(a.sentAt||a.createdAt||a.timestamp||0)-new Date(b.sentAt||b.createdAt||b.timestamp||0)).slice(-100);
     if(messages.length){previews.set(String(contactId),messages[messages.length-1]);if(previews.size>500)previews.delete(previews.keys().next().value);const old=[...document.querySelectorAll(".ca-record")].find(b=>b.dataset.caId===String(id));if(old&&active&&String(active.id)===String(id)){const temp=document.createElement("div");temp.innerHTML=recordMarkup(active);const fresh=temp.firstElementChild;fresh.hidden=old.hidden;fresh.onclick=()=>openRecord(id);fresh.querySelector("img")?.addEventListener("error",e=>e.target.remove(),{once:true});old.replaceWith(fresh);}}activeServiceId=messages.findLast(m=>m.serviceId)?.serviceId||active?.serviceId||active?.service?.id||null;
     sentPending=sentPending.filter(p=>p.contactId!==String(contactId)||(!messages.some(m=>(p.id&&String(m.id)===p.id)||(messageText(m)===p.text&&Math.abs(new Date(m.createdAt||m.sentAt||0).getTime()-p.time)<120000))&&Date.now()-p.time<120000));
