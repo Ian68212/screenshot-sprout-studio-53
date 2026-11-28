@@ -76,3 +76,20 @@
 #ge-live.ge-finance .ge-detail-button{padding:4px 9px}
 #ge-live.ge-finance #ge-results{max-height:65vh}
 #ge-live.ge-finance .ge-summary{width:190px}
+
+#ge-live{background:#f5f7f9;color:#263749;padding:18px;border-radius:10px;color-scheme:light;box-sizing:border-box}
+#ge-live h3,#ge-live h4,#ge-live .ge-heading p,#ge-live .ge-eyebrow,#ge-live #ge-message{color:#34465a}
+#ge-live .ge-layout{background:white;border:1px solid #dce4ec;border-radius:6px;padding:7px}
+#ge-live .ge-menu summary,#ge-live .ge-tile,#ge-live .ge-dropdown,#ge-live .ge-toolbar button,#ge-live input,#ge-live .ge-detail-button{background:white;color:#34465a;border:1px solid #ced9e3}
+#ge-live .ge-panel,#ge-live .ge-summary,#ge-live #ge-results{background:white;color:#34465a;border-color:#dce4ec}
+#ge-live .ge-data-table th{background:#edf2f6;color:#34465a}
+#ge-live .ge-data-table td,#ge-live .ge-data-table th{border-color:#dce4ec}
+#ge-live .ge-data-table tbody tr:nth-child(even){background:#f7f9fb}
+#ge-live .ge-data-table tbody tr:hover{background:#eaf4ee}
+#ge-live .ge-summary strong{color:#20894c}
+#ge-live .ge-notice{background:#e8eef4;color:#34465a}
+#ge-live .ge-state{display:inline-block;border-radius:12px;padding:3px 8px;font-size:11px;white-space:nowrap}
+#ge-live .ge-state.paid{color:#187541;background:#dff5e6}
+#ge-live .ge-state.late{color:#b32249;background:#fce2e9}
+#ge-live .ge-state.open{color:#805814;background:#fff0c7}
+#ge-live .ge-state.neutral{color:#455568;background:#e9edf1}

@@ -63,7 +63,7 @@ async function accessToken(){
  return t.access_token;
  }catch(e){await conn.rollback();throw e}finally{conn.release()}
 }
-const resources=Object.freeze({contatos:"contatos",produtos:"produtos",estoques:"estoques/saldos",notas:"nfe",vendas:"pedidos/vendas",compras:"pedidos/compras",receber:"contas/receber",pagar:"contas/pagar"});
+const resources=Object.freeze({formas:"formas-pagamentos",contatos:"contatos",produtos:"produtos",estoques:"estoques/saldos",notas:"nfe",vendas:"pedidos/vendas",compras:"pedidos/compras",receber:"contas/receber",pagar:"contas/pagar"});
 blingRouter.get("/consulta/:resource",admin,wrap(async(req,res)=>{
  if(!configured())return res.status(503).json({erro:"Configuração incompleta."});
  if(!Object.hasOwn(resources,req.params.resource))return res.sendStatus(404);
