@@ -51,3 +51,14 @@
 #ge-live .ge-empty{padding:24px;color:#a7bfd4;text-align:center}
 #ge-live #ge-message{color:#a7bfd4;font-size:13px}
 @media(max-width:740px){#ge-live .ge-tile{flex:1 1 42%}#ge-live .ge-panel{padding:10px}#ge-live .ge-data-table td,#ge-live .ge-data-table th{padding:10px}}
+
+#ge-live .ge-menu{position:relative}
+#ge-live .ge-menu summary{list-style:none;cursor:pointer;padding:12px 18px;border:1px solid #34516a;border-radius:7px;background:#17334c;font-size:14px;font-weight:600}
+#ge-live .ge-menu summary::-webkit-details-marker{display:none}
+#ge-live .ge-menu[open] summary{border-color:#ff912f}
+#ge-live .ge-dropdown{position:absolute;z-index:20;top:100%;left:0;min-width:220px;padding:8px;background:#112d49;border:1px solid #42607b;border-radius:8px;box-shadow:0 8px 22px #0006;display:grid;gap:5px}
+#ge-live .ge-workspace{display:flex;gap:12px;align-items:flex-start}
+#ge-live #ge-results{flex:1;min-width:0}
+#ge-live .ge-summary{width:190px;flex:none;padding:14px;background:#0c2238;border:1px solid #34516a;border-radius:8px;font-size:13px;color:#b9cede}
+#ge-live .ge-summary strong{display:block;font-size:19px;color:#78d6a2}
+@media(max-width:900px){#ge-live .ge-workspace{flex-direction:column}#ge-live #ge-results,#ge-live .ge-summary{width:100%}}
