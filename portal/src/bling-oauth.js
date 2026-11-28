@@ -127,6 +127,7 @@ blingRouter.get("/consulta/:resource/:id",admin,wrap(async(req,res)=>{
 }));
 
 const snapshotJobs=new Map();
+const snapshotFailures=new Map();
 async function buildFinanceSnapshot(resource,from,to,k){
  const rows=new Map();
  for(let page=1;page<=50;page++){
@@ -163,8 +164,8 @@ blingRouter.get("/financeiro/:resource/snapshot",admin,wrap(async(req,res)=>{
  const k="finance:"+resource+":"+from+":"+to;
  const stored=await readStored(k);
  let job=snapshotJobs.get(k);
- if((!stored||Date.now()-stored.updatedAt>300000)&&!job&&snapshotJobs.size<1){
-  job=buildFinanceSnapshot(resource,from,to,k).catch(()=>{}).finally(()=>snapshotJobs.delete(k));snapshotJobs.set(k,job);
+ if((!stored||Date.now()-stored.updatedAt>300000)&&!job&&snapshotJobs.size<1&&(!snapshotFailures.has(k)||Date.now()-snapshotFailures.get(k)>60000)){
+  job=buildFinanceSnapshot(resource,from,to,k).then(()=>snapshotFailures.delete(k)).catch(()=>{snapshotFailures.set(k,Date.now());if(snapshotFailures.size>100)snapshotFailures.delete(snapshotFailures.keys().next().value)}).finally(()=>snapshotJobs.delete(k));snapshotJobs.set(k,job);
  }
- res.json({data:stored?.data??null,updatedAt:stored?.updatedAt??null,refreshing:!!job});
+ res.json({data:stored?.data??null,updatedAt:stored?.updatedAt??null,refreshing:!!job,failed:snapshotFailures.has(k)&&!job});
 }));
