@@ -136,7 +136,7 @@ document.addEventListener("dragstart",e=>{
 });
 function rtClearDrag(){
  rtDraggingTask=null;
- document.querySelectorAll(".rt-drop-active").forEach(column=>column.classList.remove("rt-drop-active"));
+ document.querySelectorAll(".rt-drop-active,.rt-drop-before,.rt-drop-after").forEach(el=>el.classList.remove("rt-drop-active","rt-drop-before","rt-drop-after"));
 }
 document.addEventListener("dragend",rtClearDrag);
 document.addEventListener("dragover",e=>{
@@ -145,6 +145,7 @@ document.addEventListener("dragover",e=>{
  e.preventDefault();
  e.dataTransfer.dropEffect="move";
  column.classList.add("rt-drop-active");
+ document.querySelectorAll(".rt-drop-before,.rt-drop-after").forEach(el=>el.classList.remove("rt-drop-before","rt-drop-after"));const target=e.target.closest(".rt-task-card");if(target&&Number(target.dataset.taskId)!==rtDraggingTask){const rect=target.getBoundingClientRect();target.classList.add(e.clientY<rect.top+rect.height/2?"rt-drop-before":"rt-drop-after");}
 });
 document.addEventListener("dragleave",e=>{
  const column=e.target.closest?.(".rt-drop-active");
@@ -157,7 +158,20 @@ document.addEventListener("drop",e=>{
  rtClearDrag();
  if(!column)return;
  e.preventDefault();
- rtChangeStatus(id,column.dataset.taskStatus);
+ const status=column.dataset.taskStatus;
+ if(!rtCan("tasks.status")||!rtSharedReady||rtDirty||rtSyncing||!Object.hasOwn(rtStatus,status))return;
+ const task=rtState.tasks.find(t=>t.id===id);if(!task)return;
+ const target=e.target.closest(".rt-task-card");if(target&&Number(target.dataset.taskId)===id)return;
+ const previous=task.status;
+ if(rtSort!=="default"){rtChangeStatus(id,status);return;}
+ const next=rtState.tasks.filter(t=>t.id!==id);
+ let index=target?next.findIndex(t=>t.id===Number(target.dataset.taskId)):-1;
+ if(index>=0){const rect=target.getBoundingClientRect();if(e.clientY>=rect.top+rect.height/2)index++;}
+ else{index=next.length;for(let i=next.length-1;i>=0;i--)if(next[i].status===status){index=i+1;break;}}
+ task.status=status;next.splice(index,0,task);rtState.tasks=next;
+ if(previous!==status)rtLog(task,"Status alterado",rtStatus[previous]+" → "+rtStatus[status]);
+ else rtLog(task,"Ordem alterada","Posição manual no quadro");
+ rtSave();rtDraw();
 });
 
 function rtDraw(){const root=document.querySelector("#items .tasks-shell");if(root)root.outerHTML=rtTrashOpen?rtTrashView():renderTarefas();}
@@ -201,9 +215,10 @@ function rtProjectFocus(project){
 const rtPriorityLabels={baixa:"Baixa",normal:"Normal",alta:"Alta",urgente:"Urgente"};
 const rtTitleActionStyle=document.createElement("style");rtTitleActionStyle.textContent=".rt-task-title{position:relative;padding-right:64px!important}.rt-title-actions{position:absolute;right:5px;top:50%;transform:translateY(-50%);display:inline-flex;gap:3px;opacity:0;pointer-events:none}.rt-task-title:hover .rt-title-actions,.rt-task-title:focus-within .rt-title-actions{opacity:1;pointer-events:auto}.rt-title-actions button{width:24px!important;height:24px;padding:0!important;min-width:0!important;border:0!important;background:transparent!important;color:inherit;cursor:pointer;font-size:15px;line-height:1}.rt-title-actions .rt-delete-task{color:#b42318!important}@media(hover:none){.rt-title-actions{opacity:1;pointer-events:auto}}";document.head.appendChild(rtTitleActionStyle);document.addEventListener("click",e=>{if(e.target.closest(".rt-title-actions button"))e.preventDefault();},true);
 const rtStatusColorStyle=document.createElement("style");rtStatusColorStyle.textContent=".tasks-column[data-task-status=\"a_fazer\"]>h3{color:#5799DF!important;border-bottom-color:#5799DF!important}.tasks-column[data-task-status=\"a_fazer\"] .rt-task-card[data-priority]{background:#E5EFFB!important;border-color:#5799DF!important;border-left:4px solid #5799DF!important;color:#174A75!important}.tasks-column[data-task-status=\"a_fazer\"] .rt-task-card[data-priority]>.rt-task-title,.tasks-column[data-task-status=\"a_fazer\"] .rt-task-card[data-priority]>.rt-card{background:#E5EFFB!important;color:#174A75!important}.tasks-column[data-task-status=\"a_fazer\"] .rt-task-card[data-priority]>.rt-task-title{border-bottom-color:#5799DF!important}.tasks-column[data-task-status=\"andamento\"]>h3{color:#E9AC40!important;border-bottom-color:#E9AC40!important}.tasks-column[data-task-status=\"andamento\"] .rt-task-card[data-priority]{background:#FFF1D5!important;border-color:#E9AC40!important;border-left:4px solid #E9AC40!important;color:#855509!important}.tasks-column[data-task-status=\"andamento\"] .rt-task-card[data-priority]>.rt-task-title,.tasks-column[data-task-status=\"andamento\"] .rt-task-card[data-priority]>.rt-card{background:#FFF1D5!important;color:#855509!important}.tasks-column[data-task-status=\"andamento\"] .rt-task-card[data-priority]>.rt-task-title{border-bottom-color:#E9AC40!important}.tasks-column[data-task-status=\"revisao\"]>h3{color:#A78BFA!important;border-bottom-color:#A78BFA!important}.tasks-column[data-task-status=\"revisao\"] .rt-task-card[data-priority]{background:#F0E9FF!important;border-color:#A78BFA!important;border-left:4px solid #A78BFA!important;color:#62409C!important}.tasks-column[data-task-status=\"revisao\"] .rt-task-card[data-priority]>.rt-task-title,.tasks-column[data-task-status=\"revisao\"] .rt-task-card[data-priority]>.rt-card{background:#F0E9FF!important;color:#62409C!important}.tasks-column[data-task-status=\"revisao\"] .rt-task-card[data-priority]>.rt-task-title{border-bottom-color:#A78BFA!important}.tasks-column[data-task-status=\"concluida\"]>h3{color:#42B883!important;border-bottom-color:#42B883!important}.tasks-column[data-task-status=\"concluida\"] .rt-task-card[data-priority]{background:#E0F5E9!important;border-color:#42B883!important;border-left:4px solid #42B883!important;color:#176341!important}.tasks-column[data-task-status=\"concluida\"] .rt-task-card[data-priority]>.rt-task-title,.tasks-column[data-task-status=\"concluida\"] .rt-task-card[data-priority]>.rt-card{background:#E0F5E9!important;color:#176341!important}.tasks-column[data-task-status=\"concluida\"] .rt-task-card[data-priority]>.rt-task-title{border-bottom-color:#42B883!important}.tasks-board .rt-task-card[data-priority=\"urgente\"] .rt-task-priority-label{background:#fee2e2!important;color:#991b1b!important;border-color:#ef4444!important}.tasks-board .rt-task-card[data-priority=\"alta\"] .rt-task-priority-label{background:#fff0ce!important;color:#854d0e!important;border-color:#e9ac40!important}.tasks-board .rt-task-card[data-priority=\"normal\"] .rt-task-priority-label{background:#e5effb!important;color:#174a75!important;border-color:#5799df!important}.tasks-board .rt-task-card[data-priority=\"baixa\"] .rt-task-priority-label{background:#edf2f7!important;color:#475569!important;border-color:#94a3b8!important}";document.head.appendChild(rtStatusColorStyle);
+const rtOrderStyle=document.createElement("style");rtOrderStyle.textContent=".tasks-board .rt-task-title .rt-task-priority-label{display:table!important;margin:0 0 5px 0!important;padding:2px 7px!important;border:0!important;border-radius:4px!important;font-size:11px!important;font-weight:500!important}.rt-task-name{display:inline}.rt-drop-before{outline:2px solid #60a5fa!important;outline-offset:2px}.rt-drop-after{box-shadow:0 4px 0 #60a5fa!important}";document.head.appendChild(rtOrderStyle);
 function rtTaskCardHeading(task){
  const priority=Object.hasOwn(rtPriorityLabels,task.priority)?task.priority:"normal";
- return `<details class="rt-task-card" data-task-id="${task.id}" data-priority="${priority}"${rtExpandedCards.has(task.id)?" open":""}><summary class="rt-task-title" draggable="${rtCan("tasks.status")}">${esc(task.title)} <span class="rt-task-priority-label">${rtPriorityLabels[priority]}</span>${rtCurrentUser?.perfil==="admin"?`<span class="rt-title-actions"><button type="button" class="rt-rename-task" data-id="${task.id}" title="Renomear tarefa" aria-label="Renomear tarefa">✎</button><button type="button" class="rt-delete-task" data-id="${task.id}" title="Excluir tarefa" aria-label="Excluir tarefa">🗑</button></span>`:""}</summary>`;
+ return `<details class="rt-task-card" data-task-id="${task.id}" data-priority="${priority}"${rtExpandedCards.has(task.id)?" open":""}><summary class="rt-task-title" draggable="${rtCan("tasks.status")}"><span class="rt-task-priority-label">${rtPriorityLabels[priority]}</span><span class="rt-task-name">${esc(task.title)}</span>${rtCurrentUser?.perfil==="admin"?`<span class="rt-title-actions"><button type="button" class="rt-rename-task" data-id="${task.id}" title="Renomear tarefa" aria-label="Renomear tarefa">✎</button><button type="button" class="rt-delete-task" data-id="${task.id}" title="Excluir tarefa" aria-label="Excluir tarefa">🗑</button></span>`:""}</summary>`;
 }
 function rtCloneTask(source){
  if(!rtCan("tasks.create"))return;
