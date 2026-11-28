@@ -10,6 +10,7 @@ const key=()=>crypto.createHash("sha256").update(process.env.BLING_TOKEN_KEY).di
 function encrypt(value){const iv=crypto.randomBytes(12),c=crypto.createCipheriv("aes-256-gcm",key(),iv);return Buffer.concat([iv,Buffer.concat([c.update(JSON.stringify(value)),c.final()]),c.getAuthTag()]).toString("base64")}
 let ready;
 function schema(){return ready ||= (async()=>{
+ await q("CREATE TABLE IF NOT EXISTS rp_bling_read_cache (cache_key CHAR(64) PRIMARY KEY,payload MEDIUMTEXT NOT NULL,expires_at DATETIME NOT NULL) ENGINE=InnoDB");
  await q("CREATE TABLE IF NOT EXISTS rp_bling_state (state_hash CHAR(64) PRIMARY KEY,user_id INT NOT NULL,expires_at DATETIME NOT NULL) ENGINE=InnoDB");
  await q("CREATE TABLE IF NOT EXISTS rp_bling_tokens (id INT PRIMARY KEY,token_enc TEXT NOT NULL,connected_by INT NOT NULL,updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP) ENGINE=InnoDB");
 })().catch(e=>{ready=null;throw e})}
@@ -37,6 +38,7 @@ blingRouter.get("/callback",admin,wrap(async(req,res)=>{
  const data=await response.json();
  if(!response.ok||!data.access_token||!data.refresh_token)return res.status(502).json({erro:"Autorização Bling não concluída."});
  await q("INSERT INTO rp_bling_tokens(id,token_enc,connected_by) VALUES(1,?,?) ON DUPLICATE KEY UPDATE token_enc=VALUES(token_enc),connected_by=VALUES(connected_by)",[encrypt({...data,received_at:Date.now()}),req.usuario.id]);
+ await q("DELETE FROM rp_bling_read_cache");detailCache.clear();
  res.type("text/plain").send("Autorização Bling armazenada. Sincronização ainda não ativada.");
 }));
 
@@ -63,6 +65,13 @@ async function accessToken(){
  return t.access_token;
  }catch(e){await conn.rollback();throw e}finally{conn.release()}
 }
+async function readStored(k){
+ const [row]=await q("SELECT payload FROM rp_bling_read_cache WHERE cache_key=? AND expires_at>UTC_TIMESTAMP()",[hash(k)]);
+ return row?decrypt(row.payload):null;
+}
+async function saveStored(k,value,seconds){
+ await q("INSERT INTO rp_bling_read_cache(cache_key,payload,expires_at) VALUES(?,?,DATE_ADD(UTC_TIMESTAMP(),INTERVAL ? SECOND)) ON DUPLICATE KEY UPDATE payload=VALUES(payload),expires_at=VALUES(expires_at)",[hash(k),encrypt(value),seconds]);
+}
 const resources=Object.freeze({formas:"formas-pagamentos",contatos:"contatos",produtos:"produtos",estoques:"estoques/saldos",notas:"nfe",vendas:"pedidos/vendas",compras:"pedidos/compras",receber:"contas/receber",pagar:"contas/pagar"});
 blingRouter.get("/consulta/:resource",admin,wrap(async(req,res)=>{
  if(!configured())return res.status(503).json({erro:"Configuração incompleta."});
@@ -75,12 +84,16 @@ blingRouter.get("/consulta/:resource",admin,wrap(async(req,res)=>{
  if(ids.length>50||ids.some(id=>!/^\d{1,18}$/.test(id)))return res.status(400).json({erro:"Informe ids de produtos separados por vírgula."});
  for(const id of ids)url.searchParams.append("idsProdutos[]",id);
  }else{url.searchParams.set("pagina",String(page));url.searchParams.set("limite",String(limit))}
+ const listKey="list:"+url.toString();
+ const stored=await readStored(listKey);if(stored)return res.json({...stored,cached:true});
  let token;
  try{token=await accessToken()}catch{return res.status(503).json({erro:"Não foi possível obter acesso ao Bling. Verifique a autorização."})}
  const response=await fetch(url,{headers:{Authorization:"Bearer "+token,Accept:"application/json"},redirect:"error",signal:AbortSignal.timeout(15000)});
  if(!response.ok){const body=await response.json().catch(()=>null);const type=body?.error?.type;return res.status(response.status===429?429:502).json({erro:"Consulta Bling não concluída.",statusBling:response.status,tipoBling:typeof type==="string"&&/^[a-zA-Z_]{1,80}$/.test(type)?type:null});}
  const data=await response.json();
- res.json({data:data.data??[],pagina:page,limite:limit});
+ const result={data:data.data??[],pagina:page,limite:limit};
+ if(Array.isArray(data.data))await saveStored(listKey,result,60);
+ res.json(result);
 }));
 
 const detailCache=new Map();
@@ -91,10 +104,12 @@ async function cachedDetail(resource,id){
  if(cached&&cached.until>Date.now())return cached.data;
  if(detailPending.has(cacheKey))return detailPending.get(cacheKey);
  const task=detailQueue.then(async()=>{
+  const stored=await readStored("detail:"+cacheKey);if(stored)return stored;
   const token=await accessToken();
   const response=await fetch("https://api.bling.com.br/Api/v3/"+resources[resource]+"/"+id,{headers:{Authorization:"Bearer "+token,Accept:"application/json"},redirect:"error",signal:AbortSignal.timeout(15000)});
   if(!response.ok)return {status:response.status};
   const payload=await response.json();const data={data:payload.data??null};
+  if(data.data)await saveStored("detail:"+cacheKey,data,["contatos","formas"].includes(resource)?900:120);
   if(data.data){detailCache.set(cacheKey,{data,until:Date.now()+(["contatos","formas"].includes(resource)?300000:60000)});if(detailCache.size>2000)detailCache.delete(detailCache.keys().next().value)}
   return data;
  });
