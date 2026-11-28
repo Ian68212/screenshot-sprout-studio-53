@@ -1,7 +1,7 @@
 "use strict";
 const $=id=>document.getElementById(id),base="/colaborador/api/contratos";
 let current=null,model=null,selectedCategory=null;
-async function api(path="",options={}){const r=await fetch(base+path,{credentials:"same-origin",...options});if(!r.ok){const data=await r.json().catch(()=>({}));throw Error(data.erro||"Não foi possível concluir a operação (HTTP "+r.status+").");}return r.json();}
+async function api(path="",options={}){const headers=new Headers(options.headers||{});if(!["GET","HEAD","OPTIONS"].includes(String(options.method||"GET").toUpperCase()))headers.set("X-Portal","1");const r=await fetch(base+path,{credentials:"same-origin",...options,headers});if(!r.ok){const data=await r.json().catch(()=>({}));throw Error(data.erro||"Não foi possível concluir a operação (HTTP "+r.status+").");}return r.json();}
 function run(fn){return async e=>{e?.preventDefault();try{$("status").textContent="";await fn(e);}catch(err){$("status").textContent=err.message;}};}
 function node(tag,text,parent){const el=document.createElement(tag);el.textContent=text;parent.append(el);return el;}
 function post(path,data){return api(path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});}
