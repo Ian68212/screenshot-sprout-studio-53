@@ -5,7 +5,7 @@ import { tasksRouter } from "./tasks-official.js";
 import { taskAttachmentsRouter } from "./task-attachments.js";
 import { blingRouter } from "./bling-oauth.js";
 import { googleDriveRouter } from "./google-drive-oauth.js";
-import { uploadDriveFile, readDriveFile } from "./drive-storage.js";
+import { uploadDriveFile, readDriveFile, deleteDriveFile } from "./drive-storage.js";
 import chatInternoRouter from "./chat-interno.js";
 import pushNotificacoesRouter from "./push-notificacoes.js";
 import gestaoArquivosRouter from "./gestao-arquivos.js";
@@ -686,6 +686,23 @@ r.patch("/api/admin/candidaturas/:id", exigir("admin.usuarios"), wrap(async (req
   await q("UPDATE candidaturas SET status=? WHERE id=?", [status, Number(req.params.id)]);
   await auditar(req.usuario.id, "atualizou_candidatura", `#${req.params.id}: ${status}`, req.ip);
   res.json({ ok: true });
+}));
+
+r.delete("/api/admin/candidaturas/:id", exigir("admin.usuarios"), wrap(async (req, res) => {
+  const id=Number(req.params.id);
+  if(!Number.isSafeInteger(id)||id<1)return res.status(400).json({erro:"Identificador inválido."});
+  const [item]=await q("SELECT arquivo_path FROM candidaturas WHERE id=?",[id]);
+  if(!item)return res.status(404).json({erro:"Candidatura não encontrada."});
+  const stored=String(item.arquivo_path||"");
+  if(stored.startsWith("gdrive:")) await deleteDriveFile(stored.slice(7));
+  else if(stored){
+    const target=path.resolve(stored), root=path.resolve(uploadDir);
+    if(path.dirname(target)!==root)return res.status(409).json({erro:"Arquivo fora da pasta de currículos."});
+    try{await fs.promises.unlink(target);}catch(e){if(e.code!=="ENOENT")throw e;}
+  }
+  await q("DELETE FROM candidaturas WHERE id=?",[id]);
+  await auditar(req.usuario.id,"excluiu_candidatura",`#${id}`,req.ip);
+  res.json({ok:true});
 }));
 
 r.get("/api/admin/candidaturas/:id/curriculo", exigir("admin.usuarios"), wrap(async (req, res) => {
