@@ -34,3 +34,6 @@ async function permissionPanel(){
  const save=node("button","Salvar acesso",row);save.onclick=run(async()=>{await api("/permissoes/"+u.id,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({visualizar:view.checked,editar:edit.checked})});$("status").textContent="Permissão atualizada.";});}});
 }
 run(permissionPanel)();
+
+const printButton=node("button","Imprimir / salvar PDF",$("generator"));
+printButton.onclick=()=>{const w=window.open("","_blank");if(!w){$("status").textContent="Permita a abertura da janela de impressão.";return;}w.document.title="Contrato";const pre=w.document.createElement("div");pre.style.cssText="white-space:pre-wrap;font:12pt Georgia;line-height:1.5;margin:25mm";pre.textContent=$("preview").value;w.document.body.append(pre);w.focus();w.print();};
