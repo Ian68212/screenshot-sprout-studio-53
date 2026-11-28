@@ -37,3 +37,15 @@ run(permissionPanel)();
 
 const printButton=node("button","Imprimir / salvar PDF",$("generator"));
 printButton.onclick=()=>{const w=window.open("","_blank");if(!w){$("status").textContent="Permita a abertura da janela de impressão.";return;}w.document.title="Contrato";const pre=w.document.createElement("div");pre.style.cssText="white-space:pre-wrap;font:12pt Georgia;line-height:1.5;margin:25mm";pre.textContent=$("preview").value;w.document.body.append(pre);w.focus();w.print();};
+
+const wordButton=node("button","Exportar Word (.docx)",$("generator"));
+wordButton.onclick=run(async()=>{
+ const enc=new TextEncoder(),xml=s=>s.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g,"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+ const files={"[Content_Types].xml":'<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>',"_rels/.rels":'<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>',"word/document.xml":'<?xml version="1.0" encoding="UTF-8"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+$("preview").value.split(/\r?\n/).map(s=>'<w:p><w:r><w:t xml:space="preserve">'+xml(s)+'</w:t></w:r></w:p>').join("")+'<w:sectPr/></w:body></w:document>'};
+ const chunks=[],central=[];let offset=0,size=0;
+ function header(n,fields){const b=new Uint8Array(n),v=new DataView(b.buffer);for(const [p,x,l] of fields)l===2?v.setUint16(p,x,true):v.setUint32(p,x,true);return b;}
+ function crc(b){let c=0xffffffff;for(const x of b){c^=x;for(let i=0;i<8;i++)c=(c>>>1)^((c&1)?0xedb88320:0);}return (c^0xffffffff)>>>0;}
+ for(const [name,value] of Object.entries(files)){const n=enc.encode(name),b=enc.encode(value),c=crc(b);const h=header(30,[[0,0x04034b50,4],[4,20,2],[14,c,4],[18,b.length,4],[22,b.length,4],[26,n.length,2]]);chunks.push(h,n,b);const d=header(46,[[0,0x02014b50,4],[4,20,2],[6,20,2],[16,c,4],[20,b.length,4],[24,b.length,4],[28,n.length,2],[42,offset,4]]);central.push(d,n);size+=d.length+n.length;offset+=h.length+n.length+b.length;}
+ const count=Object.keys(files).length,end=header(22,[[0,0x06054b50,4],[8,count,2],[10,count,2],[12,size,4],[16,offset,4]]);
+ const url=URL.createObjectURL(new Blob([...chunks,...central,end],{type:"application/vnd.openxmlformats-officedocument.wordprocessingml.document"}));const a=document.createElement("a");a.href=url;a.download="contrato.docx";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+});
