@@ -76,14 +76,21 @@ function openPortalModule() {
 }
 
 sidebar.addEventListener("click", event => {
-  if (event.target.closest("a[data-module]")) setPortalMenu(false);
+  const link = event.target.closest("a[data-module]");
+  if (link) {
+    setPortalMenu(false);
+    if (!portalModule.hidden && link.getAttribute("aria-current") === "page") {
+      event.preventDefault();
+      openTab("inicio");
+    }
+  }
 });
 document.addEventListener("click", e => {
   const button = e.target.closest("[data-tab]");
   if (button && !button.hidden) {
     e.preventDefault();
-    const fecharCentral = button.dataset.tab === "atendimento" && !$("details").hidden && $("items").querySelector(".ca-layout");
-    openTab(fecharCentral ? "inicio" : button.dataset.tab);
+    const closeActive = button.dataset.tab !== "inicio" && button.dataset.tab !== "chat-interno" && button.closest("#menu") && button.classList.contains("active") && !$("details").hidden;
+    openTab(closeActive ? "inicio" : button.dataset.tab);
   }
 });
 portalMenuToggle.addEventListener("click", () => setPortalMenu(!sidebar.classList.contains("open")));
