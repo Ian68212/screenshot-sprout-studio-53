@@ -696,9 +696,21 @@ r.delete("/api/admin/candidaturas/:id", exigir("admin.usuarios"), wrap(async (re
   const stored=String(item.arquivo_path||"");
   if(stored.startsWith("gdrive:")) await deleteDriveFile(stored.slice(7));
   else if(stored){
-    const target=path.resolve(stored), root=path.resolve(uploadDir);
-    if(path.dirname(target)!==root)return res.status(409).json({erro:"Arquivo fora da pasta de currículos."});
-    try{await fs.promises.unlink(target);}catch(e){if(e.code!=="ENOENT")throw e;}
+    const root=path.resolve(uploadDir);
+    // Registros antigos podem guardar caminhos absolutos de uma implantação anterior.
+    const target=path.isAbsolute(stored)?path.resolve(stored):path.resolve(root,stored);
+    const candidates=[target];
+    for(const candidate of candidates){
+      let info;
+      try{info=await fs.promises.lstat(candidate);}catch(e){if(e.code==="ENOENT"||e.code==="ENOTDIR")continue;throw e;}
+      if(path.dirname(candidate)!==root||!info.isFile()||info.isSymbolicLink())return res.status(409).json({erro:"Currículo antigo localizado fora da pasta autorizada. É necessário migrar o arquivo antes de excluir."});
+      const realRoot=await fs.promises.realpath(root), realFile=await fs.promises.realpath(candidate);
+      if(path.dirname(realFile)!==realRoot)return res.status(409).json({erro:"Localização do currículo não autorizada."});
+      // Não remover arquivo compartilhado por outra candidatura.
+      const [shared]=await q("SELECT id FROM candidaturas WHERE id<>? AND (arquivo_path=? OR arquivo_path=?) LIMIT 1",[id,stored,candidate]);
+      if(shared)return res.status(409).json({erro:"Arquivo vinculado a outra candidatura."});
+      await fs.promises.unlink(candidate);
+    }
   }
   await q("DELETE FROM candidaturas WHERE id=?",[id]);
   await auditar(req.usuario.id,"excluiu_candidatura",`#${id}`,req.ip);
