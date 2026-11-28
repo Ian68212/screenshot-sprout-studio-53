@@ -1,12 +1,12 @@
 "use strict";
 const $=id=>document.getElementById(id),base="/colaborador/api/contratos";
-let current=null,model=null;
+let current=null,model=null,selectedCategory=null;
 async function api(path="",options={}){const r=await fetch(base+path,{credentials:"same-origin",...options});if(!r.ok)throw Error("Não foi possível concluir a operação (HTTP "+r.status+").");return r.json();}
 function run(fn){return async e=>{e?.preventDefault();try{$("status").textContent="";await fn(e);}catch(err){$("status").textContent=err.message;}};}
 function node(tag,text,parent){const el=document.createElement(tag);el.textContent=text;parent.append(el);return el;}
 function post(path,data){return api(path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});}
-async function categories(){const el=$("categories");el.replaceChildren();for(const c of await api("/categorias")){const o=node("option",c.nome,el);o.value=c.id;}}
-async function list(){const el=$("results");el.replaceChildren();for(const c of await api("?busca="+encodeURIComponent($("search").value))){const a=node("article","",el);node("strong",c.titulo,a);node("p",[c.categoria,c.contraparte,c.numero,c.versao?"Versão "+c.versao:"Sem arquivo"].filter(Boolean).join(" · "),a);const b=node("button","Abrir contrato",a);b.onclick=run(()=>detail(c));}}
+async function categories(){const el=$("categories");el.replaceChildren();const cats=await api("/categorias");const side=$("categoryList");side.replaceChildren();const all=node("button","Todas as categorias",side);all.onclick=run(()=>{selectedCategory=null;return list();});for(const c of cats){const b=node("button","▱ "+c.nome,side);b.onclick=run(()=>{selectedCategory=c.id;return list();});}for(const c of cats){const o=node("option",c.nome,el);o.value=c.id;}}
+async function list(){const el=$("results");el.replaceChildren();const rows=await api("?busca="+encodeURIComponent($("search").value));$("totalMetric").textContent=rows.length;const days=c=>c.vencimento?Math.ceil((new Date(c.vencimento)-Date.now())/86400000):null;$("activeMetric").textContent=rows.filter(c=>days(c)!==null&&days(c)>30).length;$("soonMetric").textContent=rows.filter(c=>days(c)!==null&&days(c)>=0&&days(c)<=30).length;$("expiredMetric").textContent=rows.filter(c=>days(c)!==null&&days(c)<0).length;for(const c of rows.filter(c=>!selectedCategory||String(c.categoria_id)===String(selectedCategory))){const a=node("article","",el);node("strong",c.titulo,a);node("p",[c.categoria,c.contraparte,c.numero,c.versao?"Versão "+c.versao:"Sem arquivo"].filter(Boolean).join(" · "),a);const b=node("button","Abrir contrato",a);b.onclick=run(()=>detail(c));}}
 async function detail(c){current=c;$("detail").hidden=false;$("detailTitle").textContent=c.titulo;const el=$("versions");el.replaceChildren();for(const v of await api("/"+c.id+"/versoes")){const a=node("article","",el);const link=node("a","Versão "+v.versao+" — "+v.arquivo_nome,a);link.href=base+"/"+c.id+"/versoes/"+v.id;node("p",[v.autor,v.criado_em,v.motivo].filter(Boolean).join(" · "),a);}}
 function form(id,fn){$(id).onsubmit=run(async e=>{const f=e.currentTarget;await fn(new FormData(f));f.reset();$("status").textContent="Salvo com sucesso.";});}
 form("category",async d=>{await post("/categorias",Object.fromEntries(d));await categories();});
@@ -49,3 +49,5 @@ wordButton.onclick=run(async()=>{
  const count=Object.keys(files).length,end=header(22,[[0,0x06054b50,4],[8,count,2],[10,count,2],[12,size,4],[16,offset,4]]);
  const url=URL.createObjectURL(new Blob([...chunks,...central,end],{type:"application/vnd.openxmlformats-officedocument.wordprocessingml.document"}));const a=document.createElement("a");a.href=url;a.download="contrato.docx";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 });
+
+$("addCategory").onclick=()=>$("categoryDialog").showModal();$("addContract").onclick=()=>$("contractDialog").showModal();$("quickModel").onclick=()=>$("showModels").click();document.querySelectorAll(".closeDialog").forEach(b=>b.onclick=()=>b.closest("dialog").close());
