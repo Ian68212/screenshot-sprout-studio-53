@@ -103,8 +103,8 @@ async function cachedDetail(resource,id){
  const cacheKey=resource+"/"+id, cached=detailCache.get(cacheKey);
  if(cached&&cached.until>Date.now())return cached.data;
  if(detailPending.has(cacheKey))return detailPending.get(cacheKey);
+ const stored=await readStored("detail:"+cacheKey);if(stored)return stored;
  const task=detailQueue.then(async()=>{
-  const stored=await readStored("detail:"+cacheKey);if(stored)return stored;
   const token=await accessToken();
   const response=await fetch("https://api.bling.com.br/Api/v3/"+resources[resource]+"/"+id,{headers:{Authorization:"Bearer "+token,Accept:"application/json"},redirect:"error",signal:AbortSignal.timeout(15000)});
   if(!response.ok)return {status:response.status};
@@ -124,4 +124,48 @@ blingRouter.get("/consulta/:resource/:id",admin,wrap(async(req,res)=>{
  const result=await cachedDetail(resource,id);
  if(result.status)return res.status(result.status===429?429:502).json({erro:"Detalhe indisponível",statusBling:result.status});
  res.json(result);
+}));
+
+const snapshotJobs=new Map();
+const snapshotFailures=new Map();
+async function buildFinanceSnapshot(resource,from,to,k){
+ const rows=new Map();
+ for(let page=1;page<=50;page++){
+  const token=await accessToken();
+  const url=new URL("https://api.bling.com.br/Api/v3/"+resources[resource]);
+  url.search=new URLSearchParams({pagina:String(page),limite:"100"}).toString();
+  const res=await fetch(url,{headers:{Authorization:"Bearer "+token,Accept:"application/json"},signal:AbortSignal.timeout(15000),redirect:"error"});
+  if(!res.ok)throw Error("list_failed");
+  const {data}=await res.json();if(!Array.isArray(data))throw Error("invalid_list");
+  for(const row of data)if(row.id&&row.vencimento>=from&&row.vencimento<=to)rows.set(String(row.id),row);
+  if(data.length<100)break;
+  if(page===50)throw Error("limit");
+  await new Promise(r=>setTimeout(r,450));
+ }
+ const refs=new Map();
+ for(const row of rows.values()){
+  const detail=await cachedDetail(resource,String(row.id));if(!detail.data)throw Error("detail_failed");
+  Object.assign(row,detail.data);
+  for(const [field,type] of [["contato","contatos"],["formaPagamento","formas"]]){
+   const v=row[field],id=String(v?.id??v??"");
+   if(!/^\d{1,18}$/.test(id)||id==="0"||v?.nome||v?.descricao)continue;
+   const refKey=type+"/"+id;
+   if(!refs.has(refKey)){const result=await cachedDetail(type,id);if(!result.data)throw Error("reference_failed");refs.set(refKey,result.data)}
+   const ref=refs.get(refKey);row[field]={id,nome:ref.nome??ref.descricao??"Não identificado"};
+  }
+  row._geDone=true;
+ }
+ const data=[...rows.values()].sort((a,b)=>String(a.vencimento).localeCompare(String(b.vencimento)));
+ await saveStored(k,{data,updatedAt:Date.now()},86400);
+}
+blingRouter.get("/financeiro/:resource/snapshot",admin,wrap(async(req,res)=>{
+ const {resource}=req.params,{from,to}=req.query;
+ if(!["pagar","receber"].includes(resource)||typeof from!=="string"||typeof to!=="string"||!/^\d{4}-\d{2}-\d{2}$/.test(from)||!/^\d{4}-\d{2}-\d{2}$/.test(to)||from>to)return res.sendStatus(400);
+ const k="finance:"+resource+":"+from+":"+to;
+ const stored=await readStored(k);
+ let job=snapshotJobs.get(k);
+ if((!stored||Date.now()-stored.updatedAt>300000)&&!job&&snapshotJobs.size<1&&(!snapshotFailures.has(k)||Date.now()-snapshotFailures.get(k)>60000)){
+  job=buildFinanceSnapshot(resource,from,to,k).then(()=>snapshotFailures.delete(k)).catch(()=>{snapshotFailures.set(k,Date.now());if(snapshotFailures.size>100)snapshotFailures.delete(snapshotFailures.keys().next().value)}).finally(()=>snapshotJobs.delete(k));snapshotJobs.set(k,job);
+ }
+ res.json({data:stored?.data??null,updatedAt:stored?.updatedAt??null,refreshing:!!job,failed:snapshotFailures.has(k)&&!job});
 }));
